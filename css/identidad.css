@@ -1,0 +1,290 @@
+/* ===========================================================================
+   SEC-HACIENDA · css/identidad.css
+   Estilos de la FASE 0 (identidad, roles y sesión).
+ 
+   Reconstruido el 04/08/2026 a partir de las clases que genera js/identidad.js
+   y de los tokens que ya usa styles.css (--primary, --input-border, etc.).
+   .chip, .pin-pad, .pin-dot y .pin-keypad ya viven en styles.css: aquí solo
+   está lo que empieza por idn-.
+   =========================================================================== */
+
+/* ── LOGIN: paso 1, elegir usuario ───────────────────────── */
+.idn-titulo {
+  margin: 0 0 10px;
+  font-size: .95rem;
+  font-weight: 700;
+  color: var(--text-sub, #3d5248);
+  text-align: center;
+}
+
+#idn-buscar {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 14px;
+  border-radius: 12px;
+  border: 1.5px solid var(--input-border, rgba(6, 64, 43, .22));
+  background: rgba(255, 255, 255, .85);
+  font-size: .95rem;
+  color: var(--text-main, #0f1f16);
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+#idn-buscar:focus {
+  border-color: var(--primary, #06402B);
+  box-shadow: 0 0 0 3px var(--accent-dim, rgba(6, 64, 43, .08));
+}
+#idn-buscar::placeholder { color: var(--text-muted, #6b7c74); }
+
+.idn-usuarios {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 46vh;
+  overflow-y: auto;
+  margin-top: 12px;
+  padding-right: 4px;
+  -webkit-overflow-scrolling: touch;
+}
+.idn-usuarios::-webkit-scrollbar { width: 6px; }
+.idn-usuarios::-webkit-scrollbar-thumb {
+  background: rgba(6, 64, 43, .18);
+  border-radius: 3px;
+}
+
+.idn-usuario {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1.5px solid var(--card-border, rgba(6, 64, 43, .14));
+  background: rgba(255, 255, 255, .82);
+  text-align: left;
+  cursor: pointer;
+  transition: transform .12s, background .15s, border-color .15s;
+}
+.idn-usuario:hover {
+  background: #fff;
+  border-color: var(--primary, #06402B);
+}
+.idn-usuario:active { transform: scale(.98); }
+.idn-usuario.sinpin { opacity: .55; }
+
+.idn-nom {
+  font-size: .92rem;
+  font-weight: 600;
+  color: var(--text-main, #0f1f16);
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+.idn-vacio {
+  margin: 18px 0;
+  text-align: center;
+  font-size: .88rem;
+  color: var(--text-muted, #6b7c74);
+}
+
+/* Miniatura circular: iniciales, o la foto si la tiene ──── */
+.idn-mini {
+  position: relative;
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--primary, #06402B);
+  color: #fff;
+  font-size: .8rem;
+  font-weight: 700;
+  letter-spacing: .5px;
+}
+.idn-mini img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ── LOGIN: paso 2, PIN del usuario elegido ──────────────── */
+.idn-elegido {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  font-size: .95rem;
+  color: var(--text-main, #0f1f16);
+}
+.idn-elegido b { font-weight: 700; }
+
+#idn-volver {
+  display: block;
+  margin: 0 auto;
+}
+
+/* Mismo aspecto que .pin-key de styles.css, para el teclado que
+   pinta identidad.js con la clase .idn-key */
+.idn-key {
+  aspect-ratio: 1.4;
+  width: auto;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .85);
+  border: 1.5px solid var(--input-border, rgba(6, 64, 43, .22));
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary, #06402B);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all .12s;
+}
+.idn-key:active {
+  background: var(--primary, #06402B);
+  color: #fff;
+  transform: scale(.94);
+}
+.idn-key.action {
+  font-size: 1rem;
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-muted, #6b7c74);
+}
+
+/* ── INICIO: foto de perfil ──────────────────────────────── */
+.idn-avatar-wrap {
+  display: flex;
+  justify-content: center;
+  margin: 4px 0 10px;
+}
+
+.idn-avatar {
+  position: relative;
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  overflow: hidden;
+  cursor: pointer;
+  background: var(--primary, #06402B);
+  border: 3px solid rgba(255, 255, 255, .9);
+  box-shadow: 0 4px 14px rgba(6, 64, 43, .22);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform .15s;
+}
+.idn-avatar:active { transform: scale(.96); }
+
+.idn-avatar-ini {
+  color: #fff;
+  font-size: 1.7rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.idn-avatar-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.idn-avatar-cam {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--primary, #06402B);
+  font-size: .8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, .2);
+}
+
+/* ── INICIO: chips de roles ──────────────────────────────── */
+.idn-roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  margin: 6px 0 2px;
+}
+
+.idn-rol-chip {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--accent-dim, rgba(6, 64, 43, .08));
+  border: 1px solid var(--card-border, rgba(6, 64, 43, .14));
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .4px;
+  color: var(--primary, #06402B);
+  text-transform: uppercase;
+}
+.idn-rol-chip.sin {
+  background: rgba(180, 83, 9, .10);
+  border-color: rgba(180, 83, 9, .25);
+  color: #b45309;
+}
+
+/* ── PC: la lista de usuarios aprovecha el ancho ─────────── */
+@media (min-width: 720px) {
+  .idn-usuarios {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    max-height: 52vh;
+  }
+}
+
+/* ===========================================================================
+   FASE 9 · LOGIN — cuentas guardadas en el dispositivo
+   Ya no se lista a todo el personal: cada fila es una cuenta usada en este
+   equipo, con su papelera para quitarla (no toca la base de datos).
+   =========================================================================== */
+.idn-cuenta-fila {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.idn-cuenta-fila .idn-usuario { flex: 1 1 auto; min-width: 0; }
+
+.idn-cuenta-del {
+  flex: 0 0 auto;
+  width: 42px !important;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 12px;
+  border: 1.5px solid rgba(220, 38, 38, .35);
+  background: rgba(220, 38, 38, .08);
+  color: #dc2626;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform .12s, background .15s;
+}
+.idn-cuenta-del:hover { background: rgba(220, 38, 38, .18); transform: translateY(-1px); }
+.idn-cuenta-del:active { transform: translateY(0); }
+
+.idn-otro {
+  width: 100%;
+  margin-top: 10px;
+  justify-content: center;
+}
+
+html[data-tema="oscuro"] .idn-usuario { background: rgba(var(--surface-rgb), .72); }
+html[data-tema="oscuro"] .idn-cuenta-del { background: rgba(248, 113, 113, .12); color: #f87171; }

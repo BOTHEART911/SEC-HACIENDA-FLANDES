@@ -1,0 +1,338 @@
+/* ===========================================================================
+   SEC-HACIENDA · css/base-visual.css   (FASE 3 — base visual y capas nativas)
+   Se carga DESPUÉS de styles.css, identidad.css y configuracion.css.
+   No reemplaza nada de styles.css: solo añade el tema oscuro (sobre los
+   tokens que la Fase 3 dejó en :root) y las capas nuevas.
+   =========================================================================== */
+
+/* ═══════════════════════════════════════════════════════════════════
+   1) MODO OSCURO
+   styles.css ya trabaja con tokens: aquí solo se cambian los valores.
+   ═══════════════════════════════════════════════════════════════════ */
+html[data-tema="oscuro"] {
+  --primary:       #6fd3a5;
+  --primary-2:     #4fbb8b;
+  --primary-light: #8ee4bd;
+  --accent:        #6fd3a5;
+  --accent-dim:    rgba(111,211,165,.12);
+  --ok:            #4ade80;
+  --error:         #f87171;
+  --scrim:         rgba(0,0,0,.62);
+
+  --surface-rgb:   26, 38, 33;
+
+  --card-bg:       rgba(26,38,33,.72);
+  --card-border:   rgba(111,211,165,.20);
+
+  --text-main:     #e7f0ea;
+  --text-muted:    #93a79c;
+  --text-sub:      #bdd0c5;
+
+  --input-bg:      rgba(26,38,33,.92);
+  --input-border:  rgba(111,211,165,.26);
+  --input-focus:   #6fd3a5;
+
+  --shadow-card:   0 8px 32px rgba(0,0,0,.45), 0 1px 0 rgba(255,255,255,.04) inset;
+  --shadow-btn:    0 4px 16px rgba(0,0,0,.50);
+
+  --tema-fondo:        none;
+  --tema-fondo-color:  #0d1512;
+
+  --tinte-alta:    88, 28, 28;
+  --tinte-media:   92, 58, 16;
+  --tinte-baja:    22, 74, 46;
+
+  color-scheme: dark;
+}
+
+/* LOTE 13/08 — dos capas (Asignador y ruedas de fecha) piden var(--card) y
+   var(--text), que NO existen en ninguna hoja: en modo oscuro se quedaban
+   con el blanco de respaldo y el texto casi negro. Se definen como alias de
+   los tokens que sí existen, en los dos temas. */
+:root {
+  --card: rgba(255,255,255,.98);
+  --text: #0f1f16;
+}
+html[data-tema="oscuro"] {
+  --card: rgba(26,38,33,.98);
+  --text: #e7f0ea;
+}
+
+/* LOTE 13/08 — el modal REBOTAR de BD Predial se quedó fuera del arreglo de
+   styles.css: era el único que seguía viéndose transparente y oscuro. */
+#modal-bdp-rebotar {
+  background: rgba(var(--surface-rgb), .30) !important;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+#modal-bdp-rebotar .card {
+  background: rgba(var(--surface-rgb), .98) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: 0 20px 60px rgba(6,64,43,.22) !important;
+}
+
+/* — Casos que no salen solos de los tokens — */
+html[data-tema="oscuro"] .proc-file-counter,
+html[data-tema="oscuro"] .pin-key:active,
+html[data-tema="oscuro"] .idn-key:active { color: #06301f; }
+html[data-tema="oscuro"] .proc-file-counter { border-color: rgba(255,255,255,.18); }
+
+html[data-tema="oscuro"] .bdp-exp-copy { background: rgba(2,132,199,.16); color: #7dd3fc; }
+html[data-tema="oscuro"] .bdp-exp-copy:hover { background: rgba(2,132,199,.26); }
+html[data-tema="oscuro"] .bdp-seg-aviso {
+  background: rgba(180,83,9,.16); color: #fcd34d; border-color: rgba(252,211,77,.32);
+}
+
+/* Los tintes de clasificación llevan un blanco fijo en el 2º tope del degradado */
+html[data-tema="oscuro"] .bdp-card.clasif-ALTA,
+html[data-tema="oscuro"] .bdp-card.clasif-MEDIA,
+html[data-tema="oscuro"] .bdp-card.clasif-BAJA { background-image: none; }
+html[data-tema="oscuro"] .bdp-card.clasif-ALTA  { background-color: rgba(var(--tinte-alta),.55); }
+html[data-tema="oscuro"] .bdp-card.clasif-MEDIA { background-color: rgba(var(--tinte-media),.55); }
+html[data-tema="oscuro"] .bdp-card.clasif-BAJA  { background-color: rgba(var(--tinte-baja),.45); }
+
+/* SweetAlert2 */
+/* ── LOTE 06/09 · el aviso SIEMPRE por encima ─────────────────────────
+   SweetAlert nace con z-index 1060 y los modales de la app viven mucho más
+   arriba (descargas 10000 · asignador e insights 10020 · rueda de fechas
+   10030 · visor 10050): cualquier aviso lanzado desde ellos quedaba DEBAJO
+   y el usuario no lo veía (el caso que destapó esto: "no hay filas para
+   descargar"). Una sola línea lo arregla para toda la app, hoy y para los
+   modales que vengan. */
+.swal2-container { z-index: 100010 !important; }
+
+html[data-tema="oscuro"] .swal2-popup { background: rgba(26,38,33,.98) !important; color: var(--text-main) !important; }
+html[data-tema="oscuro"] .swal2-title,
+html[data-tema="oscuro"] .swal2-html-container { color: var(--text-main) !important; }
+html[data-tema="oscuro"] .swal2-backdrop-show { background: rgba(0,0,0,.55) !important; }
+html[data-tema="oscuro"] .swal2-input,
+html[data-tema="oscuro"] .swal2-textarea,
+html[data-tema="oscuro"] .swal2-select {
+  background: var(--input-bg) !important; color: var(--text-main) !important;
+  border-color: var(--input-border) !important;
+}
+
+/* Chat: la burbuja del otro y el pie usan el token, el header sigue verde */
+html[data-tema="oscuro"] .chat-msg.other .chat-bubble { color: var(--text-main); }
+html[data-tema="oscuro"] select option { background: #1a2621; color: var(--text-main); }
+html[data-tema="oscuro"] iframe { background: #1a2621; }
+html[data-tema="oscuro"] img.brand { filter: brightness(.94); }
+
+/* Botón luna/sol
+   FASE 11 — se subió ARRIBA a la derecha. Antes vivía abajo a la derecha
+   y ahí es donde va el botón "Consultar" del panel de Insights, que es el
+   sitio donde la gente ya lo busca (igual que en la app de Jhonny). */
+.tema-btn {
+  position: fixed; right: 14px; z-index: 9500;
+  top: calc(14px + env(safe-area-inset-top, 0px)); bottom: auto;
+  width: 46px; height: 46px; border-radius: 50%;
+  border: 1.5px solid var(--card-border);
+  background: rgba(var(--surface-rgb),.92);
+  box-shadow: var(--shadow-card);
+  font-size: 1.15rem; line-height: 1; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: transform .16s ease, background .16s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.tema-btn:hover  { transform: scale(1.06); }
+.tema-btn:active { transform: scale(.92); }
+
+/* ═══════════════════════════════════════════════════════════════════
+   2) ANCHO APROVECHADO EN PC
+   Solo en vistas de lista/tablero. Los formularios siguen angostos.
+   ═══════════════════════════════════════════════════════════════════ */
+@media (min-width: 1024px) {
+  html[data-ancho="1"] .container { max-width: min(1600px, 96vw); }
+  html[data-ancho="1"] .view.active > .card,
+  html[data-ancho="1"] .view.active > .container > .card { max-width: 100%; }
+  html[data-ancho="1"] .view.active .card.narrow { max-width: 560px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   3) ESQUELETOS DE CARGA
+   ═══════════════════════════════════════════════════════════════════ */
+.sk {
+  position: relative; overflow: hidden;
+  background: rgba(var(--surface-rgb),.55);
+  border: 1.5px solid var(--card-border);
+  border-radius: var(--radius-md);
+}
+.sk::after {
+  content: ''; position: absolute; inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(var(--surface-rgb),.85), transparent);
+  animation: skShine 1.25s infinite;
+}
+@keyframes skShine { 100% { transform: translateX(100%); } }
+.sk-line { height: 12px; border-radius: 6px; margin: 9px 0; }
+.sk-line.w40 { width: 40%; } .sk-line.w60 { width: 60%; }
+.sk-line.w80 { width: 80%; } .sk-line.w95 { width: 95%; }
+.sk-card { padding: 16px 18px; margin: 12px 0; }
+.sk-wrap { display: grid; gap: 12px; grid-column: 1 / -1; }
+
+/* FASE 7.1 — el esqueleto es la señal de carga: mientras esté en
+   pantalla, el loader de pantalla completa se calla. Antes se pintaba
+   encima (inset:0 + desenfoque) y el esqueleto no se veía nunca. */
+body.hac-esqueleto #loader { opacity: 0 !important; pointer-events: none !important; }
+
+/* El esqueleto ocupa el ancho de las tarjetas reales, también cuando el
+   contenedor es una rejilla (#bdp-list son 2 columnas en PC). */
+.sk-card { grid-column: auto; }
+@media (prefers-reduced-motion: reduce) { .sk::after { animation: none; } }
+
+/* ═══════════════════════════════════════════════════════════════════
+   4) RIPPLE
+   ═══════════════════════════════════════════════════════════════════ */
+.rip-host { position: relative; overflow: hidden; }
+.rip {
+  position: absolute; border-radius: 50%; pointer-events: none;
+  background: currentColor; opacity: .26;
+  transform: scale(0); animation: ripGo .52s ease-out forwards;
+}
+@keyframes ripGo { to { transform: scale(2.6); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .rip { display: none; } }
+
+/* Micro-animaciones de pulsación */
+button:where(:not([class*="kit-"]):not(.acceso):not(.hf-cara):not(.hf-tema)):active, .chip:active, .icon-btn:active,
+.cat-pill:active, .panel-tab:active, .login-tab:active {
+  transform: scale(.97);
+}
+button:where(:not([class*="kit-"]):not(.acceso):not(.hf-cara):not(.hf-tema)), .chip, .icon-btn, .cat-pill, .panel-tab, .login-tab {
+  transition: transform .12s cubic-bezier(.34,1.56,.64,1),
+              background .16s ease, box-shadow .16s ease;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   5) TRANSICIÓN LATERAL ENTRE VISTAS
+   ═══════════════════════════════════════════════════════════════════ */
+.view.vt-ade { animation: vtAde .26s cubic-bezier(.22,.61,.36,1) both; }
+.view.vt-atr { animation: vtAtr .26s cubic-bezier(.22,.61,.36,1) both; }
+@keyframes vtAde { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: none; } }
+@keyframes vtAtr { from { opacity: 0; transform: translateX(-28px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .view.vt-ade, .view.vt-atr { animation: none; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   6) PULL TO REFRESH
+   ═══════════════════════════════════════════════════════════════════ */
+#ptr {
+  position: fixed; top: 0; left: 50%; z-index: 9400;
+  width: 42px; height: 42px; margin-left: -21px;
+  border-radius: 50%;
+  background: rgba(var(--surface-rgb),.96);
+  border: 1.5px solid var(--card-border);
+  box-shadow: var(--shadow-card);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--primary); font-size: 1.05rem;
+  transform: translateY(-60px); opacity: 0;
+  pointer-events: none;
+}
+#ptr.ptr-listo { color: var(--ok); }
+#ptr.ptr-girando i {
+  display: block; width: 18px; height: 18px; border-radius: 50%;
+  border: 2.5px solid rgba(var(--surface-rgb),0);
+  border-top-color: var(--primary); border-right-color: var(--primary);
+  animation: ptrSpin .7s linear infinite;
+}
+@keyframes ptrSpin { to { transform: rotate(360deg); } }
+
+/* ═══════════════════════════════════════════════════════════════════
+   7) ATENCIONES REGISTRADAS — 3 columnas en PC, 1 en móvil
+   ═══════════════════════════════════════════════════════════════════ */
+#atenc-wrap.atenc-grid {
+  display: grid; gap: 14px; align-items: start;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 760px)  { #atenc-wrap.atenc-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+@media (min-width: 1100px) { #atenc-wrap.atenc-grid { grid-template-columns: repeat(3, minmax(0,1fr)); } }
+#atenc-wrap.atenc-grid > .sol-card { margin: 0; height: 100%; }
+#atenc-wrap.atenc-grid > .atenc-vacio,
+#atenc-wrap.atenc-grid > .atenc-sentinela { grid-column: 1 / -1; }
+.atenc-sentinela { min-height: 8px; }
+.atenc-mas {
+  grid-column: 1 / -1; text-align: center;
+  font-size: .82rem; font-weight: 800; color: var(--text-muted);
+  padding: 10px 0 4px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   8) MODAL DE PDF — fila de acciones
+   ═══════════════════════════════════════════════════════════════════ */
+.pdf-acciones {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  justify-content: center; margin: 2px 0 0;
+}
+.pdf-acc {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 14px; border-radius: var(--radius-xl);
+  border: 1.5px solid var(--input-border);
+  background: rgba(var(--surface-rgb),.90);
+  color: var(--text-sub); font-weight: 800; font-size: .8rem;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.pdf-acc:hover { border-color: var(--primary); color: var(--primary); }
+
+/* ═══════════════════════════════════════════════════════════════════
+   FASE 9 · 1) MODO OSCURO — desplegable de RESIDENCIA (Choices.js)
+   Choices trae su CSS del CDN con blancos fijos: en oscuro el panel salía
+   blanco y las opciones casi invisibles (AGREGAR SOLICITUD PREDIAL).
+   Aquí se pinta con los mismos tokens que el resto de la app.
+   ═══════════════════════════════════════════════════════════════════ */
+html[data-tema="oscuro"] .choices__inner,
+html[data-tema="oscuro"] .choices[data-type*="select-one"] .choices__inner {
+  background: var(--input-bg);
+  border: 1.5px solid var(--input-border);
+  color: var(--text-main);
+}
+html[data-tema="oscuro"] .choices.is-open .choices__inner,
+html[data-tema="oscuro"] .choices.is-focused .choices__inner {
+  border-color: var(--input-focus);
+}
+html[data-tema="oscuro"] .choices__list--single .choices__item,
+html[data-tema="oscuro"] .choices__list--single { color: var(--text-main); }
+html[data-tema="oscuro"] .choices__placeholder { color: var(--text-muted); opacity: 1; }
+
+html[data-tema="oscuro"] .choices__list--dropdown,
+html[data-tema="oscuro"] .choices__list[aria-expanded] {
+  background: rgba(var(--surface-rgb), .99);
+  border: 1.5px solid var(--input-border);
+  color: var(--text-main);
+  box-shadow: var(--shadow-card);
+}
+html[data-tema="oscuro"] .choices__list--dropdown .choices__item,
+html[data-tema="oscuro"] .choices__list[aria-expanded] .choices__item {
+  color: var(--text-main);
+  background: transparent;
+}
+html[data-tema="oscuro"] .choices__list--dropdown .choices__item--selectable.is-highlighted,
+html[data-tema="oscuro"] .choices__list[aria-expanded] .choices__item--selectable.is-highlighted,
+html[data-tema="oscuro"] .choices__list--dropdown .choices__item--selectable:hover {
+  background: var(--accent-dim);
+  color: var(--primary-light);
+}
+html[data-tema="oscuro"] .choices__list--dropdown .choices__item--disabled,
+html[data-tema="oscuro"] .choices__list[aria-expanded] .choices__item--disabled {
+  color: var(--text-muted);
+}
+/* buscador de dentro del desplegable */
+html[data-tema="oscuro"] .choices__input,
+html[data-tema="oscuro"] .choices__list--dropdown .choices__input {
+  background: var(--input-bg);
+  color: var(--text-main);
+  border-bottom: 1px solid var(--input-border);
+}
+html[data-tema="oscuro"] .choices__input::placeholder { color: var(--text-muted); }
+html[data-tema="oscuro"] .choices[data-type*="select-one"]::after { border-color: var(--text-sub) transparent transparent; }
+html[data-tema="oscuro"] .choices[data-type*="select-one"].is-open::after { border-color: transparent transparent var(--text-sub); }
+
+/* ═══════════════════════════════════════════════════════════════════
+   FASE 9 · botón ＋ Agregar del visor de archivos
+   ═══════════════════════════════════════════════════════════════════ */
+.visor-acc.visor-acc-ok {
+  border-color: rgba(22,163,74,.55);
+  background: linear-gradient(135deg, #16a34a, #15803d);
+  color: #fff;
+}
+.visor-acc.visor-acc-ok:hover { filter: brightness(1.06); }

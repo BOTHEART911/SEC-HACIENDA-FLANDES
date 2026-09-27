@@ -1,0 +1,229 @@
+/* ============================================================
+   DESCARGAR BITÁCORAS — LOTE 10/09/2026 · SEC-HACIENDA
+   Modal de descarga a Excel y PDF de la bitácora de BD Predial.
+
+   Solo clases bxp-*: no toca styles.css ni css/bitacora.css.
+   Los colores salen de las variables del tema, así sirve igual en
+   claro y en oscuro (Fase 3).
+
+   Dos notas vivas que hay que respetar aquí:
+     · styles.css:146 tiene `button{width:100%}` GLOBAL ⇒ todo botón
+       nuevo fija su ancho o sale estirado de lado a lado.
+     · `.card` es cristal (--card-bg al 10% + backdrop-filter): dentro
+       de un modal el desenfoque toma el velo y la caja sale oscura en
+       modo día. Se usa el mismo patrón opaco del lote 13/08.
+   ============================================================ */
+
+/* ── la pastilla de BD Predial ── */
+
+.bxp-pill {
+  width: auto !important;
+  flex: 0 0 auto;
+  background: linear-gradient(135deg, #b45309, #7c2d12);
+  color: #fff;
+  border-color: transparent;
+}
+
+.bxp-wrap { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 2px; }
+
+/* ── el botón dentro del modal Ver del expediente ── */
+
+.bxp-btn-exp {
+  width: auto !important;
+  background: linear-gradient(135deg, #b45309, #7c2d12);
+  color: #fff;
+  border-color: transparent;
+}
+
+/* ── el modal ── */
+
+#modal-bitexp {
+  position: fixed;
+  inset: 0;
+  z-index: 10015;                 /* sobre #modal-bitacoras (10010) */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(var(--surface-rgb), .30);
+}
+
+#modal-bitexp.hidden { display: none; }
+
+#modal-bitexp .bxp-caja {
+  margin: 0;
+  width: min(700px, 100%);
+  max-height: 88vh;
+  overflow-y: auto;
+  background: rgba(var(--surface-rgb), .98) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: 0 20px 60px rgba(6, 64, 43, .22) !important;
+}
+
+.bxp-alcance {
+  margin: 0 0 12px;
+  font-weight: 700;
+  font-size: .9rem;
+  color: var(--text-muted);
+}
+
+/* ── bloques de opciones ── */
+
+.bxp-bloque {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--input-border);
+  border-radius: 12px;
+  background: rgba(var(--surface-rgb), .55);
+}
+
+.bxp-tit {
+  font-size: .82rem;
+  font-weight: 700;
+  letter-spacing: .4px;
+  text-transform: uppercase;
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+
+.bxp-radio,
+.bxp-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 4px;
+  font-size: .9rem;
+  cursor: pointer;
+}
+.bxp-radio input,
+.bxp-check input { width: 18px; height: 18px; margin: 0; flex: 0 0 auto; }
+.bxp-radio i { font-style: normal; color: var(--text-muted); font-weight: 700; }
+
+.bxp-check {
+  font-size: .82rem;
+  font-weight: 700;
+  letter-spacing: .4px;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+
+.bxp-rango {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 6px;
+}
+.bxp-rango label { display: block; margin-bottom: 4px; }
+.bxp-rango input { width: 100%; }
+
+.bxp-bloque.bxp-off .bxp-rango { opacity: .45; pointer-events: none; }
+
+.bxp-nota {
+  margin: 6px 0 0;
+  font-size: .82rem;
+  color: var(--text-muted);
+}
+.bxp-fijo { margin: 0 0 12px; }
+
+/* ── columnas ── */
+
+.bxp-cols-cab {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.bxp-cols-cab label { margin: 0; }
+
+.bxp-cols-acc { display: flex; gap: 6px; }
+
+.bxp-mini {
+  width: auto !important;
+  padding: 4px 12px;
+  font-size: .78rem;
+  border-radius: 999px;
+  border: 1px solid var(--input-border);
+  background: transparent;
+  color: var(--primary);
+  cursor: pointer;
+}
+.bxp-mini:hover { background: var(--accent-dim); }
+
+.bxp-columnas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 10px;
+  max-height: 30vh;
+  overflow-y: auto;
+  padding: 6px;
+  border: 1px solid var(--input-border);
+  border-radius: 12px;
+}
+
+.bxp-col {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 4px 6px;
+  border-radius: 8px;
+  font-size: .86rem;
+  cursor: pointer;
+}
+.bxp-col:hover { background: var(--accent-dim); }
+.bxp-col input { width: 18px; height: 18px; margin: 0; flex: 0 0 auto; }
+.bxp-col span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── conteo y avisos ── */
+
+.bxp-conteo {
+  margin: 10px 0 0;
+  font-size: .86rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+.bxp-conteo:empty { display: none; }
+
+.bxp-avance {
+  margin: 6px 0 0;
+  font-size: .86rem;
+  color: var(--text-muted);
+}
+.bxp-avance:empty { display: none; }
+
+.bxp-avance-malo {
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-weight: 700;
+  color: #7f1d1d;
+  background: rgba(185, 28, 28, .10);
+  border: 1px solid rgba(185, 28, 28, .25);
+}
+
+.bxp-avance-aviso {
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-weight: 700;
+  color: var(--primary);
+  background: var(--accent-dim);
+  border: 1px solid var(--input-border);
+}
+
+/* ── botones ── */
+
+.bxp-botones { flex-wrap: wrap; gap: 8px; }
+
+.bxp-btn-pdf {
+  width: auto !important;
+  background: linear-gradient(135deg, #b91c1c, #7f1d1d);
+  color: #fff;
+  border-color: transparent;
+}
+.bxp-btn-pdf:disabled { opacity: .6; }
+
+@media (max-width: 560px) {
+  .bxp-columnas { grid-template-columns: 1fr; max-height: 38vh; }
+  .bxp-rango { grid-template-columns: 1fr; }
+}

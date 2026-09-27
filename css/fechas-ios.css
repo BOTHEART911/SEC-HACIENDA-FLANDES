@@ -1,0 +1,97 @@
+/* ============================================================
+   FECHAS ESTILO iOS — FASE 13 · SEC-HACIENDA
+   El alto de .iosf-item DEBE ser 42px: js/fechas-ios.js calcula
+   la posición de la rueda con ese número.
+   ============================================================ */
+
+.iosf-wrap{
+  position:fixed; inset:0; z-index:10030;
+  display:flex; align-items:flex-end; justify-content:center;
+  opacity:0; transition:opacity .16s ease;
+}
+.iosf-wrap.iosf-on{ opacity:1; }
+@media (min-width:720px){ .iosf-wrap{ align-items:center; } }
+
+.iosf-fondo{ position:absolute; inset:0; background:var(--scrim, rgba(0,0,0,.45)); }
+
+.iosf-hoja{
+  position:relative; width:min(460px,100%);
+  background:var(--card,#fff); color:var(--text,#14231c);
+  border-radius:18px 18px 0 0;
+  box-shadow:0 -10px 40px rgba(0,0,0,.28);
+  padding-bottom:env(safe-area-inset-bottom, 0);
+  overflow:hidden;
+}
+@media (min-width:720px){ .iosf-hoja{ border-radius:18px; } }
+
+.iosf-h{
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+  padding:12px 16px 8px;
+}
+.iosf-t{ font-weight:800; font-size:.9rem; color:var(--primary,#06402B); }
+.iosf-anio{
+  font-weight:800; font-size:.8rem; color:var(--text-sub,#5b6b62);
+  background:rgba(6,64,43,.08); padding:3px 10px; border-radius:20px;
+}
+
+.iosf-ruedas{
+  position:relative; display:flex; gap:6px;
+  padding:0 14px 6px; align-items:stretch;
+}
+.iosf-col-wrap{ flex:1 1 0; display:flex; flex-direction:column; align-items:stretch; min-width:0; }
+
+.iosf-col{
+  height:210px; overflow-y:auto; scroll-snap-type:y mandatory;
+  -webkit-overflow-scrolling:touch; text-align:center;
+  scrollbar-width:none;
+}
+.iosf-col::-webkit-scrollbar{ display:none; }
+
+.iosf-pad{ height:84px; }     /* (210 - 42) / 2 = 84 */
+.iosf-item{
+  height:42px; line-height:42px; scroll-snap-align:center;
+  font-size:.92rem; color:var(--text-sub,#8a938d);
+  cursor:pointer; user-select:none;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  transition:color .12s ease, transform .12s ease;
+}
+.iosf-item.sel{
+  color:var(--primary,#06402B); font-weight:800; font-size:1.02rem;
+}
+
+.iosf-marca{
+  position:absolute; left:14px; right:14px; top:50%;
+  height:42px; margin-top:-21px; pointer-events:none;
+  background:rgba(6,64,43,.06);
+  border-top:1px solid rgba(6,64,43,.18);
+  border-bottom:1px solid rgba(6,64,43,.18);
+  border-radius:10px;
+}
+
+.iosf-fl{
+  width:auto !important; height:24px; flex:0 0 24px;
+  border:none; background:transparent; cursor:pointer; padding:0;
+  color:var(--text-sub,#8a938d); font-size:.72rem; line-height:1;
+}
+.iosf-fl:hover{ color:var(--primary,#06402B); }
+@media (hover:none){ .iosf-fl{ display:none; } }   /* en táctil se arrastra */
+
+.iosf-pie{
+  display:flex; gap:8px; padding:10px 14px 14px;
+  border-top:1px solid rgba(6,64,43,.12);
+}
+.iosf-ok, .iosf-cancel{
+  flex:1 1 0; width:auto !important;
+  border:none; border-radius:12px; padding:11px 12px;
+  font-weight:800; font-size:.86rem; cursor:pointer;
+}
+.iosf-ok{ background:var(--primary,#06402B); color:#fff; }
+.iosf-cancel{ background:rgba(6,64,43,.08); color:var(--text,#14231c); }
+
+/* Los antiguos <input type="date"> convertidos a texto */
+.iosf-input{ cursor:pointer; caret-color:transparent; }
+
+@media (prefers-reduced-motion: reduce){
+  .iosf-wrap, .iosf-item{ transition:none !important; }
+  .iosf-col{ scroll-behavior:auto; }
+}

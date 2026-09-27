@@ -1,0 +1,324 @@
+/* ============================================================
+   KIT-FLANDES · PIEZA 20 · PUERTA DE BIENVENIDA (estilos)
+
+   Es lo primero que ve la gente, así que carga el peso de la primera
+   impresión: fondo de marca con profundidad, una aurora que respira
+   detrás del escudo y una entrada escalonada.
+
+   Todo sale de los tokens de base.css. Ni un color a mano: así el modo
+   oscuro no es una cacería de #fff.
+   ============================================================ */
+
+.kit-bien-abierta, .kit-bien-abierta body { overflow: hidden; }
+
+.kit-bien {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  padding: 24px 16px calc(24px + env(safe-area-inset-bottom));
+  background:
+    radial-gradient(120% 80% at 50% -10%, var(--k-marca-clara) 0%, var(--k-marca) 42%, var(--k-marca-2) 100%);
+  opacity: 0;
+  transition: opacity .26s ease;
+}
+.kit-bien--on { opacity: 1; }
+
+/* Mientras se desvanece sigue estando en pantalla un cuarto de segundo:
+   sin esto se tragaría el primer toque que la persona diera al login. */
+.kit-bien:not(.kit-bien--on) { pointer-events: none; }
+
+/* La aurora: dos manchas de luz que respiran muy despacio. Da sensación
+   de algo vivo sin distraer de los dos botones, que es a lo que se viene. */
+.kit-bien__aurora {
+  position: absolute;
+  inset: -20%;
+  background:
+    radial-gradient(38% 28% at 22% 26%, rgba(255, 255, 255, .22), transparent 60%),
+    radial-gradient(32% 24% at 78% 68%, rgba(255, 255, 255, .14), transparent 62%);
+  filter: blur(6px);
+  animation: kit-bien-respira 11s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+@keyframes kit-bien-respira {
+  from { transform: translate3d(-2%, -1%, 0) scale(1); }
+  to   { transform: translate3d(2%, 2%, 0) scale(1.08); }
+}
+
+.kit-bien__caja {
+  position: relative;
+  width: min(420px, 100%);
+  text-align: center;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Cada hijo entra un poco después que el anterior. */
+.kit-bien__caja > * {
+  opacity: 0;
+  transform: translateY(14px);
+  animation: kit-bien-sube .5s cubic-bezier(.22, 1, .36, 1) forwards;
+}
+.kit-bien__caja > *:nth-child(1) { animation-delay: .06s; }
+.kit-bien__caja > *:nth-child(2) { animation-delay: .12s; }
+.kit-bien__caja > *:nth-child(3) { animation-delay: .18s; }
+.kit-bien__caja > *:nth-child(4) { animation-delay: .24s; }
+.kit-bien__caja > *:nth-child(5) { animation-delay: .30s; }
+.kit-bien__caja > *:nth-child(6) { animation-delay: .36s; }
+@keyframes kit-bien-sube { to { opacity: 1; transform: none; } }
+
+.kit-bien__escudo {
+  width: 124px;
+  height: 124px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, .12);
+  border: 1px solid rgba(255, 255, 255, .28);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, .28), inset 0 1px 0 rgba(255, 255, 255, .34);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.kit-bien__escudo img {
+  width: 96px;
+  height: 96px;
+  object-fit: contain;
+  border-radius: 50%;
+}
+
+.kit-bien__t {
+  margin: 6px 0 0;
+  font: 700 1.62rem/1.15 var(--k-fuente-titulo);
+  letter-spacing: -.2px;
+}
+.kit-bien__sub {
+  margin: 0;
+  font-size: .95rem;
+  color: rgba(255, 255, 255, .82);
+}
+
+.kit-bien__ventajas {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 7px;
+  margin: 6px 0 2px;
+}
+.kit-bien__v {
+  font-size: .78rem;
+  padding: 6px 11px;
+  border-radius: var(--k-r-pill);
+  background: rgba(255, 255, 255, .14);
+  border: 1px solid rgba(255, 255, 255, .2);
+  color: #fff;
+}
+
+.kit-bien__botones {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+/* El botón principal va en blanco sobre el verde: sobre un fondo de marca,
+   un botón del mismo verde desaparecería. */
+.kit-bien .kit-bien__instalar {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  background: #fff;
+  color: var(--k-marca-2);
+  border: 0;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, .26);
+}
+.kit-bien .kit-bien__instalar:active { transform: scale(.985); }
+
+.kit-bien .kit-bien__seguir {
+  width: 100%;
+  color: #fff;
+  background: rgba(255, 255, 255, .10);
+  border: 1px solid rgba(255, 255, 255, .28);
+}
+
+.kit-bien__pie {
+  margin: 4px 0 0;
+  font-size: .76rem;
+  color: rgba(255, 255, 255, .7);
+}
+
+/* 4.6.1 · la firma en la portada. El pie del kit está pensado para papel
+   blanco; aquí va sobre el verde, así que se le cambia el color y se le
+   quita el peso — la portada es para instalar la app, no para firmarla. */
+.kit-bien__cred {
+  margin-top: 18px;
+  padding: 0;
+  opacity: .85;
+}
+.kit-bien__cred .kit-cred__cop    { color: rgba(255, 255, 255, .55); }
+.kit-bien__cred .kit-cred__autor  { color: #fff; font-size: 15px; }
+.kit-bien__cred .kit-cred__frase  { color: rgba(255, 255, 255, .72); font-size: 12px; margin-top: 9px; padding-top: 9px; }
+.kit-bien__cred .kit-cred__frase::before { background: rgba(255, 255, 255, .3); }
+.kit-bien__cred .kit-cred__version { color: rgba(255, 255, 255, .5); }
+
+/* Quien pide menos movimiento, recibe menos movimiento. */
+@media (prefers-reduced-motion: reduce) {
+  .kit-bien__aurora { animation: none; }
+  .kit-bien__caja > * { animation: none; opacity: 1; transform: none; }
+}
+
+@media (max-height: 640px) {
+  .kit-bien__escudo { width: 92px; height: 92px; }
+  .kit-bien__escudo img { width: 70px; height: 70px; }
+  .kit-bien__t { font-size: 1.36rem; }
+  .kit-bien__ventajas { display: none; }
+}
+
+/* ════════════════════════════════════════════════════════════
+   4.5 · LA PORTADA, VIVA
+   Oss la probó en el teléfono y dijo que estaba "importante pero
+   muerta". Lo que se mueve tiene que significar algo, así que:
+
+     · tres burbujas que suben detrás, muy despacio y muy tenues:
+       dan profundidad sin pedir atención;
+     · un aro que late alrededor del escudo, como la señal de que
+       algo está esperando a que lo toques;
+     · las ventajas entran una detrás de otra y no de golpe;
+     · el botón principal respira, y al tocarlo sale disparado
+       hacia arriba, que es justo el gesto de "instalar";
+     · si la app YA está instalada, un sello verde cae sobre el
+       escudo y el botón de instalar desaparece de la fila.
+
+   Todo se apaga con prefers-reduced-motion, al final del archivo.
+   ════════════════════════════════════════════════════════════ */
+
+.kit-bien__burbujas {
+  position: absolute; inset: 0; overflow: hidden; pointer-events: none;
+}
+.kit-bien__burbujas i {
+  position: absolute; bottom: -22vh;
+  border-radius: 50%;
+  background: radial-gradient(circle at 32% 30%,
+              rgba(255, 255, 255, .13), rgba(255, 255, 255, 0) 68%);
+  animation: kit-bien-flota 19s linear infinite;
+}
+.kit-bien__burbujas i:nth-child(1) { left: 8%;  width: 150px; height: 150px; animation-duration: 21s; }
+.kit-bien__burbujas i:nth-child(2) { left: 52%; width: 96px;  height: 96px;  animation-duration: 17s; animation-delay: -7s; }
+.kit-bien__burbujas i:nth-child(3) { left: 78%; width: 200px; height: 200px; animation-duration: 26s; animation-delay: -13s; }
+@keyframes kit-bien-flota {
+  0%   { transform: translate3d(0, 0, 0) scale(.9); opacity: 0; }
+  12%  { opacity: 1; }
+  88%  { opacity: 1; }
+  100% { transform: translate3d(14px, -128vh, 0) scale(1.14); opacity: 0; }
+}
+
+/* el escudo, con su aro y su sello */
+.kit-bien__escudo { position: relative; }
+.kit-bien__aro {
+  position: absolute; inset: -9px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, .34);
+  animation: kit-bien-late 2.9s ease-out infinite;
+}
+@keyframes kit-bien-late {
+  0%   { transform: scale(.94); opacity: .85; }
+  70%  { transform: scale(1.12); opacity: 0; }
+  100% { transform: scale(1.12); opacity: 0; }
+}
+.kit-bien__escudo img { animation: kit-bien-respira-escudo 6s ease-in-out infinite; }
+@keyframes kit-bien-respira-escudo {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50%      { transform: translateY(-4px) rotate(-.6deg); }
+}
+
+/* el sello de "ya la tienes": solo aparece en el estado instalada */
+.kit-bien__sello {
+  position: absolute; right: -4px; bottom: -4px;
+  width: 34px; height: 34px; border-radius: 50%;
+  display: none; align-items: center; justify-content: center;
+  color: #fff; background: #1f9d55;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, .35);
+}
+.kit-bien--instalada .kit-bien__sello {
+  display: flex;
+  animation: kit-bien-sello .5s cubic-bezier(.2, 1.5, .4, 1) both;
+}
+@keyframes kit-bien-sello {
+  from { transform: scale(.2) rotate(-25deg); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+.kit-bien--instalada .kit-bien__aro { animation: none; opacity: 0; }
+
+/* las ventajas, una detrás de otra */
+.kit-bien__v {
+  opacity: 0;
+  animation: kit-bien-entra .42s cubic-bezier(.22, 1, .36, 1) forwards;
+}
+.kit-bien__v:nth-child(1) { animation-delay: .40s; }
+.kit-bien__v:nth-child(2) { animation-delay: .52s; }
+.kit-bien__v:nth-child(3) { animation-delay: .64s; }
+@keyframes kit-bien-entra {
+  from { opacity: 0; transform: translateY(8px) scale(.94); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* el botón que respira y despega */
+.kit-bien .kit-bien__instalar {
+  position: relative; overflow: hidden;
+  animation: kit-bien-respira-boton 3.4s ease-in-out .9s infinite;
+}
+@keyframes kit-bien-respira-boton {
+  0%, 100% { box-shadow: 0 8px 22px rgba(0, 0, 0, .28); }
+  50%      { box-shadow: 0 10px 30px rgba(31, 157, 85, .55); }
+}
+/* un brillo que cruza el botón cada tanto: dice "esto se toca" */
+.kit-bien .kit-bien__instalar::after {
+  content: ''; position: absolute; top: 0; bottom: 0; width: 42%;
+  left: -55%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .34), transparent);
+  animation: kit-bien-brillo 3.4s ease-in-out .9s infinite;
+}
+@keyframes kit-bien-brillo {
+  0%, 55% { left: -55%; }
+  85%     { left: 115%; }
+  100%    { left: 115%; }
+}
+.kit-bien .kit-bien__instalar svg { transition: transform .2s ease; }
+.kit-bien .kit-bien__instalar:hover svg { transform: translateY(2px); }
+.kit-bien .kit-bien__instalar--yendo {
+  animation: none;
+  transform: translateY(-6px) scale(.98);
+  transition: transform .25s cubic-bezier(.3, 1.6, .5, 1);
+}
+.kit-bien .kit-bien__instalar--yendo svg { animation: kit-bien-despega .6s ease-in forwards; }
+@keyframes kit-bien-despega {
+  to { transform: translateY(-26px) scale(.7); opacity: 0; }
+}
+
+/* la línea que dice qué va a pasar en ESTE aparato */
+.kit-bien__pista {
+  margin: 10px 0 0;
+  font-size: .86rem; line-height: 1.45;
+  color: rgba(255, 255, 255, .8);
+  min-height: 1.2em;
+  opacity: 0;
+  animation: kit-bien-entra .45s ease .72s forwards;
+}
+.kit-bien--instalada .kit-bien__pista { color: rgba(255, 255, 255, .92); font-weight: 600; }
+
+@media (prefers-reduced-motion: reduce) {
+  .kit-bien__burbujas,
+  .kit-bien__aro { display: none; }
+  .kit-bien__escudo img,
+  .kit-bien .kit-bien__instalar,
+  .kit-bien .kit-bien__instalar::after,
+  .kit-bien__sello { animation: none; }
+  .kit-bien__v,
+  .kit-bien__pista { opacity: 1; animation: none; }
+}

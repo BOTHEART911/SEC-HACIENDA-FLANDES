@@ -1,0 +1,2066 @@
+<!doctype html> 
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <title>Sec. Hacienda · Alcaldía de Flandes</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="description" content="App de la Secretaría de Hacienda de la Alcaldía de Flandes." />
+
+  <!-- SEC-HACIENDA-FLANDES: fuentes del kit Flandes (IBM Plex Sans + Sora) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Sora:wght@600;700;800&display=swap">
+  <!-- El icono es el escudo SEC. HACIENDA APP-DIGITAL. El de 180 va sin
+       transparencia porque iOS pinta de negro lo transparente. -->
+  <link rel="icon" type="image/png" sizes="32x32" href="img/icono-32.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="img/icono-192.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="img/icono-180.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#06402B"/> 
+
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+
+ <!-- KIT-FLANDES: la base va ANTES que los estilos de la app -->
+  <link rel="stylesheet" href="kit/base.css">
+  <link rel="stylesheet" href="kit/banner.css">
+  <link rel="stylesheet" href="kit/cielo.css">
+  <link rel="stylesheet" href="kit/personas.css">
+  <link rel="stylesheet" href="kit/guardado.css">
+  <link rel="stylesheet" href="kit/instalar.css">
+  <link rel="stylesheet" href="kit/bienvenida.css">
+  <link rel="stylesheet" href="kit/conexion.css">
+  <link rel="stylesheet" href="kit/creditos.css">
+
+ <!-- ✅ TUS ESTILOS PROPIOS -->
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="css/identidad.css"><!-- FASE 0 -->
+  <link rel="stylesheet" href="css/configuracion.css"><!-- FASE 1 -->
+  <link rel="stylesheet" href="css/base-visual.css"><!-- FASE 3 -->
+  <link rel="stylesheet" href="css/descargas.css">
+  <link rel="stylesheet" href="css/bitacora.css"><!-- LOTE 06/09 -->
+  <link rel="stylesheet" href="css/vistas.css"><!-- FASE 6 -->
+  <link rel="stylesheet" href="css/visor.css"><!-- FASE 8 -->
+  <link rel="stylesheet" href="css/capa-11-insights.css"><!-- FASE 11 -->
+  <link rel="stylesheet" href="css/asignador.css"><!-- FASE 13 -->
+  <link rel="stylesheet" href="css/fechas-ios.css"><!-- FASE 13 -->
+  <link rel="stylesheet" href="css/form-ancho.css"><!-- LOTE 08/09 -->
+  <link rel="stylesheet" href="css/bitacora-export.css"><!-- LOTE 10/09 -->
+  <link rel="stylesheet" href="css/mi-trabajo.css"><!-- 14/09: MI TRABAJO (bitacoras + actuaciones) -->
+  <link rel="stylesheet" href="css/solicitud-exp.css"><!-- 17/09: SOLICITUD EXPEDIENTE (modal, boton rojo con latido) -->
+  <!-- SEC-HACIENDA-FLANDES: la identidad Flandes encima de todo (EL ÚLTIMO) -->
+  <link rel="stylesheet" href="css/flandes.css">
+
+  <!-- version.js y marca.js ANTES que el kit: el kit lee APP_VERSION y MARCA al cargarse -->
+  <script src="version.js"></script>
+  <script src="js/marca.js"></script>
+  <script src="kit/kit.js"></script>
+  <script src="kit/iconos.js"></script>
+  <script src="kit/version.js"></script>
+  <script src="kit/personas.js"></script>
+  <script src="kit/banner.js"></script>
+  <script src="kit/cielo.js"></script>
+  <script src="kit/guardado.js"></script>
+  <script src="kit/instalar.js"></script>
+  <script src="kit/conexion.js"></script>
+  <script src="kit/creditos.js"></script>
+  <script src="kit/bienvenida.js"></script>
+  <script>
+    /* FASE 3 — el tema se aplica ANTES del primer pintado (sin parpadeo) */
+    (function(){try{var t=localStorage.getItem('hac.tema.v1');
+      if(!t){t=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'oscuro':'claro';}
+      document.documentElement.setAttribute('data-tema',t==='oscuro'?'oscuro':'claro');
+      if(t==='oscuro'){var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content','#0d1512');}
+    }catch(e){}})();
+  </script>
+  
+</head>
+<body>
+  <!-- Loader -->
+  <div id="loader" class="loader hidden" aria-live="polite" aria-busy="true">
+    <div class="spinner-ios" role="status" aria-label="Cargando">
+      <i></i><i></i><i></i><i></i><i></i><i></i>
+      <i></i><i></i><i></i><i></i><i></i><i></i>
+    </div>
+  </div>
+
+  <!-- MODAL: RESPUESTA LIMPIA -->
+<div id="modal-respuesta-limpia" class="hidden"
+  style="position:fixed; inset:0; background:var(--scrim); z-index:10000; display:flex; align-items:center; justify-content:center; padding:16px;">
+  <div class="card narrow" style="margin:0; width:min(560px, 100%);">
+    <h2 style="color:var(--primary); margin-bottom:8px;">RESPUESTA LIMPIA</h2>
+    <p class="muted center" style="margin-top:0; font-weight:800;">
+      Solo si es necesario.
+    </p>
+
+    <label>Respuesta</label>
+    <textarea
+      id="respuesta-limpia"
+      rows="5"
+      required
+      placeholder="Envía esta respuesta solo si el contribuyente no solicito un recibo existente o necesita ser retroalimentado con respecto a tu solicitud."
+    ></textarea>
+
+    <div class="btn-row" style="margin-top:14px;">
+      <button id="btn-enviar-respuesta-limpia" class="btn-primary">Enviar</button>
+      <button id="btn-cerrar-respuesta-limpia" class="danger">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+  <div class="container">
+    <!-- VISTA INSTALAR -->
+    <section id="view-instalar" class="view">
+      <div class="card narrow" style="text-align:center;">
+        <h2 style="color:var(--primary);">SECRETARIA DE HACIENDA</h2>
+        <img class="brand" alt="Instalar" src="img/slider.gif" />
+        <p style="font-weight:700;">Herramienta de uso exclusivo para personal autorizado</p>
+        <p class="muted" style="margin-top:14px;"><b>Si NO visualizas el botón Instalar</b> INICIA sesión de google.</p>
+        <div class="btn-row" style="justify-content:center; margin-top:12px;">
+          <button id="btn-instalar" class="btn-primary" style="display:none;">Instalar la App</button>
+        </div>
+        <p class="muted" style="margin-top:14px;"><b>Si ya instalaste la App</b> refresca la página o búscala en el escritorio.</p>
+      </div>
+    </section>
+
+    <!-- VISTA LOGIN -->
+    <section id="view-login" class="view active">
+      <div class="card narrow">
+        <h1 style="color:var(--primary); text-shadow: 0 2px 2px #031732;">SECRETARIA DE HACIENDA</h1>
+        <p class="helper"><b>Solo el personal autorizado de esta secretaría tiene acceso a esta App</b></p>
+
+       <!-- Tabs de acceso -->
+        <div class="login-tabs">
+<button type="button" class="login-tab" data-tab="doc">Documento</button>
+          <button type="button" class="login-tab active" data-tab="pin">PIN rápido</button>
+        </div>
+
+        <!-- TAB DOCUMENTO (acceso actual, intacto) -->
+        <div id="tab-doc" class="hidden">
+          <label>Documento</label>
+          <div style="position:relative;">
+            <input id="login-doc" type="password" inputmode="numeric" autocomplete="off" placeholder="Sin puntos ni espacios" />
+            <button type="button" id="toggle-doc" aria-label="Mostrar documento"
+              style="position:absolute;top:50%;right:10px;transform:translateY(-50%);background:transparent;border:0;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:6px;">
+              <img id="toggle-doc-img" src="img/mostrar.png" alt="Mostrar" style="width:22px;height:22px;">
+            </button>
+          </div>
+
+          <div class="btn-row" style="margin-top:12px;">
+            <button class="btn-primary" id="btn-login">Iniciar Sesión</button>
+          </div>
+        </div>
+
+        <!-- TAB PIN RÁPIDO -->
+        <div id="tab-pin">
+          <div class="pin-pad">
+            <div class="pin-dot" data-pos="0"></div>
+            <div class="pin-dot" data-pos="1"></div>
+            <div class="pin-dot" data-pos="2"></div>
+            <div class="pin-dot" data-pos="3"></div>
+          </div>
+          <div class="pin-keypad">
+            <button type="button" class="pin-key" data-key="1">1</button>
+            <button type="button" class="pin-key" data-key="2">2</button>
+            <button type="button" class="pin-key" data-key="3">3</button>
+            <button type="button" class="pin-key" data-key="4">4</button>
+            <button type="button" class="pin-key" data-key="5">5</button>
+            <button type="button" class="pin-key" data-key="6">6</button>
+            <button type="button" class="pin-key" data-key="7">7</button>
+            <button type="button" class="pin-key" data-key="8">8</button>
+            <button type="button" class="pin-key" data-key="9">9</button>
+            <button type="button" class="pin-key action" data-key="clear">Borrar</button>
+            <button type="button" class="pin-key" data-key="0">0</button>
+            <button type="button" class="pin-key action" data-key="back">⌫</button>
+          </div>
+        </div>
+
+        <footer class="kit-cred hf-cred" id="hf-cred-login"></footer>
+      </div>
+    </section>
+
+    <!-- VISTA INICIO -->
+    <section id="view-inicio" class="view">
+      <div class="card narrow">
+        <div class="btn-row" style="margin-bottom:12px;">
+          <button class="chip danger" id="btn-logout">Cerrar Sesión</button>
+        </div>
+
+        <h2 id="inicio-nombre" style="color:var(--primary); font-weight:1000; margin-top:6px;"></h2>
+        <p id="inicio-sub" class="center muted" style="margin-top:0; font-weight:700;"></p>
+
+                <!-- ── Categoría PREDIAL ── -->
+        <div class="btn-row" style="margin-top:14px;">
+          <button id="btn-cat-predial" class="btn-primary btn-icon-label">
+            <img src="img/predial.png"
+                 alt="Predial" />
+            PREDIAL
+          </button>
+        </div>
+
+        <!-- Sub-botones PREDIAL (colapsables) -->
+<div id="predial-submenu" style="display:none;">
+  <div class="btn-row" style="margin-top:10px;">
+    <button id="btn-agregar" class="btn-primary" style="display:none;">AGREGAR ATENCIÓN PREDIAL</button>
+    <button id="btn-pendientes" class="btn-primary" style="display:none;">PENDIENTES PREDIAL</button>
+  </div>
+  <div class="btn-row" style="margin-top:10px;">
+    <button id="btn-atenciones-registradas" class="btn-primary" style="display:none;">ATENCIONES REGISTRADAS</button>
+  </div>
+<div class="btn-row" style="margin-top:10px;">
+    <!-- FASE 6: vuelve como MODAL de descarga a Excel (ya no es un enlace de Drive). -->
+    <button id="btn-mis-informes" class="btn-primary" style="display:none;">MIS INFORMES PREDIAL</button>
+    <button id="btn-estadisticas" class="btn-primary" style="display:none;">ESTADISTICAS 📊</button>
+  </div>
+  <div class="btn-row" style="margin-top:10px;">
+    <button id="btn-bd-predial" class="btn-primary btn-icon-label" style="display:none; background:linear-gradient(135deg,#1e40af 0%,#1d4ed8 100%);">
+      <img src="img/base-de-datos.webp" alt="BD Predial" />
+      BASE DE DATOS
+    </button>
+  </div>
+</div>
+
+        <!-- ── DRIVE ANEXOS ── -->
+        <div class="btn-row" style="margin-top:10px;">
+          <button id="btn-drive-anexos" class="btn-primary btn-icon-label">
+            <img src="img/drive.webp"
+                 alt="Drive" />
+            DRIVE ANEXOS
+          </button>
+        </div>
+
+        <!-- ── MI SEMÁFORO ── -->
+                <div class="btn-row" style="margin-top:10px;">
+          <button id="btn-semaforo" class="btn-primary btn-icon-label"
+            style="background:linear-gradient(135deg,#f87171 0%,#fbbf24 50%,#4ade80 100%);display:none;">
+            <img src="img/semaforo.png"
+                 alt="Semáforo" />
+            MI SEMÁFORO
+          </button>
+        </div>
+        
+      </div>
+    </section>
+
+    <!-- VISTA PENDIENTES / LISTAS -->
+    <section id="view-lista" class="view">
+      <div class="card">
+        <h2 id="lista-title" style="color:var(--primary); margin-bottom:8px;">PENDIENTES PREDIAL</h2>
+
+        <div class="count-row">
+          <span class="count-pill">TOTAL: <span id="lista-count">0</span></span>
+          <input id="lista-filter" class="filter-input" type="text" placeholder="Filtrar por cualquier dato…" />
+        </div>
+
+        <!-- (Cambio #2) botón regresar ANTES de las tarjetas -->
+        <div class="btn-row" style="margin-top:10px;">
+          <button id="lista-back" class="danger">Regresar</button>
+        </div>
+
+        <div id="lista-wrap" class="sol-list"></div>
+      </div>
+    </section>
+
+    <!-- VISTA RESPUESTA SOLICITUD -->
+    <section id="view-respuesta" class="view">
+      <div class="card narrow">
+        <h2 style="color:var(--primary); margin-bottom:8px;">RESPUESTA SOLICITUD</h2>
+
+        <!-- (Cambio solicitado) quitamos el "resumen" (el bloque head) -->
+        <div id="resp-head"
+     style="margin:10px auto 12px; text-align:center; background:rgba(var(--surface-rgb),.92); border:2px solid var(--card-border); border-radius:14px; padding:12px;">
+</div
+
+        <label>Respuesta (opcional)</label>
+        <textarea id="respuesta" rows="4" placeholder="Escribe si tienes algo anexo que referir, de lo contrario, solo adjunta los recibos."></textarea>
+
+                <label>Vigencia</label>
+        <select id="vigencia" required>
+          <option value="" disabled selected>Selecciona una opción</option>
+          <option value="VIGENCIA ACTUAL">VIGENCIA ACTUAL</option>
+          <option value="VIGENCIAS ANTERIORES">VIGENCIAS ANTERIORES</option>
+        </select>
+
+        <div style="margin-top:10px;">
+          <h3 style="text-align:left; margin:10px 0 6px; color:var(--text-sub);">Adjuntar Recibos (PDF o Word)</h3>
+          <div class="muted" style="margin:0 0 10px;"><b>Máximo 2 MB por archivo.</b> Debes adjuntar al menos 1 archivo (PDF o Word).</div>
+
+          <label>Recibo 1</label>
+          <input id="recibo1" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+          <div id="recibo1-status" class="pdf-status"></div>
+
+          <label>Recibo 2</label>
+          <input id="recibo2" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+          <div id="recibo2-status" class="pdf-status"></div>
+
+          <label>Recibo 3</label>
+          <input id="recibo3" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+          <div id="recibo3-status" class="pdf-status"></div>
+
+          <label>Recibo 4</label>
+          <input id="recibo4" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+          <div id="recibo4-status" class="pdf-status"></div>
+
+          <label>Recibo 5</label>
+          <input id="recibo5" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+          <div id="recibo5-status" class="pdf-status"></div>
+        </div>
+
+        <!-- (Cambio #2) botón regresar ANTES (en esta vista: arriba de Guardar/Regresar no aplica, pero lo movemos a arriba del footer) -->
+        <div class="btn-row" style="margin-top:14px;">
+          <button id="resp-back" class="danger">Regresar</button>
+        </div>
+        <div class="btn-row" style="margin-top:10px;">
+          <button id="resp-guardar" class="btn-primary">Guardar</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- VISTA AGREGAR SOLICITUD -->
+    <section id="view-agregar" class="view">
+      <div class="card narrow">
+        <h2 style="color:var(--primary);">AGREGAR SOLICITUD PREDIAL</h2>
+
+        <label>Nombre del propietario</label>
+        <input id="Propietario" type="text" placeholder="Nombre del propietario" />
+
+        <label>Documento o NIT</label>
+        <!-- input con icono buscar (clic) -->
+        <div class="input-icon-wrap">
+          <input id="identidad" type="text" inputmode="numeric" placeholder="sin puntos, espacios ni guiones" />
+          <button type="button" id="btn-buscar-contacto" class="icon-in-input" aria-label="Buscar contacto" title="Buscar contacto">
+            <img src="img/buscar.webp" alt="Buscar">
+          </button>
+        </div>
+
+        <label>Residencia</label>
+        <select id="upd-residencia">
+          <option value="" disabled selected>Selecciona tu Residencia</option>
+          <option value="ACAPULCO I">ACAPULCO I</option>
+          <option value="ACAPULCO II">ACAPULCO II</option>
+          <option value="AGUAMARINA">AGUAMARINA</option>
+          <option value="ALCALA I">ALCALA I</option>
+          <option value="ALFONSO LOPEZ">ALFONSO LOPEZ</option>
+          <option value="ALTAGRACIA I">ALTAGRACIA I</option>
+          <option value="ALTAGRACIA II">ALTAGRACIA II</option>
+          <option value="ALTAGRACIA IV">ALTAGRACIA IV</option>
+          <option value="APROVITEF">APROVITEF</option>
+          <option value="ARAGON I">ARAGON I</option>
+          <option value="ARAGON II">ARAGON II</option>
+          <option value="ARAGON III">ARAGON III</option>
+          <option value="ARAGON IV">ARAGON IV</option>
+          <option value="ARBOLEDA I">ARBOLEDA I</option>
+          <option value="ARBOLEDA II">ARBOLEDA II</option>
+          <option value="BALCONES DE ALEJANDRIA">BALCONES DE ALEJANDRIA</option>
+          <option value="BILBAO">BILBAO</option>
+          <option value="CALA I">CALA I</option>
+          <option value="CANALES">CANALES</option>
+          <option value="CANCUN">CANCUN</option>
+          <option value="CAMALA">CAMALA</option>
+          <option value="CASA DEL SOL I">CASA DEL SOL I</option>
+          <option value="CASA DEL SOL II">CASA DEL SOL II</option>
+          <option value="CENTRO">CENTRO</option>
+          <option value="COLEGIO I">COLEGIO I</option>
+          <option value="COLEGIO II">COLEGIO II</option>
+          <option value="COLEGIO III">COLEGIO III</option>
+          <option value="DUBAI">DUBAI</option>
+          <option value="EL JORDAN">EL JORDAN</option>
+          <option value="GAITAN">GAITAN</option>
+          <option value="HANGARES">HANGARES</option>
+          <option value="BRISAS DEL CARMEN">BRISAS DEL CARMEN</option>
+          <option value="VILLA MAGDALENA">VILLA MAGDALENA</option>
+          <option value="VILLA MARIANA">VILLA MARIANA</option>
+          <option value="IQUEIMA">IQUEIMA</option>
+          <option value="JARDINES DE BABILONIA">JARDINES DE BABILONIA</option>
+          <option value="LA CAPILLA">LA CAPILLA</option>
+          <option value="LA CEIBA">LA CEIBA</option>
+          <option value="LA ESPERANZA">LA ESPERANZA</option>
+          <option value="LA PAZ">LA PAZ</option>
+          <option value="LA UNION">LA UNION</option>
+          <option value="LAS ROSAS">LAS ROSAS</option>
+          <option value="LAS VILLAS">LAS VILLAS</option>
+          <option value="LIBERTADOR">LIBERTADOR</option>
+          <option value="LLERAS">LLERAS</option>
+          <option value="LOS MANGOS I">LOS MANGOS I</option>
+          <option value="LOS MANGOS II">LOS MANGOS II</option>
+          <option value="LOS MANGOS III">LOS MANGOS III</option>
+          <option value="LOS MANGOS IV">LOS MANGOS IV</option>
+          <option value="LOS MANGOS V">LOS MANGOS V</option>
+          <option value="LOS MANGOS VI">LOS MANGOS VI</option>
+          <option value="LOS MANGOS VII">LOS MANGOS VII</option>
+          <option value="LOS PIJAOS">LOS PIJAOS</option>
+          <option value="MINUTO DE DIOS">MINUTO DE DIOS</option>
+          <option value="MIRADOR DE LA ESPERANZA">MIRADOR DE LA ESPERANZA</option>
+          <option value="MIRADOR DEL SOL">MIRADOR DEL SOL</option>
+          <option value="MONACO">MONACO</option>
+          <option value="OBRERO">OBRERO</option>
+          <option value="OBRERO DELIRIO">OBRERO DELIRIO</option>
+          <option value="ORQUIDEAS I">ORQUÍDEAS I</option>
+          <option value="ORQUIDEAS II">ORQUÍDEAS II</option>
+          <option value="ORQUIDEAS REAL I">ORQUÍDEAS REAL I</option>
+          <option value="ORQUIDEAS REAL II">ORQUÍDEAS REAL II</option>
+          <option value="ORQUIDEAS REAL III">ORQUÍDEAS REAL III</option>
+          <option value="ORQUIDEAS REAL IV">ORQUÍDEAS REAL IV</option>
+          <option value="PARADERO I">PARADERO I</option>
+          <option value="PARADERO II">PARADERO II</option>
+          <option value="PARAISO">PARAISO</option>
+          <option value="PAKISTAN I">PAKISTAN I</option>
+          <option value="PAKISTAN II">PAKISTAN II</option>
+          <option value="PAKISTAN III">PAKISTAN III</option>
+          <option value="PALO VERDE">PALO VERDE</option>
+          <option value="PARQUES DE ALEJANDRIA I">PARQUES DE ALEJANDRIA I</option>
+          <option value="PARQUES DE ALEJANDRIA II">PARQUES DE ALEJANDRIA II</option>
+          <option value="PARQUES DE ALEJANDRIA III">PARQUES DE ALEJANDRIA III</option>
+          <option value="PARQUES DE ALEJANDRIA IV">PARQUES DE ALEJANDRIA IV</option>
+          <option value="PARQUES DE PAKISTAN I">PARQUES DE PAKISTAN I</option>
+          <option value="PARQUES DE PAKISTAN II">PARQUES DE PAKISTAN II</option>
+          <option value="PARQUES DE PAKISTAN III">PARQUES DE PAKISTAN III</option>
+          <option value="PARQUES DE PAKISTAN IV">PARQUES DE PAKISTAN IV</option>
+          <option value="PARQUES DE PAKISTAN V">PARQUES DE PAKISTAN V</option>
+          <option value="PORTAL DEL RUBY">PORTAL DEL RUBY</option>
+          <option value="PRADERAS DE PALMA REAL">PRADERAS DE PALMA REAL</option>
+          <option value="PRADOS DE SAN REMO">PRADOS DE SAN REMO</option>
+          <option value="PUERTA BLANCA">PUERTA BLANCA</option>
+          <option value="PUERTO BAHIA I">PUERTO BAHIA I</option>
+          <option value="PUERTO BAHIA II">PUERTO BAHIA II</option>
+          <option value="PUERTO DOMINGO">PUERTO DOMINGO</option>
+          <option value="PUERTO MEDITERRANEO">PUERTO MEDITERRANEO</option>
+          <option value="QUINTAS DE SAN ESTEBAN">QUINTAS DE SAN ESTEBAN</option>
+          <option value="QUINTAS DE SAN FRANCISCO">QUINTAS DE SAN FRANCISCO</option>
+          <option value="QUINTAS DEL DIVINO NIÑO">QUINTAS DEL DIVINO NIÑO</option>
+          <option value="QUINTAS FERROVIARIAS">QUINTAS FERROVIARIAS</option>
+          <option value="RIVERAS DEL MAGDALENA">RIVERAS DEL MAGDALENA</option>
+          <option value="SAN ANDRES">SAN ANDRES</option>
+          <option value="SAN FELIPE DE BARAJAS">SAN FELIPE DE BARAJAS</option>
+          <option value="SAN FRANCISCO">SAN FRANCISCO</option>
+          <option value="SAN LUIS">SAN LUIS</option>
+          <option value="SANTA ANA">SANTA ANA</option>
+          <option value="SANTA MARTHA">SANTA MARTHA</option>
+          <option value="SANTA MONICA I">SANTA MONICA I</option>
+          <option value="SANTA MONICA II">SANTA MONICA II</option>
+          <option value="SINAI">SINAI</option>
+          <option value="SOL Y BRISA">SOL Y BRISA</option>
+          <option value="TARQUI">TARQUI</option>
+          <option value="TAYRONA">TAYRONA</option>
+          <option value="TERRAZAS DE ALEJANDRIA">TERRAZAS DE ALEJANDRIA</option>
+          <option value="TOPACIO">TOPACIO</option>
+          <option value="TRIANA">TRIANA</option>
+          <option value="URBANIZACION ARRAYANES">URBANIZACION ARRAYANES</option>
+          <option value="URBANIZACION EL PALMAR">URBANIZACION EL PALMAR</option>
+          <option value="URBANIZACION EL PORTAL">URBANIZACION EL PORTAL</option>
+          <option value="URBANIZACION EL RUBY">URBANIZACION EL RUBY</option>
+          <option value="URBANIZACION LOS ALMENDROS">URBANIZACION LOS ALMENDROS</option>
+          <option value="URBANIZACION VILLA LUCIA">URBANIZACION VILLA LUCIA</option>
+          <option value="URBANIZACION VILLA MAGDALENA I">URBANIZACION VILLA MAGDALENA I</option>
+          <option value="URBANIZACION VILLA MAGDALENA II">URBANIZACION VILLA MAGDALENA II</option>
+          <option value="URBANIZACION VILLA MAGDALENA III">URBANIZACION VILLA MAGDALENA III</option>
+          <option value="URBANIZACION VILLA MARIANA">URBANIZACION VILLA MARIANA</option>
+          <option value="VALLESUE">VALLESUE</option>
+          <option value="VENECIA I">VENECIA I</option>
+          <option value="VENECIA II">VENECIA II</option>
+          <option value="VENECIA III">VENECIA III</option>
+          <option value="VENECIA IV">VENECIA IV</option>
+          <option value="VILLA DE LAS PALMAS">VILLA DE LAS PALMAS</option>
+          <option value="VILLA DEL RIO I">VILLA DEL RIO I</option>
+          <option value="VILLA DEL RIO II">VILLA DEL RIO II</option>
+          <option value="VILLA DEL SOL">VILLA DEL SOL</option>
+          <option value="VILLA ESPERANZA">VILLA ESPERANZA</option>
+          <option value="VILLA LAS PALMAS">VILLA LAS PALMAS</option>
+          <option value="VILLA MEDINA">VILLA MEDINA</option>
+          <option value="VILLAS DEL MEDITERANEO">VILLAS DEL MEDITERANEO</option>
+        </select>
+
+        <label>Teléfono</label>
+        <input id="celular" type="tel" inputmode="numeric" placeholder="sin puntos ni espacios" />
+
+        <div class="btn-row" style="margin-top:14px;">
+          <button id="add-guardar" class="btn-primary">Guardar</button>
+          <button id="add-back" class="danger">Regresar</button>
+        </div>
+      </div>
+    </section>
+
+<!-- VISTA DRIVE ANEXOS -->
+<section id="view-drive-anexos" class="view">
+  <div class="card">
+    <h2 style="color:var(--primary)">DRIVE ANEXOS</h2>
+    <p class="helper"><b>Uso exclusivo del Equipo para anexar informes</b></p>
+
+    <!-- FASE 7: ADMIN y DEV ven las carpetas de todo el equipo, así que
+         necesitan buscador. Para el resto (una sola tarjeta) se esconde. -->
+    <div class="count-row" id="drive-filter-row" style="display:none; margin-bottom:12px;">
+      <span class="count-pill">TOTAL: <span id="drive-count">0</span></span>
+      <input id="drive-filter" class="filter-input" type="text" placeholder="Filtrar por nombre o correo…" />
+    </div>
+
+    <div id="drive-grid" class="grid"></div>
+
+    <!-- Botón Regresar (requisito) -->
+    <div class="spaced">
+      <button id="btn-drive-regresar" class="danger btn-big">Regresar</button>
+    </div>
+  </div>
+</section>
+
+<!-- VISTA EDITAR DRIVE -->
+<section id="view-drive-editar" class="view">
+  <div class="card" style="max-width:640px;">
+    <div class="edit-head">
+      <div id="drive-edit-nombre" class="edit-badge"></div>
+    </div>
+    <h2 style="color:var(--primary); margin-top:6px;">EDITAR</h2>
+
+    <label for="drive-edit-correo">Correo de Edición (Gmail)</label>
+    <input id="drive-edit-correo" type="email" inputmode="email" autocomplete="off" placeholder="usuario@gmail.com">
+
+    <div class="spaced">
+      <button id="btn-drive-guardar" class="btn-primary btn-big">Guardar</button>
+    </div>
+    <div class="spaced">
+      <button id="btn-drive-back-edit" class="danger btn-big">Regresar</button>
+    </div>
+
+    <p class="muted center" style="margin-top:10px;">
+      Se concede permiso de edición a la carpeta del registro. Si existía un correo anterior, se retira el permiso.
+    </p>
+  </div>
+</section>
+
+   <!-- VISTA ESTADÍSTICAS DASHBOARD v2 -->
+<section id="view-estadisticas" class="view">
+  <div class="estad-dash-card">
+
+    <!-- ── Header ── -->
+    <div class="estad-dash-header">
+      <div class="estad-dash-title-wrap">
+        <img src="img/tendencia.png" alt="Estadísticas" />
+        <div>
+          <h2 class="estad-dash-title">ESTADÍSTICAS 📊</h2>
+          <div class="estad-dash-subtitle" id="estad-dash-subtitle">Solo SUPER USUARIO</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Toolbar tabs ── -->
+    <div class="panel-toolbar" style="margin-bottom:18px;">
+      <button class="panel-tab active" id="estad-tab-btn-tiempo"
+        onclick="estadShowTab_('tiempo')">
+        <img src="img/calendario.webp" alt="" />
+        TIEMPO 2026
+      </button>
+      <button class="panel-tab" id="estad-tab-btn-zonas"
+        onclick="estadShowTab_('zonas')">
+        <img src="img/mapa.png" alt="" />
+        ZONAS
+      </button>
+      <button class="panel-tab" id="estad-tab-btn-tendencia"
+        onclick="estadShowTab_('tendencia')">
+        <img src="img/tendencia.png" alt="" />
+        TENDENCIA
+      </button>
+      <button class="danger panel-tab" onclick="estadGoBack_()">
+        ← REGRESAR
+      </button>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         TAB: TIEMPO 2026
+    ══════════════════════════════════════════ -->
+    <div id="estad-view-tiempo" class="estad-tab-content">
+
+      <!-- KPIs -->
+      <div class="estad-kpi-row" id="estad-kpis-tiempo"></div>
+
+      <!-- Pills totales -->
+      <div class="estad-tend-pills" id="estad-totals-tiempo"></div>
+
+      <!-- Gráfico barras tiempo -->
+      <div class="estad-chart-premium">
+        <div class="estad-chart-label">
+          <img src="img/calendario.webp" alt="" />
+          ATENCIÓN PREDIAL — TIEMPO 2026
+        </div>
+        <div style="height:420px; position:relative;">
+          <canvas id="estad-canvas-tiempo"></canvas>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         TAB: ZONAS
+    ══════════════════════════════════════════ -->
+    <div id="estad-view-zonas" class="estad-tab-content" style="display:none;">
+
+      <!-- KPIs zonas -->
+      <div class="estad-kpi-row" id="estad-kpis-zonas"></div>
+
+      <!-- Top zonas -->
+      <div class="panel-section">
+        <div class="panel-section-title">
+          <img src="img/mapa.png" alt="" />
+          TOP ZONAS
+        </div>
+        <div class="estad-top-list" id="estad-top-zonas"></div>
+      </div>
+
+      <!-- Gráfico paginado -->
+      <div class="estad-chart-premium" style="margin-top:14px;">
+        <div class="estad-chart-label">
+          <img src="img/mapa.png" alt="" />
+          DISTRIBUCIÓN POR ZONA
+          <span id="estad-zonas-page-label"
+            style="margin-left:auto;font-size:.72rem;color:var(--text-muted);font-family:'IBM Plex Sans',sans-serif;font-weight:600;"></span>
+        </div>
+        <div style="height:440px; position:relative;">
+          <canvas id="estad-canvas-zonas"></canvas>
+        </div>
+        <div class="estad-pager" id="estad-pager-zonas"></div>
+      </div>
+
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         TAB: TENDENCIA
+    ══════════════════════════════════════════ -->
+    <div id="estad-view-tendencia" class="estad-tab-content" style="display:none;">
+
+      <!-- KPIs tendencia -->
+      <div class="estad-kpi-row" id="estad-kpis-tendencia"></div>
+
+      <!-- Gráfico de línea -->
+      <div class="estad-chart-premium">
+        <div class="estad-chart-label">
+          <img src="img/tendencia.png" alt="" />
+          EVOLUCIÓN MENSUAL 2026
+        </div>
+        <div style="height:320px; position:relative;">
+          <canvas id="estad-canvas-tendencia"></canvas>
+        </div>
+      </div>
+
+      <!-- Tabla comparación mensual -->
+      <div class="estad-chart-premium">
+        <div class="estad-chart-label">
+          <img src="img/calendario.webp" alt="" />
+          DETALLE MENSUAL
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="estad-month-table">
+            <thead>
+              <tr>
+                <th>MES</th>
+                <th>CHAT</th>
+                <th>PRESENCIAL</th>
+                <th>TOTAL</th>
+                <th>VAR.</th>
+              </tr>
+            </thead>
+            <tbody id="estad-month-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</section>
+
+     <!-- ============================================================
+     MI SEMÁFORO — NUEVAS VISTAS
+     Agregar antes del cierre </div> del .container en index.html
+     ============================================================ -->
+
+<!-- VISTA ASIGNACIONES -->
+<section id="view-asignaciones" class="view">
+  <!-- FASE 7: el max-width inline (1100px) le ganaba a la regla de ancho en
+       PC de la Fase 3, así que esta vista nunca se ensanchaba. Ahora va por
+       clase y styles/base-visual deciden. -->
+  <div class="card vista-ancha">
+
+    <h2 class="proc-view-title">ASIGNACIONES</h2>
+
+    <div class="count-row" style="margin-bottom:12px;">
+      <span class="count-pill" id="proc-count-pill">TOTAL: <span id="proc-count">0</span></span>
+      <input id="proc-filter" class="filter-input" type="text" placeholder="Filtrar por cualquier dato…" />
+    </div>
+
+    <!-- FASE 9 · barra compacta de filtros (ESTADO · ASIGNADO · VENCIMIENTO).
+         La pinta js (procMontarFiltros_), igual que en BD Predial. -->
+    <div id="proc-filtros" class="vf-row"></div>
+
+    <!-- Pastillas filtro por estado: siguen siendo la FUENTE DE VERDAD del
+         filtro de estado, pero ya no se ven (las maneja la barra de arriba). -->
+<div id="proc-pills-fuente" style="display:none;">
+<div id="proc-status-filter" class="proc-status-filter">
+  <button type="button" class="proc-status-pill active" data-status="ALL">TODAS</button>
+  <button type="button" class="proc-status-pill" data-status="ASIGNADO">ASIGNADO</button>
+  <button type="button" class="proc-status-pill" data-status="EN PROYECCIÓN">EN PROYECCIÓN</button>
+  <button type="button" class="proc-status-pill" data-status="PENDIENTE EVIDENCIA">PENDIENTE EVIDENCIA</button>
+  <button type="button" class="proc-status-pill" data-status="FINALIZADO">FINALIZADO</button>
+</div>
+</div>
+
+      <div class="btn-row" style="margin-bottom:14px;">
+  <button id="btn-panel-dashboard" class="btn-primary"
+    style="background:linear-gradient(135deg,#1e40af 0%,#1d4ed8 100%);display:none;">
+    <span style="display:inline-flex;align-items:center;gap:8px;">
+      <img src="img/barras.png"
+           style="width:22px;height:22px;object-fit:contain;" alt="Panel" />
+      PANEL 📊
+    </span>
+  </button>
+  <button id="btn-agregar-asignacion" class="btn-primary"
+    style="background:linear-gradient(135deg,#06b6d4,#0284c7);display:none;">
+    AGREGAR ASIGNACIÓN
+  </button>
+  <!-- FASE 6: vuelve como MODAL de descarga a Excel (ya no es un enlace de Drive). -->
+  <button id="btn-mis-procesos" class="btn-primary"
+    style="background:linear-gradient(135deg,#7c3aed,#4f46e5);display:none;">
+    MIS PROCESOS
+  </button>
+  <button id="btn-asignaciones-back" class="danger">REGRESAR</button>
+</div>
+
+    <div id="proc-list" class="sol-list"></div>
+  </div>
+</section>
+
+<!-- VISTA AGREGAR ASIGNACIÓN -->
+<section id="view-agregar-asignacion" class="view">
+  <div class="card narrow">
+    <h2 style="color:var(--primary);">AGREGAR ASIGNACIÓN</h2>
+
+    <!-- Fecha de Recibido -->
+    <label>Fecha de Recibido</label>
+    <input id="proc-recibido" type="text" placeholder="dd/mm/2026" readonly
+      onclick="abrirProcPicker('recibido')" required
+      style="cursor:pointer;" />
+
+    <!-- Consecutivo -->
+    <label>Consecutivo</label>
+    <input id="proc-consecutivo" type="text" placeholder="Ingresa Consecutivo" required />
+
+    <!-- Asunto -->
+    <label>Asunto</label>
+    <textarea id="proc-descripcion" rows="2"
+      placeholder="Relaciona brevemente el asunto" required></textarea>
+
+    <!-- Solo super usuario: Peticionario y Expediente -->
+    <label>Peticionario</label>
+    <input id="proc-peticionario" type="text" placeholder="Nombre del peticionario" />
+
+    <label>N° EXP. INTERNO</label>
+    <input id="proc-expediente" type="text" placeholder="Ej: SH-0525" />
+
+    <!-- Fecha Respuesta oportuna -->
+    <label>Fecha de Respuesta oportuna</label>
+    <p class="muted" style="margin:0 0 6px;font-size:.8rem;">
+      Selecciona al menos 1 día hábil antes del vencimiento
+    </p>
+    <input id="proc-respuesta" type="text" placeholder="dd/mm/2026" readonly
+      onclick="abrirProcPicker('respuesta')" required
+      style="cursor:pointer;" />
+
+    <!-- Medio -->
+    <label>Medio</label>
+    <select id="proc-medio" required>
+      <option value="" disabled selected>Selecciona el Medio</option>
+      <option value="CORRESPONDENCIA">CORRESPONDENCIA</option>
+      <option value="CORREO">CORREO</option>
+    </select>
+
+    <!-- Categoría (con iconos dinámicos) -->
+    <label>Categoría</label>
+    <div id="proc-cat-selector" class="cat-selector"></div>
+    <select id="proc-categoria" style="display:none;" required></select>
+
+    <!-- Subcategoría -->
+    <label>Subcategoría</label>
+    <div id="proc-subcat-selector" class="cat-selector"></div>
+    <select id="proc-subcategoria" style="display:none;"></select>
+
+    <!-- Asignado -->
+    <label>Asignado <span class="muted">(opcional)</span></label>
+    <!-- FASE 5: las opciones las pone js/alcance.js con quien tiene el rol -->
+    <select id="proc-asignado">
+      <option value="">— Sin asignar —</option>
+    </select>
+    <input id="proc-contacto1" type="hidden" />
+
+    <!-- Asistente: opcional, ya no se deduce del abogado (FASE 5) -->
+    <label>Asistente <span class="muted">(opcional)</span></label>
+    <select id="proc-asistente">
+      <option value="">— Sin asistente —</option>
+    </select>
+    <input id="proc-contacto2" type="hidden" />
+
+    <!-- Ocultos -->
+    <input id="proc-coordinador" type="hidden" />
+    <input id="proc-contacto3"   type="hidden" />
+
+    <!-- Documentos Recibidos -->
+    <label>Documento Recibido 1 <span class="muted">(opcional, PDF o Word, 10MB)</span></label>
+    <input id="proc-recibido1" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+    <div id="proc-recibido1-status" class="proc-file-status"></div>
+
+    <label>Documento Recibido 2 <span class="muted">(opcional, PDF o Word, 10MB)</span></label>
+    <input id="proc-recibido2" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+    <div id="proc-recibido2-status" class="proc-file-status"></div>
+
+    <label>Documento Recibido 3 <span class="muted">(opcional, PDF o Word, 10MB)</span></label>
+    <input id="proc-recibido3" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+    <div id="proc-recibido3-status" class="proc-file-status"></div>
+
+    <div class="btn-row" style="margin-top:16px;">
+      <button id="btn-proc-add-guardar" class="btn-primary">Guardar</button>
+      <button id="btn-proc-add-back" class="danger">Regresar</button>
+    </div>
+  </div>
+</section>
+
+<!-- VISTA VER DETALLES DE ASIGNACIÓN -->
+<section id="view-ver-asignacion" class="view">
+  <div class="card" style="max-width:860px;">
+
+    <h2 style="color:var(--primary); margin-bottom:8px;">DETALLE DE TU ASIGNACIÓN</h2>
+
+    <!-- Header: categoría + subcategoría + estado -->
+    <div id="proc-ver-header" class="proc-detalle-header"></div>
+
+    <!-- Cuerpo campos -->
+    <div id="proc-ver-body" style="margin-top:10px;"></div>
+
+    <!-- Evidencia -->
+    <div id="proc-ver-evidencia" class="proc-evidencia-wrap" style="display:none;">
+      <p style="font-weight:800;text-align:center;color:var(--primary);margin-bottom:8px;">Evidencia</p>
+      <img id="proc-ver-evidencia-img" class="proc-evidencia-img" alt="Evidencia" />
+    </div>
+
+    <!-- Archivos recibidos y respuestas -->
+    <div id="proc-ver-files" class="proc-files-row" style="margin-top:14px;"></div>
+
+    <!-- Creada -->
+    <div id="proc-ver-creacion" style="margin-top:10px;font-size:.82rem;color:var(--text-muted);text-align:left;"></div>
+
+    <!-- Botones de acción -->
+    <div class="btn-row" id="proc-ver-actions" style="margin-top:16px; flex-wrap:wrap; gap:10px;">
+      <!-- Se renderizan dinámicamente -->
+    </div>
+
+    <div class="btn-row" style="margin-top:10px;">
+      <button id="btn-ver-asignacion-back" class="danger">REGRESAR</button>
+    </div>
+  </div>
+</section>
+
+<!-- VISTA EDITAR ASIGNACIÓN -->
+<section id="view-editar-asignacion" class="view">
+  <div class="card narrow">
+    <h2 style="color:var(--primary);">EDICIÓN DE ASIGNACIÓN</h2>
+    <div id="edit-badge-row" style="text-align:center;margin-bottom:10px;"></div>
+
+    <!-- Solo super usuario -->
+    <div id="edit-super-fields">
+      <label>Fecha de Recibido</label>
+      <input id="edit-recibido" type="text" placeholder="dd/mm/2026" readonly
+        onclick="abrirProcPicker('edit-recibido')" style="cursor:pointer;" />
+
+      <label>Consecutivo</label>
+      <input id="edit-consecutivo" type="text" placeholder="Ingresa Consecutivo" />
+
+      <label>Asunto</label>
+      <textarea id="edit-descripcion" rows="2" placeholder="Relaciona brevemente el asunto"></textarea>
+
+      <label>Peticionario</label>
+      <input id="edit-peticionario" type="text" placeholder="Nombre del peticionario" />
+
+      <label>N° EXP. INTERNO</label>
+      <input id="edit-expediente" type="text" placeholder="Ej: SH-0525" />
+
+      <label>Fecha de Respuesta oportuna</label>
+      <input id="edit-respuesta" type="text" placeholder="dd/mm/2026" readonly
+        onclick="abrirProcPicker('edit-respuesta')" style="cursor:pointer;" />
+
+      <label>Medio</label>
+      <select id="edit-medio">
+        <option value="">— Sin cambio —</option>
+        <option value="CORRESPONDENCIA">CORRESPONDENCIA</option>
+        <option value="CORREO">CORREO</option>
+      </select>
+
+      <label>Asignado</label>
+      <!-- FASE 5: las opciones las pone js/alcance.js con quien tiene el rol -->
+      <select id="edit-asignado">
+        <option value="">— Sin asignar —</option>
+      </select>
+      <input id="edit-contacto1" type="hidden" />
+    </div>
+
+    <!-- Ambos roles -->
+    <label>Categoría</label>
+    <div id="edit-cat-selector" class="cat-selector"></div>
+    <select id="edit-categoria" style="display:none;"></select>
+
+    <label>Subcategoría</label>
+    <div id="edit-subcat-selector" class="cat-selector"></div>
+    <select id="edit-subcategoria" style="display:none;"></select>
+
+    <label>Asistente <span class="muted">(opcional)</span></label>
+    <select id="edit-asistente">
+      <option value="">— Sin asistente —</option>
+    </select>
+    <input id="edit-contacto2"   type="hidden" />
+    <input id="edit-coordinador" type="hidden" />
+    <input id="edit-contacto3"   type="hidden" />
+
+    <!-- Solo super usuario: recibidos -->
+    <div id="edit-recibidos-super">
+      <label>Documento Recibido 1 <span class="muted">(opcional, PDF o Word, 10MB)</span></label>
+      <input id="edit-recibido1" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+      <div id="edit-recibido1-status" class="proc-file-status"></div>
+
+      <label>Documento Recibido 2 <span class="muted">(opcional, PDF o Word, 10MB)</span></label>
+      <input id="edit-recibido2" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+      <div id="edit-recibido2-status" class="proc-file-status"></div>
+
+      <label>Documento Recibido 3 <span class="muted">(opcional, PDF o Word, 10MB)</span></label>
+      <input id="edit-recibido3" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+      <div id="edit-recibido3-status" class="proc-file-status"></div>
+    </div>
+
+    <!-- Ambos roles: respuestas -->
+    <label>Documento Respuesta 1 <span class="muted">(opcional, PDF o Word, 10MB)</span></label>
+    <input id="edit-respuesta1" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+    <div id="edit-respuesta1-status" class="proc-file-status"></div>
+
+    <label>Documento Respuesta 2 <span class="muted">(opcional, PDF o Word, 10MB)</span></label>
+    <input id="edit-respuesta2" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+    <div id="edit-respuesta2-status" class="proc-file-status"></div>
+
+    <label>Documento Respuesta 3 <span class="muted">(opcional, PDF o Word, 10MB)</span></label>
+    <input id="edit-respuesta3" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+    <div id="edit-respuesta3-status" class="proc-file-status"></div>
+
+    <label>Bitácora</label>
+    <textarea id="edit-bitacora" rows="5"
+      placeholder="Realiza tus bitácoras"></textarea>
+
+    <label>Etapa Jurídica</label>
+    <select id="edit-etapa">
+      <option value="">— Selecciona —</option>
+    </select>
+
+    <label>Evidencia Respuesta <span class="muted">(imagen, 5MB)</span></label>
+<input id="edit-evidencia" type="file" accept="image/*" />
+<div id="edit-evidencia-status" class="proc-file-status"></div>
+<div id="edit-evidencia-preview">
+  <img id="edit-evidencia-preview-img" src="" alt="Preview evidencia" />
+</div>
+
+    <label>Estado</label>
+    <select id="edit-estado">
+      <option value="">— Selecciona —</option>
+    </select>
+
+    <!-- Solo super: fecha cierre -->
+    <div id="edit-cierre-super">
+      <label>Fecha de Cierre <span class="muted">(opcional)</span></label>
+      <input id="edit-cierre" type="text" placeholder="dd/mm/2026" readonly
+        onclick="abrirProcPicker('edit-cierre')" style="cursor:pointer;" />
+    </div>
+
+    <div class="btn-row" style="margin-top:16px;">
+      <button id="btn-edit-asig-guardar" class="btn-primary">Guardar</button>
+      <button id="btn-edit-asig-back" class="danger">Regresar</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     MODALES SEMÁFORO
+     ============================================================ -->
+
+    <!-- Lightbox evidencia proceso -->
+<div id="proc-lightbox" aria-modal="true" role="dialog" aria-label="Ver imagen">
+  <button id="proc-lightbox-close" aria-label="Cerrar zoom" title="Cerrar">✕</button>
+  <img id="proc-lightbox-img" src="" alt="Evidencia ampliada" onclick="event.stopPropagation()" />
+</div>
+
+<!-- Modal REBOTAR -->
+<div id="modal-rebotar" class="hidden"
+  style="position:fixed;inset:0;background:var(--scrim);z-index:10000;
+         display:flex;align-items:center;justify-content:center;padding:16px;">
+  <div class="card narrow" style="margin:0;width:min(560px,100%);">
+    <h2 style="color:var(--primary);">REBOTAR ASIGNACIÓN</h2>
+    <p class="helper" style="margin-top:0;">Justifica por qué esta asignación no es de tu competencia.</p>
+    <label>Justificación Jurídica</label>
+    <textarea id="proc-rebote" rows="5"
+      placeholder="Redacta la razón por la cual esta asignación no es de tu competencia."></textarea>
+    <div class="btn-row" style="margin-top:14px;">
+      <button id="btn-rebote-guardar" class="btn-primary">Guardar</button>
+      <button id="btn-rebote-regresar" class="danger">Regresar</button>
+    </div>
+  </div>
+</div>
+
+    <!-- Modal SOLICITAR PROCESO (asignado → coordinador) -->
+<div id="modal-solicitar-proceso" class="hidden"
+  style="position:fixed;inset:0;background:var(--scrim);z-index:10000;
+         display:flex;align-items:center;justify-content:center;padding:16px;">
+  <div class="card narrow" style="margin:0;width:min(560px,100%);">
+    <h2 id="modal-sp-titulo" style="color:var(--primary);">¿Deseas complementar la solicitud?</h2>
+    <label>Mensaje (opcional)</label>
+    <textarea id="modal-sp-solicitud" rows="5"
+      placeholder="Redacta si lo consideras necesario."></textarea>
+    <div class="btn-row" style="margin-top:14px;">
+      <button id="btn-sp-guardar" class="btn-primary">Guardar</button>
+      <button id="btn-sp-cancelar" class="danger">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal DECISIÓN (super usuario → asignado) -->
+<div id="modal-decision" class="hidden"
+  style="position:fixed;inset:0;background:var(--scrim);z-index:10000;
+         display:flex;align-items:center;justify-content:center;padding:16px;">
+  <div class="card narrow" style="margin:0;width:min(560px,100%);">
+    <h2 id="modal-dec-titulo" style="color:var(--primary);">¿Deseas complementar la respuesta?</h2>
+    <label>Mensaje (opcional)</label>
+    <textarea id="modal-dec-solicitud" rows="5"
+      placeholder="Redacta si lo consideras necesario."></textarea>
+    <div class="btn-row" style="margin-top:14px;">
+      <button id="btn-dec-guardar" class="btn-primary">Guardar</button>
+      <button id="btn-dec-cancelar" class="danger">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Picker Fecha (para procesos) -->
+<div id="proc-fecha-modal" class="proc-picker-modal" aria-hidden="true">
+  <div class="picker-box">
+    <h3 style="margin:0 0 8px;font-family:'Sora',sans-serif;color:var(--primary);">
+      Selecciona la fecha
+    </h3>
+    <div class="picker-grid">
+      <div>
+        <small>Día</small>
+        <select id="proc-picker-dia" size="10"></select>
+      </div>
+      <div>
+        <small>Mes</small>
+        <select id="proc-picker-mes" size="12"></select>
+      </div>
+      <div>
+        <small>Año</small>
+        <select id="proc-picker-anio" size="3" disabled>
+          <option selected>2026</option>
+        </select>
+      </div>
+    </div>
+    <div class="picker-actions">
+      <button type="button" class="btn btn-cancel"
+        onclick="cancelarProcPicker()">Cancelar</button>
+      <button type="button" class="btn btn-ok"
+        onclick="confirmarProcPicker()">Ok</button>
+    </div>
+  </div>
+</div>
+
+    <!-- Modal Picker AÑO (para DEBE DESDE) -->
+<div id="bdp-anio-modal" class="proc-picker-modal" aria-hidden="true">
+  <div class="picker-box">
+    <h3 style="margin:0 0 8px;font-family:'Sora',sans-serif;color:var(--primary);">
+      Selecciona el año
+    </h3>
+    <div style="display:flex; justify-content:center; margin:12px 0 16px;">
+      <select id="bdp-anio-select" size="10" style="height:220px; min-width:120px;"></select>
+    </div>
+    <div class="picker-actions">
+      <button type="button" class="btn btn-cancel" onclick="cancelarBDPAnio()">Cancelar</button>
+      <button type="button" class="btn btn-ok"     onclick="confirmarBDPAnio()">Ok</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Picker FECHA (para fechas opcionales 2026) -->
+<div id="bdp-fecha-modal" class="proc-picker-modal" aria-hidden="true">
+  <div class="picker-box">
+    <h3 style="margin:0 0 8px;font-family:'Sora',sans-serif;color:var(--primary);">
+      Selecciona la fecha
+    </h3>
+    <div class="picker-grid">
+      <div>
+        <small>Día</small>
+        <select id="bdp-pick-dia" size="10"></select>
+      </div>
+      <div>
+        <small>Mes</small>
+        <select id="bdp-pick-mes" size="12"></select>
+      </div>
+      <div>
+        <small>Año</small>
+        <select id="bdp-pick-anio" size="10"></select>
+      </div>
+    </div>
+    <div class="picker-actions">
+      <button type="button" class="btn btn-cancel" onclick="cancelarBDPFecha()">Cancelar</button>
+      <button type="button" class="btn btn-ok"     onclick="confirmarBDPFecha()">Ok</button>
+    </div>
+  </div>
+</div>
+
+    <!-- ============================================================
+     MODAL CHAT TIEMPO REAL
+     ============================================================ -->
+<div id="modal-chat" aria-modal="true" role="dialog" aria-label="Chat de asignación">
+  <div class="chat-box">
+
+    <!-- Header -->
+    <div class="chat-header">
+      <div class="chat-header-avatar">💬</div>
+      <div class="chat-header-info">
+        <div class="chat-header-title" id="chat-header-title">Chat de Asignación</div>
+        <div class="chat-header-sub"  id="chat-header-sub">Cargando...</div>
+      </div>
+      <button id="btn-chat-reset" aria-label="Resetear chat" title="Resetear chat"
+  style="display:none; background:rgba(239,68,68,.30); border:0; color:#fff;
+         width:34px; height:34px; border-radius:50%; font-size:1rem;
+         cursor:pointer; align-items:center; justify-content:center;
+         flex-shrink:0; transition:.15s; margin-right:4px;">
+  🗑️
+</button>
+<button class="chat-header-close" id="btn-chat-close" aria-label="Cerrar chat">✕</button>
+    </div>
+
+    <!-- Mensajes -->
+    <div class="chat-messages" id="chat-messages">
+      <div class="chat-empty" id="chat-empty">
+        <img src="img/chincheta.png" alt="">
+        <p>Aún no hay mensajes.<br>¡Sé el primero en escribir!</p>
+      </div>
+    </div>
+
+    <!-- Indicador escribiendo -->
+    <div class="chat-typing" id="chat-typing">
+      <span class="typing-dots">
+        <span></span><span></span><span></span>
+      </span>
+      &nbsp;<span id="chat-typing-who"></span> está escribiendo…
+    </div>
+
+    <!-- Footer input -->
+    <div class="chat-footer">
+      <div class="chat-input-wrap">
+        <textarea id="chat-input" rows="1"
+          placeholder="Escribe un mensaje…"
+          maxlength="800"></textarea>
+      </div>
+      <button class="chat-send-btn" id="btn-chat-send" aria-label="Enviar mensaje">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"/>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- Toast mensaje nuevo -->
+<div id="chat-toast">💬 Nuevo mensaje</div>
+
+<!-- Modal SOLICITUD EXPEDIENTE — MENSAJE O BITÁCORA (17/09: lo gobierna js/solicitud-exp.js) -->
+<div id="modal-expediente" class="hidden"
+  style="position:fixed;inset:0;background:var(--scrim);z-index:10000;
+         display:flex;align-items:center;justify-content:center;padding:16px;">
+  <div class="card narrow" style="margin:0;width:min(560px,100%);display:flex;flex-direction:column;gap:10px;">
+    <h2 style="color:var(--primary);">MENSAJE O BITÁCORA</h2>
+
+    <!-- Historial: solo lectura -->
+    <div id="modal-expediente-historial"
+      style="
+        background:rgba(6,64,43,.04);
+        border:1.5px solid rgba(6,64,43,.14);
+        border-radius:var(--radius-md);
+        padding:12px 14px;
+        font-size:.88rem;
+        font-weight:500;
+        color:var(--text-main);
+        white-space:pre-wrap;
+        word-break:break-word;
+        min-height:60px;
+        max-height:220px;
+        overflow-y:auto;
+        line-height:1.6;
+        display:none;
+      ">
+    </div>
+
+    <!-- Sin historial aún -->
+    <p id="modal-expediente-vacio"
+      style="margin:0;font-size:.82rem;font-weight:600;color:var(--text-muted);
+             text-align:center;display:none;">
+      Aún no hay mensajes en este expediente.
+    </p>
+
+    <!-- Campo nuevo mensaje -->
+    <label for="modal-expediente-nuevo" style="margin:4px 0 2px;">Nuevo mensaje</label>
+    <textarea
+      id="modal-expediente-nuevo"
+      rows="3"
+      placeholder="Escribe tu mensaje aquí…"
+      style="white-space:pre-wrap;"
+    ></textarea>
+
+    <div class="btn-row" style="margin-top:6px;">
+      <button id="btn-expediente-guardar" class="btn-primary">Enviar</button>
+      <button id="btn-expediente-cancelar" class="danger">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+    <!-- VISTA PANEL DASHBOARD -->
+<section id="view-panel" class="view">
+  <div class="panel-card">
+
+    <!-- Header -->
+    <div class="panel-header">
+      <div class="panel-title-wrap">
+        <img src="img/barras.png" alt="Panel" />
+        <div>
+          <h2 class="panel-title">PANEL 📊</h2>
+          <div class="panel-subtitle" id="panel-subtitle">Cargando datos...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="panel-toolbar">
+      <button class="panel-tab active" id="panel-tab-resumen" onclick="panelShowTab_('resumen')">
+        <img src="img/barras.png" alt="" />
+        RESUMEN
+      </button>
+      <button class="panel-tab" id="panel-tab-equipo" onclick="panelShowTab_('equipo')">
+        <img src="img/usuarios.webp" alt="" />
+        EQUIPO
+      </button>
+      <button class="panel-tab" id="panel-tab-tiempo" onclick="panelShowTab_('tiempo')">
+        <img src="img/reloj.png" alt="" />
+        TIEMPOS
+      </button>
+      <button class="panel-tab" id="panel-tab-cats" onclick="panelShowTab_('cats')">
+        <img src="img/target.webp" alt="" />
+        CATEGORÍAS
+      </button>
+      <button class="danger panel-tab" id="panel-back-btn" onclick="panelGoBack_()">
+        ← REGRESAR
+      </button>
+    </div>
+
+    <!-- ── TAB: RESUMEN ── -->
+    <div id="panel-view-resumen" class="panel-animate">
+
+      <!-- KPIs principales -->
+      <div class="panel-kpis" id="panel-kpis-main"></div>
+
+      <!-- Semáforo visual -->
+      <div class="panel-section">
+        <div class="panel-section-title">
+          <img src="img/target.webp" alt="" />
+          SEMÁFORO DE ASIGNACIONES
+        </div>
+        <div class="semaforo-resumen" id="panel-semaforo"></div>
+      </div>
+
+      <!-- Estados -->
+      <div class="panel-section">
+        <div class="panel-section-title">
+          <img src="img/barras.png" alt="" />
+          DISTRIBUCIÓN POR ESTADO
+        </div>
+        <div class="panel-chart-wrap" style="height:240px;">
+          <canvas id="panel-chart-estados"></canvas>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── TAB: EQUIPO ── -->
+    <div id="panel-view-equipo" class="panel-animate" style="display:none;">
+
+      <div class="panel-section">
+        <div class="panel-section-title">
+          <img src="img/usuarios.webp" alt="" />
+          RANKING POR ASIGNADO
+        </div>
+        <div class="ranking-list" id="panel-ranking"></div>
+      </div>
+
+      <div class="panel-section" style="margin-top:18px;">
+        <div class="panel-section-title">
+          <img src="img/barras.png" alt="" />
+          CARGA DE TRABAJO
+        </div>
+        <div class="panel-chart-wrap" style="height:280px;">
+          <canvas id="panel-chart-equipo"></canvas>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── TAB: TIEMPOS ── -->
+    <div id="panel-view-tiempo" class="panel-animate" style="display:none;">
+
+      <!-- KPIs de tiempo -->
+      <div class="panel-kpis" id="panel-kpis-tiempo"></div>
+
+      <div class="panel-section">
+        <div class="panel-section-title">
+          <img src="img/reloj.png" alt="" />
+          PRÓXIMOS VENCIMIENTOS
+        </div>
+        <div class="timeline-list" id="panel-timeline"></div>
+      </div>
+
+    </div>
+
+ <!-- ── TAB: CATEGORÍAS ── -->
+    <div id="panel-view-cats" class="panel-animate" style="display:none;">
+
+      <div class="panel-grid-2">
+        <div class="panel-section">
+          <div class="panel-section-title">
+            <img src="img/target.webp" alt="" />
+            POR CATEGORÍA
+          </div>
+          <div class="cat-donut-wrap" id="panel-cats"></div>
+        </div>
+
+        <div class="panel-section">
+          <div class="panel-section-title">
+            <img src="img/target.webp" alt="" />
+            <span id="panel-subcats-list-title">POR SUBCATEGORÍA</span>
+          </div>
+          <div class="cat-donut-wrap" id="panel-subcats"></div>
+        </div>
+      </div>
+
+      <div class="panel-grid-2" style="margin-top:14px;">
+        <div class="panel-section">
+          <div class="panel-section-title">
+            <img src="img/barras.png" alt="" />
+            GRÁFICO POR CATEGORÍA
+          </div>
+          <div class="panel-chart-wrap" style="height:280px;">
+            <canvas id="panel-chart-cats"></canvas>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <div class="panel-section-title">
+            <img src="img/barras.png" alt="" />
+            <span id="panel-subcats-chart-title">GRÁFICO POR SUBCATEGORÍA</span>
+          </div>
+          <div class="panel-chart-wrap" style="height:280px;">
+            <canvas id="panel-chart-subcats"></canvas>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</section>
+
+    <!-- VISTA ATENCIONES REGISTRADAS -->
+<section id="view-atenciones" class="view">
+  <div class="card">
+    <h2 style="color:var(--primary);">ATENCIONES REGISTRADAS</h2>
+
+    <!-- Pestañas Chat / Presencial -->
+    <div class="panel-toolbar" style="margin-bottom:14px;">
+      <button class="panel-tab active" id="tab-atenc-chat"
+        onclick="atencionesShowTab_('chat')">
+        CHAT
+      </button>
+      <button class="panel-tab" id="tab-atenc-pres"
+        onclick="atencionesShowTab_('pres')" style="display:none;">
+        PRESENCIAL
+      </button>
+    </div>
+
+    <div class="count-row">
+      <span class="count-pill">TOTAL: <span id="atenc-count">0</span></span>
+      <input id="atenc-filter" class="filter-input" type="text"
+        placeholder="Filtrar por cualquier dato…" />
+    </div>
+
+    <div class="btn-row" style="margin-top:10px;">
+      <button id="atenc-back" class="danger">Regresar</button>
+    </div>
+
+    <div id="atenc-wrap" class="sol-list"></div>
+  </div>
+</section>
+
+    <!-- ============================================================
+     VISTA BASE DE DATOS IMPUESTO PREDIAL
+     ============================================================ -->
+<section id="view-bd-predial" class="view">
+  <!-- FASE 7: igual que en Asignaciones, fuera el max-width inline. -->
+  <div class="card vista-ancha">
+
+    <h2 class="proc-view-title">BASE DE DATOS IMPUESTO PREDIAL</h2>
+
+    <div class="count-row" style="margin-bottom:12px;">
+      <span class="count-pill">TOTAL: <span id="bdp-count">0</span></span>
+      <input id="bdp-filter" class="filter-input" type="text" placeholder="Filtrar por cualquier dato…" />
+    </div>
+
+    <!-- FASE 7 · selectores compactos. Los pinta js (bdpMontarFiltros_)
+         leyendo las pastillas de abajo, que quedan ocultas pero siguen
+         siendo las que mandan: así js/alcance.js y todo el filtrado de
+         siempre funcionan sin cambiar una línea. -->
+    <div id="bdp-filtros" class="vf-row"></div>
+
+    <div id="bdp-pills-fuente" style="display:none;">
+    <!-- Pastillas filtro CLASIFICACION -->
+    <div class="bdp-pills-label">CLASIFICACIÓN</div>
+    <div id="bdp-pills-clasif" class="proc-status-filter">
+      <button type="button" class="proc-status-pill active" data-clasif="ALL">TODAS</button>
+      <button type="button" class="proc-status-pill" data-clasif="ALTA"
+        style="background:rgba(220,38,38,.10);border-color:#dc2626;color:#dc2626;">ALTA</button>
+      <button type="button" class="proc-status-pill" data-clasif="MEDIA"
+        style="background:rgba(249,115,22,.10);border-color:#f97316;color:#f97316;">MEDIA</button>
+      <button type="button" class="proc-status-pill" data-clasif="BAJA"
+        style="background:rgba(22,163,74,.10);border-color:#16a34a;color:#16a34a;">BAJA</button>
+    </div>
+
+    <!-- Pastillas filtro ACTUACION -->
+    <div class="bdp-pills-label">ACTUACIÓN</div>
+<div id="bdp-pills-actuacion" class="proc-status-filter">
+      <button type="button" class="proc-status-pill active" data-actuacion="ALL">TODAS</button>
+      <button type="button" class="proc-status-pill" data-actuacion="NINGUNA">NINGUNA</button>
+      <button type="button" class="proc-status-pill" data-actuacion="COMUNICACION PERSUASIVA">COMUNICACION PERSUASIVA</button>
+      <button type="button" class="proc-status-pill" data-actuacion="LIQUIDACION OFICIAL">LIQUIDACION OFICIAL</button>
+      <button type="button" class="proc-status-pill" data-actuacion="MANDAMIENTO DE PAGO">MANDAMIENTO DE PAGO</button>
+      <button type="button" class="proc-status-pill" data-actuacion="EMBARGO">EMBARGO</button>
+      <button type="button" class="proc-status-pill" data-actuacion="SENTENCIA">SENTENCIA</button>
+      <button type="button" class="proc-status-pill" data-actuacion="DESEMBARGO">DESEMBARGO</button>
+      <button type="button" class="proc-status-pill" data-actuacion="REVOCATORIA DIRECTA">REVOCATORIA DIRECTA</button>
+      <button type="button" class="proc-status-pill" data-actuacion="INSOLVENCIA">INSOLVENCIA</button>
+      <button type="button" class="proc-status-pill" data-actuacion="PRESCRIPCION">PRESCRIPCIÓN</button>
+    </div>
+
+   <!-- Pastillas filtro SUSTANCIADOR -->
+    <div class="bdp-pills-label" id="bdp-label-sustanciador">SUSTANCIADOR</div>
+    <!-- FASE 5: las opciones las pone js/alcance.js con quien tiene el rol -->
+    <div id="bdp-pills-sustanciador" class="proc-status-filter">
+      <button type="button" class="proc-status-pill active" data-sustanciador="ALL">TODOS</button>
+      <button type="button" class="proc-status-pill" data-sustanciador="NINGUNO">NINGUNO</button>
+    </div>
+
+    <!-- Pastillas filtro ESTADO PROCESO -->
+    <div class="bdp-pills-label">ESTADO PROCESO</div>
+    <div id="bdp-pills-estado" class="proc-status-filter">
+      <button type="button" class="proc-status-pill active" data-estado="ALL">TODOS</button>
+      <button type="button" class="proc-status-pill" data-estado="NINGUNO">NINGUNO</button>
+      <button type="button" class="proc-status-pill" data-estado="ACUERDO DE PAGO">ACUERDO DE PAGO</button>
+      <button type="button" class="proc-status-pill" data-estado="COBRO PERSUASIVO/LIQUIDACION">COBRO PERSUASIVO/LIQUIDACIÓN</button>
+      <button type="button" class="proc-status-pill" data-estado="COBRO COACTIVO">COBRO COACTIVO</button>
+      <button type="button" class="proc-status-pill" data-estado="AL DIA">AL DIA</button>
+    </div>
+
+    <!-- 17/09 · Pastillas filtro SOLICITUD EXPEDIENTE (columna AP).
+         app.js les pone el número de expedientes en cada estado. -->
+    <div class="bdp-pills-label">SOLICITUD EXP.</div>
+    <div id="bdp-pills-solexp" class="proc-status-filter">
+      <button type="button" class="proc-status-pill active" data-solexp="ALL">Todas</button>
+      <button type="button" class="proc-status-pill" data-solexp="PENDIENTE">Pendientes de respuesta</button>
+      <button type="button" class="proc-status-pill" data-solexp="RESPONDIDA">Respondidas</button>
+      <button type="button" class="proc-status-pill" data-solexp="NINGUNA">Sin solicitud</button>
+    </div>
+    </div><!-- /bdp-pills-fuente -->
+
+    <!-- Pastilla "Solo las mías" (solo aparece si el usuario es sustanciador) -->
+    <div id="bdp-pills-mias-wrap" style="margin-top:6px; display:none;">
+      <button type="button" id="bdp-pill-mias" class="proc-status-pill"
+        style="background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;border-color:transparent;">
+        👤 SOLO LAS MÍAS
+      </button>
+    </div>
+
+    <!-- Botones de acción -->
+    <div class="btn-row" style="margin-top:14px; margin-bottom:14px;">
+      <button id="btn-bdp-panel" class="btn-primary"
+        style="background:linear-gradient(135deg,#1e40af 0%,#1d4ed8 100%); display:none;">
+        <span style="display:inline-flex;align-items:center;gap:8px;">
+          <img src="img/barras.png"
+               style="width:22px;height:22px;object-fit:contain;" alt="Panel" />
+          PANEL 📊
+        </span>
+      </button>
+      <button id="btn-bdp-agregar" class="btn-primary btn-icon-label"
+        style="background:linear-gradient(135deg,#06b6d4,#0284c7); display:none;">
+        <img src="img/agregar.webp" alt="Agregar" />
+        AGREGAR EXPEDIENTE
+      </button>
+      <!-- FASE 6: "DATOS EXCEL" vuelve como MODAL de descarga (con filtros y
+           check de columnas), ya no como enlace fijo de Drive. -->
+      <button id="btn-bdp-mis-exp" class="btn-primary btn-icon-label"
+        style="background:linear-gradient(135deg,#16a34a,#15803d); display:none;">
+        <img src="img/excel.webp" alt="Datos Excel" />
+        DATOS EXCEL
+      </button>
+      <button id="btn-bdp-expedientes" class="btn-primary btn-icon-label"
+        style="background:linear-gradient(135deg,#7c3aed,#4f46e5);">
+        <img src="img/expediente.webp" alt="Mis Expedientes" />
+        MIS EXPEDIENTES
+      </button>
+      <button id="btn-bdp-back" class="danger">REGRESAR</button>
+    </div>
+
+    <div id="bdp-list" class="sol-list"></div>
+  </div>
+</section>
+
+    <!-- ============================================================
+     VISTA AGREGAR / EDITAR EXPEDIENTE PREDIAL
+     ============================================================ -->
+<section id="view-bdp-form" class="view">
+  <div class="card narrow">
+    <h2 id="bdp-form-title" style="color:var(--primary);">AGREGAR EXPEDIENTE</h2>
+    <div id="bdp-form-badge" style="text-align:center;margin-bottom:10px;"></div>
+
+    <!-- ── Bloque SUPER USUARIO ── -->
+    <div id="bdp-super-fields">
+
+      <label>Nombres del propietario <span style="color:#dc2626;">*</span></label>
+      <input id="bdp-nombres" type="text" placeholder="Se guarda en mayúscula" />
+
+      <label>NIT o Cédula <span style="color:#dc2626;">*</span></label>
+      <input id="bdp-nit" type="text" inputmode="numeric" placeholder="Sin puntos ni espacios" />
+
+      <label>Correo electrónico</label>
+      <input id="bdp-correo" type="email" placeholder="opcional" />
+
+      <label>Dirección del predio <span style="color:#dc2626;">*</span></label>
+      <input id="bdp-direccion" type="text" placeholder="Calle / Carrera / Barrio…" />
+
+      <label>Matrícula <span class="muted">(opcional)</span></label>
+      <div class="input-icon-wrap">
+        <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-weight:800;color:var(--primary);pointer-events:none;">357-</span>
+        <input id="bdp-matricula" type="text" inputmode="numeric" placeholder="solo el número" style="padding-left:50px;" />
+      </div>
+
+      <label>Ficha Catastral <span class="muted">(12-15 dígitos, opcional)</span></label>
+      <input id="bdp-ficha" type="text" inputmode="numeric" placeholder="solo dígitos" />
+
+      <label>¿Escaneado? <span style="color:#dc2626;">*</span></label>
+      <select id="bdp-escaneado">
+        <option value="NO" selected>NO</option>
+        <option value="SI">SI</option>
+      </select>
+
+      <label>Debe Desde <span style="color:#dc2626;">*</span></label>
+      <input id="bdp-debe-desde" type="text" placeholder="Selecciona año…" readonly
+        onclick="abrirBDPAnio_()" style="cursor:pointer;" />
+      <input id="bdp-debe-desde-raw" type="hidden" />
+
+      <label>Deuda Hasta</label>
+      <input id="bdp-deuda-hasta" type="text" readonly
+        style="background:rgba(6,64,43,.04); cursor:not-allowed;" />
+
+      <label>Valor Deuda <span style="color:#dc2626;">*</span></label>
+      <input id="bdp-valor-deuda" type="text" inputmode="numeric" placeholder="$ 0" />
+      <div id="bdp-clasif-preview" class="muted" style="margin-top:4px; font-size:.78rem;"></div>
+
+      <label>No. Exp. Físico <span style="color:#dc2626;">*</span></label>
+      <div style="display:grid; grid-template-columns: 80px 1fr; gap:8px;">
+        <select id="bdp-exp-letra">
+          <option value="">Letra…</option>
+        </select>
+        <input id="bdp-exp-numero" type="text" inputmode="numeric" maxlength="4" placeholder="4 dígitos" />
+      </div>
+      <p class="muted" style="font-size:.72rem;margin:4px 0 0;">Ej: A0001. No puede haber duplicados.</p>
+
+      <label>Sustanciador <span style="color:#dc2626;">*</span></label>
+      <!-- FASE 5: las opciones las pone js/alcance.js con quien tiene el rol -->
+      <select id="bdp-sustanciador">
+        <option value="NINGUNO" selected>NINGUNO</option>
+      </select>
+
+      <label>Asistente <span class="muted">(opcional)</span></label>
+      <select id="bdp-asistente">
+        <option value="">— Sin asistente —</option>
+      </select>
+      <input id="bdp-contacto-sust"  type="hidden" />
+      <input id="bdp-contacto-asist" type="hidden" />
+      <input id="bdp-asignador"      type="hidden" />
+      <input id="bdp-contacto-asignador" type="hidden" />
+
+    </div>
+
+    <!-- ── Bloque AMBOS roles ── -->
+    <label>Bitácora <span style="color:#dc2626;">*</span></label>
+    <textarea id="bdp-bitacora" rows="4" placeholder="Registra actuaciones y observaciones"></textarea>
+
+    <label>Actuación <span style="color:#dc2626;">*</span></label>
+    <select id="bdp-actuacion">
+      <option value="NINGUNA" selected>NINGUNA</option>
+      <option value="COMUNICACION PERSUASIVA">COMUNICACION PERSUASIVA</option>
+      <option value="LIQUIDACION OFICIAL">LIQUIDACION OFICIAL</option>
+      <option value="MANDAMIENTO DE PAGO">MANDAMIENTO DE PAGO</option>
+      <option value="EMBARGO">EMBARGO</option>
+      <option value="SENTENCIA">SENTENCIA</option>
+      <option value="DESEMBARGO">DESEMBARGO</option>
+      <option value="REVOCATORIA DIRECTA">REVOCATORIA DIRECTA</option>
+      <option value="INSOLVENCIA">INSOLVENCIA</option>
+      <option value="PRESCRIPCION">PRESCRIPCION</option>
+    </select>
+
+    <label>Estado del Proceso <span style="color:#dc2626;">*</span></label>
+    <select id="bdp-estado-proceso">
+      <option value="NINGUNO" selected>NINGUNO</option>
+      <option value="ACUERDO DE PAGO">ACUERDO DE PAGO</option>
+      <option value="COBRO PERSUASIVO/LIQUIDACION">COBRO PERSUASIVO/LIQUIDACION</option>
+      <option value="COBRO COACTIVO">COBRO COACTIVO</option>
+      <option value="AL DIA">AL DÍA</option>
+    </select>
+
+    <!-- ── Más campos opcionales SUPER USUARIO ── -->
+    <div id="bdp-extra-fields">
+
+      <h3 style="margin-top:18px; color:var(--primary); text-align:left;">📋 Persuasivo / Notificaciones</h3>
+
+      <label>Oficio Persuasivo <span class="muted">(opcional)</span></label>
+      <input id="bdp-oficio-persuas" type="text" />
+
+      <label>Fecha Oficio Persuasivo <span class="muted">(opcional)</span></label>
+      <input id="bdp-fecha-oficio-persuas" type="text" placeholder="dd/mm/2026" readonly
+        onclick="abrirBDPFecha_('fecha-oficio-persuas')" style="cursor:pointer;" />
+
+      <label>Fecha Entrega <span class="muted">(opcional)</span></label>
+      <input id="bdp-fecha-entrega" type="text" placeholder="dd/mm/2026" readonly
+        onclick="abrirBDPFecha_('fecha-entrega')" style="cursor:pointer;" />
+
+      <label>Resolución Liquidación <span class="muted">(opcional)</span></label>
+      <input id="bdp-resol-liquidac" type="text" />
+
+      <label>Fecha Resolución <span class="muted">(opcional)</span></label>
+      <input id="bdp-fecha-resolucion" type="text" placeholder="dd/mm/2026" readonly
+        onclick="abrirBDPFecha_('fecha-resolucion')" style="cursor:pointer;" />
+
+      <label>Oficio Citación <span class="muted">(opcional)</span></label>
+      <input id="bdp-oficio-citacion" type="text" />
+
+      <label>Fecha Oficio <span class="muted">(opcional)</span></label>
+      <input id="bdp-fecha-oficio" type="text" placeholder="dd/mm/2026" readonly
+        onclick="abrirBDPFecha_('fecha-oficio')" style="cursor:pointer;" />
+
+      <label>Notif. Citación</label>
+      <select id="bdp-notif-citacion"><option value="NO" selected>NO</option><option value="SI">SI</option></select>
+
+      <label>Notif. Electrónica</label>
+      <select id="bdp-notif-electr"><option value="NO" selected>NO</option><option value="SI">SI</option></select>
+
+      <label>Notif. Personal</label>
+      <select id="bdp-notif-personal"><option value="NO" selected>NO</option><option value="SI">SI</option></select>
+
+      <label>Notif. Aviso</label>
+      <select id="bdp-notif-aviso"><option value="NO" selected>NO</option><option value="SI">SI</option></select>
+
+      <label>Publicación Web</label>
+      <select id="bdp-publicacion-web"><option value="NO" selected>NO</option><option value="SI">SI</option></select>
+
+      <label>Ejecutoria <span class="muted">(opcional)</span></label>
+      <input id="bdp-ejecutoria" type="text" />
+
+      <label>Mandamiento de Pago</label>
+      <select id="bdp-mandam-pago"><option value="NO" selected>NO</option><option value="SI">SI</option></select>
+
+      <label>F-MP <span class="muted">(opcional)</span></label>
+      <input id="bdp-f-mp" type="text" />
+
+      <h3 style="margin-top:18px; color:var(--primary); text-align:left;">📅 Seguimiento</h3>
+
+      <label>Fecha de Seguimiento <span class="muted">(opcional)</span></label>
+      <input id="bdp-form-seg-fecha" type="date" />
+
+      <label class="bdp-seg-check">
+        <input type="checkbox" id="bdp-form-seg-check" disabled /> Recordar
+      </label>
+      <div id="bdp-form-seg-aviso" class="bdp-seg-aviso" style="display:none;"></div>
+    </div>
+
+    <div style="margin-top:16px;">
+      <button id="btn-bdp-form-archivo" type="button" class="btn-primary btn-icon-label"
+        style="background:linear-gradient(135deg,#b91c1c,#7f1d1d);">
+        <img src="img/pdf.webp" alt="" />
+        EXPEDIENTE (ARCHIVO)
+      </button>
+    </div>
+
+    <div class="btn-row" style="margin-top:16px;">
+      <button id="btn-bdp-form-guardar" class="btn-primary">Guardar</button>
+      <button id="btn-bdp-form-back" class="danger">Regresar</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     VISTA VER DETALLES EXPEDIENTE PREDIAL
+     ============================================================ -->
+<section id="view-bdp-detalle" class="view">
+  <div class="card" style="max-width:900px;">
+
+    <h2 style="color:var(--primary); margin-bottom:8px;">DETALLE DEL EXPEDIENTE</h2>
+
+    <!-- Header con clasificación, actuación, estado -->
+    <div id="bdp-det-header" class="proc-detalle-header"></div>
+
+    <!-- Cuerpo -->
+    <div id="bdp-det-body" style="margin-top:12px;"></div>
+
+    <!-- Acciones -->
+    <div class="btn-row" id="bdp-det-actions" style="margin-top:16px; flex-wrap:wrap; gap:10px;"></div>
+
+    <div class="btn-row" style="margin-top:10px;">
+      <button id="btn-bdp-det-back" class="danger">REGRESAR</button>
+    </div>
+  </div>
+</section>
+
+<!-- Modal DECISIÓN (cambiar Actuación) -->
+<div id="modal-bdp-decision" class="hidden"
+  style="position:fixed;inset:0;background:var(--scrim);z-index:10000;
+         display:flex;align-items:center;justify-content:center;padding:16px;">
+  <div class="card narrow" style="margin:0;width:min(560px,100%);">
+    <div class="bdp-exp-header" style="justify-content:center;">
+      <img src="img/notificacion.webp"
+           alt="" style="width:26px;height:26px;object-fit:contain;" />
+      <h2 style="color:var(--primary);margin:0;">ACTUACIÓN Y SEGUIMIENTO</h2>
+    </div>
+    <p class="helper" style="margin-top:6px;">Cambia la actuación del expediente. Se notificará al sustanciador.</p>
+    <div id="bdp-dec-context" style="text-align:center;font-size:.85rem;font-weight:700;color:var(--text-sub);margin-bottom:10px;"></div>
+
+    <label>Nueva Actuación</label>
+    <select id="bdp-dec-actuacion">
+      <option value="NINGUNA">NINGUNA</option>
+      <option value="COMUNICACION PERSUASIVA">COMUNICACION PERSUASIVA</option>
+      <option value="LIQUIDACION OFICIAL">LIQUIDACION OFICIAL</option>
+      <option value="MANDAMIENTO DE PAGO">MANDAMIENTO DE PAGO</option>
+      <option value="EMBARGO">EMBARGO</option>
+      <option value="SENTENCIA">SENTENCIA</option>
+      <option value="DESEMBARGO">DESEMBARGO</option>
+      <option value="REVOCATORIA DIRECTA">REVOCATORIA DIRECTA</option>
+      <option value="INSOLVENCIA">INSOLVENCIA</option>
+      <option value="PRESCRIPCION">PRESCRIPCION</option>
+    </select>
+
+    <label>Fecha de Seguimiento <span class="muted">(opcional)</span></label>
+    <input id="bdp-seg-fecha" type="date" />
+
+    <label class="bdp-seg-check">
+      <input type="checkbox" id="bdp-seg-check" disabled /> Recordar
+    </label>
+    <div id="bdp-seg-aviso" class="bdp-seg-aviso" style="display:none;"></div>
+
+    <div class="btn-row" style="margin-top:14px;">
+      <button id="btn-bdp-dec-guardar" class="btn-primary">Confirmar</button>
+      <button id="btn-bdp-dec-cancelar" class="danger">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal REBOTAR (objeción al asignador) -->
+<div id="modal-bdp-rebotar" class="hidden"
+  style="position:fixed;inset:0;background:var(--scrim);z-index:10000;
+         display:flex;align-items:center;justify-content:center;padding:16px;">
+  <div class="card narrow" style="margin:0;width:min(560px,100%);">
+    <h2 style="color:var(--primary);">REBOTAR EXPEDIENTE</h2>
+    <p class="helper" style="margin-top:0;">Envía objeción al asignador. No realiza ningún cambio en el expediente.</p>
+    <div id="bdp-reb-context" style="text-align:center;font-size:.85rem;font-weight:700;color:var(--text-sub);margin-bottom:10px;"></div>
+
+    <label>Justificación</label>
+    <textarea id="bdp-reb-justif" rows="5" placeholder="Explica la razón de la objeción"></textarea>
+
+    <div class="btn-row" style="margin-top:14px;">
+      <button id="btn-bdp-reb-guardar" class="btn-primary">Enviar objeción</button>
+      <button id="btn-bdp-reb-cancelar" class="danger">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+    <!-- ============================================================
+     MODAL: MIS EXPEDIENTES (explorador de Drive, columna K)
+     ============================================================ -->
+<div id="modal-bdp-expedientes" class="hidden"
+  style="position:fixed;inset:0;background:var(--scrim);z-index:10000;
+         display:flex;align-items:center;justify-content:center;padding:16px;">
+  <div class="card" style="margin:0;width:min(640px,100%);max-height:88vh;
+       display:flex;flex-direction:column;gap:12px;">
+
+    <div class="bdp-exp-header">
+      <img src="img/expediente.webp"
+           alt="" style="width:26px;height:26px;object-fit:contain;" />
+      <h2 style="color:var(--primary);margin:0;">MIS EXPEDIENTES</h2>
+    </div>
+
+    <!-- Ruta / carpeta actual -->
+    <div id="bdp-exp-path" class="bdp-exp-path"></div>
+
+    <!-- Filtro -->
+    <div class="bdp-exp-filter">
+      <input id="bdp-exp-filtro" type="text" autocomplete="off"
+             placeholder="🔍 Filtrar por nombre…" />
+      <button id="bdp-exp-filtro-clear" type="button"
+              class="bdp-exp-filtro-clear" title="Limpiar">✕</button>
+    </div>
+
+    <!-- Listado dinámico -->
+    <div id="bdp-exp-list" class="bdp-exp-list"></div>
+
+    <!-- Botones -->
+    <div class="btn-row" style="margin-top:4px;">
+      <button id="btn-bdp-exp-atras" class="btn-primary"
+        style="background:linear-gradient(135deg,#64748b,#475569);display:none;">
+        ⟵ ATRÁS
+      </button>
+      <button id="btn-bdp-exp-salir" class="danger">SALIR</button>
+    </div>
+  </div>
+</div>
+
+    <!-- ============================================================
+     MODAL: EXPEDIENTE (archivo AL — visualizar / explorar)
+     ============================================================ -->
+<div id="modal-bdp-archivo" class="hidden"
+  style="position:fixed;inset:0;background:var(--scrim);z-index:10000;
+         display:flex;align-items:center;justify-content:center;padding:16px;">
+  <div class="card" style="margin:0;width:min(760px,100%);max-height:90vh;
+       display:flex;flex-direction:column;gap:12px;">
+
+    <div class="bdp-exp-header">
+      <img src="img/pdf.webp"
+           alt="" style="width:26px;height:26px;object-fit:contain;" />
+      <h2 style="color:var(--primary);margin:0;">EXPEDIENTE</h2>
+    </div>
+    <div id="bdp-arch-context" style="text-align:center;font-size:.85rem;font-weight:700;color:var(--text-sub);"></div>
+
+    <!-- Estado A: con archivo (visualización) -->
+    <div id="bdp-arch-view" style="display:none;flex-direction:column;gap:12px;flex:1;min-height:0;">
+      <div class="bdp-arch-frame">
+        <iframe id="bdp-arch-iframe" src="" allow="autoplay"></iframe>
+      </div>
+      <div class="btn-row">
+        <button id="btn-bdp-arch-reemplazar" class="btn-primary"
+          style="background:linear-gradient(135deg,#7c3aed,#4f46e5);">Reemplazar</button>
+        <button id="btn-bdp-arch-eliminar" class="danger">Eliminar</button>
+        <button id="btn-bdp-arch-salir1" class="btn-primary"
+          style="background:linear-gradient(135deg,#64748b,#475569);">Salir</button>
+      </div>
+    </div>
+
+    <!-- Estado B: sin archivo (explorador) -->
+    <div id="bdp-arch-explorer" style="display:none;flex-direction:column;gap:10px;flex:1;min-height:0;">
+      <div id="bdp-arch-path" class="bdp-exp-path"></div>
+      <div class="bdp-exp-filter">
+        <input id="bdp-arch-filtro" type="text" autocomplete="off" placeholder="🔍 Filtrar por nombre…" />
+        <button id="bdp-arch-filtro-clear" type="button" class="bdp-exp-filtro-clear" title="Limpiar">✕</button>
+      </div>
+      <div id="bdp-arch-list" class="bdp-exp-list"></div>
+      <div class="btn-row">
+        <button id="btn-bdp-arch-atras" class="btn-primary"
+          style="background:linear-gradient(135deg,#64748b,#475569);display:none;">⟵ ATRÁS</button>
+        <button id="btn-bdp-arch-salir2" class="danger">SALIR</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+    <!-- ============================================================
+     VISTA PANEL BD PREDIAL
+     ============================================================ -->
+<section id="view-bdp-panel" class="view">
+  <div class="panel-card">
+
+    <!-- Header -->
+    <div class="panel-header">
+      <div class="panel-title-wrap">
+        <img src="img/base-de-datos.webp" alt="Panel BD Predial" />
+        <div>
+          <h2 class="panel-title">PANEL — BD PREDIAL 📊</h2>
+          <div class="panel-subtitle" id="bdpp-subtitle">Cargando datos...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="panel-toolbar">
+      <button class="panel-tab active" id="bdpp-tab-resumen" onclick="bdppShowTab_('resumen')">
+        <img src="img/barras.png" alt="" />
+        RESUMEN
+      </button>
+      <button class="panel-tab" id="bdpp-tab-cartera" onclick="bdppShowTab_('cartera')">
+        <img src="img/target.webp" alt="" />
+        CARTERA
+      </button>
+      <button class="panel-tab" id="bdpp-tab-actuaciones" onclick="bdppShowTab_('actuaciones')">
+        <img src="img/firma.webp" alt="" />
+        ACTUACIONES
+      </button>
+      <button class="panel-tab" id="bdpp-tab-equipo" onclick="bdppShowTab_('equipo')">
+        <img src="img/usuarios.webp" alt="" />
+        EQUIPO
+      </button>
+      <button class="danger panel-tab" onclick="bdppGoBack_()">← REGRESAR</button>
+    </div>
+
+    <!-- ══════════ TAB: RESUMEN ══════════ -->
+    <div id="bdpp-view-resumen" class="panel-animate">
+      <div class="panel-kpis" id="bdpp-kpis-resumen"></div>
+
+      <div class="panel-grid-2">
+        <div class="panel-section">
+          <div class="panel-section-title">
+            <img src="img/target.webp" alt="" />
+            DISTRIBUCIÓN POR CLASIFICACIÓN
+          </div>
+          <div class="panel-chart-wrap" style="height:280px;">
+            <canvas id="bdpp-chart-clasif"></canvas>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <div class="panel-section-title">
+            <img src="img/barras.png" alt="" />
+            ESTADO DEL PROCESO
+          </div>
+          <div class="panel-chart-wrap" style="height:280px;">
+            <canvas id="bdpp-chart-estado"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ TAB: CARTERA ══════════ -->
+    <div id="bdpp-view-cartera" class="panel-animate" style="display:none;">
+      <div class="panel-kpis" id="bdpp-kpis-cartera"></div>
+
+      <div class="panel-section">
+        <div class="panel-section-title">
+          <img src="img/target.webp" alt="" />
+          TOP 10 DEUDORES
+        </div>
+        <div class="ranking-list" id="bdpp-top-deudores"></div>
+      </div>
+
+      <div class="panel-section">
+        <div class="panel-section-title">
+          <img src="img/barras.png" alt="" />
+          MONTO ACUMULADO POR CLASIFICACIÓN
+        </div>
+        <div class="panel-chart-wrap" style="height:280px;">
+          <canvas id="bdpp-chart-monto-clasif"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ TAB: ACTUACIONES ══════════ -->
+    <div id="bdpp-view-actuaciones" class="panel-animate" style="display:none;">
+      <div class="panel-kpis" id="bdpp-kpis-actuaciones"></div>
+
+      <div class="panel-section">
+        <div class="panel-section-title">
+          <img src="img/firma.webp" alt="" />
+          DISTRIBUCIÓN POR ACTUACIÓN
+        </div>
+        <div class="panel-chart-wrap" style="height:340px;">
+          <canvas id="bdpp-chart-actuacion"></canvas>
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <div class="panel-section-title">
+          <img src="img/target.webp" alt="" />
+          MONTO ADEUDADO POR ACTUACIÓN
+        </div>
+        <div class="panel-chart-wrap" style="height:300px;">
+          <canvas id="bdpp-chart-monto-actuacion"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ TAB: EQUIPO ══════════ -->
+    <div id="bdpp-view-equipo" class="panel-animate" style="display:none;">
+      <div class="panel-kpis" id="bdpp-kpis-equipo"></div>
+
+      <div class="panel-section">
+        <div class="panel-section-title">
+          <img src="img/usuarios.webp" alt="" />
+          RANKING POR SUSTANCIADOR
+        </div>
+        <div class="ranking-list" id="bdpp-ranking-sust"></div>
+      </div>
+
+      <div class="panel-section">
+        <div class="panel-section-title">
+          <img src="img/barras.png" alt="" />
+          CARGA POR SUSTANCIADOR
+        </div>
+        <div class="panel-chart-wrap" style="height:340px;">
+          <canvas id="bdpp-chart-sust"></canvas>
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <div class="panel-section-title">
+          <img src="img/target.webp" alt="" />
+          MONTO GESTIONADO POR SUSTANCIADOR
+        </div>
+        <div class="panel-chart-wrap" style="height:280px;">
+          <canvas id="bdpp-chart-monto-sust"></canvas>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+  <!-- Cierre del Container -->
+  </div> 
+ 
+<script src="js/assets.js"></script>  <!-- FASE 2: resolvedor único de imágenes y sonidos (ANTES de app.js) -->
+<script src="js/app.js"></script>  <!-- ← JS propio al final -->
+<script src="js/identidad.js"></script>  <!-- FASE 0: identidad, roles y sesión (después de app.js) -->
+<script src="js/configuracion.js"></script>  <!-- FASE 1: Configuración (después de identidad.js) -->
+<script src="js/base-visual.js"></script>  <!-- FASE 3: base visual y capas nativas (el último) -->
+<script src="js/capa-12-antidoble.js"></script>  <!-- FASE 4: capa 12 anti doble clic -->
+<script src="js/en-vivo.js"></script>  <!-- FASE 4: vistas EN VIVO con Firebase -->
+<script src="js/alcance.js"></script>  <!-- FASE 5: alcance por filas -->
+<script src="js/descargas.js"></script>  <!-- FASE 6: los 3 modales de descarga a Excel -->
+<script src="js/visor.js"></script>  <!-- FASE 8: visor de archivos en modal -->
+<script src="js/esqueletos.js"></script>  <!-- FASE 10: esqueletos en lugar del loader (EL ÚLTIMO) -->
+<script src="js/capa-11-insights.js"></script>  <!-- FASE 11: panel de consultas (Insights) -->
+<script src="js/fechas-ios.js"></script>  <!-- FASE 13: ruedas de fecha estilo iOS -->
+<script src="js/asignador.js"></script>  <!-- FASE 13: botón ASIGNADOR en BD Predial -->
+<script src="js/asistente.js"></script>  <!-- LOTE 13/08: regla del ASISTENTE en los formularios -->
+<script src="js/bitacora.js"></script>  <!-- LOTE 06/09: filtro y panel MIS BITÁCORAS -->
+<script src="js/adjuntos.js"></script>  <!-- LOTE 06/09: adjuntar PDF o Word -->
+<script src="js/bdp-rapido.js"></script>  <!-- LOTE 08/09: listado compacto, fila conocida y precarga de la pagina -->
+<script src="js/no-aperturados.js"></script>  <!-- LOTE 08/09: pastilla NO APERTURADOS en BD Predial -->
+<script src="js/form-ancho.js"></script>  <!-- LOTE 08/09: formularios repartidos a lo ancho -->
+<script src="js/solicitud-exp.js"></script>  <!-- 17/09: SOLICITUD EXPEDIENTE en Asignaciones y BD Predial (antes de bitacora-export.js y mi-trabajo.js) -->
+<script src="js/bitacora-export.js"></script>  <!-- LOTE 10/09: descargar bitacoras de BD Predial en Excel y PDF -->
+<script src="js/mi-trabajo.js"></script>  <!-- 14/09: agrupa MIS/VER/DESCARGAR de bitacoras y actuaciones en un solo boton. Va DESPUES de bitacora.js y bitacora-export.js: les cede la pastilla. -->
+<script src="js/flandes.js"></script>  <!-- SEC-HACIENDA-FLANDES: banner, inicio, portada, cohete y firma del ecosistema Flandes (EL ÚLTIMO) -->
+
+</body>
+</html>

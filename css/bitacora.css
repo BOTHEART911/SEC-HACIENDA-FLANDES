@@ -1,0 +1,186 @@
+/* ============================================================
+   MIS BITÁCORAS — LOTE 06/09/2026 · SEC-HACIENDA
+   Pastilla de filtro + modal con las anotaciones propias.
+
+   Nota viva de la Fase 11: styles.css:146 tiene `button{width:100%}`
+   GLOBAL. Todo botón nuevo tiene que fijar su ancho o sale estirado
+   de lado a lado.
+   ============================================================ */
+
+.bit-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 6px 0 2px;
+}
+
+.bit-pill,
+.bit-ver {
+  width: auto !important;
+  flex: 0 0 auto;
+  background: linear-gradient(135deg, #0a7a46, #06402B);
+  color: #fff;
+  border-color: transparent;
+}
+
+.bit-ver {
+  background: linear-gradient(135deg, #2563eb, #1e40af);
+}
+
+.bit-pill.active {
+  box-shadow: 0 0 0 3px rgba(10, 122, 70, .28);
+  filter: saturate(1.15);
+}
+
+.bit-num { font-weight: 800; opacity: .95; }
+
+/* ── modal ───────────────────────────────────────────────────
+   Mismo patrón opaco del LOTE 13/08: velo claro y caja al 98 %,
+   sin backdrop-filter (con el blur la caja tomaba el velo y se
+   veía oscura en modo día). */
+
+#modal-bitacoras {
+  position: fixed;
+  inset: 0;
+  z-index: 10010;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(var(--surface-rgb), .30);
+}
+
+#modal-bitacoras.hidden { display: none; }
+
+#modal-bitacoras .bit-caja {
+  width: min(720px, 100%);
+  max-height: 88vh;
+  overflow: auto;
+  background: rgba(var(--surface-rgb), .98) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* ── resumen ── */
+
+.bit-resumen {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.bit-caja-num {
+  border: 1px solid rgba(6, 64, 43, .16);
+  border-radius: 12px;
+  padding: 8px 6px;
+  text-align: center;
+  background: rgba(6, 64, 43, .04);
+}
+
+.bit-caja-num b {
+  display: block;
+  font-size: 1.25rem;
+  color: var(--primary);
+  line-height: 1.15;
+}
+
+.bit-caja-num b.chica { font-size: .95rem; }
+
+.bit-caja-num span {
+  font-size: .68rem;
+  text-transform: uppercase;
+  letter-spacing: .3px;
+  opacity: .75;
+}
+
+.bit-vacio {
+  grid-column: 1 / -1;
+  margin: 6px 0;
+  text-align: center;
+  font-size: .9rem;
+  opacity: .8;
+}
+
+/* ── lista ── */
+
+.bit-lista { display: flex; flex-direction: column; gap: 8px; }
+
+.bit-mes {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #0a7a46, #06402B);
+  color: #fff;
+  font-weight: 800;
+  font-size: .78rem;
+  letter-spacing: .4px;
+}
+
+.bit-mes span {
+  background: rgba(255, 255, 255, .22);
+  border-radius: 999px;
+  padding: 1px 9px;
+  font-size: .72rem;
+}
+
+.bit-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  border: 1px solid rgba(6, 64, 43, .14);
+  border-radius: 12px;
+  padding: 9px 10px;
+  cursor: pointer;
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+
+.bit-item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(6, 64, 43, .12);
+}
+
+.bit-fecha {
+  flex: 0 0 auto;
+  min-width: 82px;
+  font-weight: 800;
+  font-size: .78rem;
+  color: var(--primary);
+  padding-top: 2px;
+}
+
+.bit-cuerpo { flex: 1 1 auto; min-width: 0; }
+
+.bit-exp {
+  margin: 0;
+  font-weight: 800;
+  font-size: .84rem;
+}
+
+.bit-exp span { font-weight: 500; opacity: .8; }
+
+.bit-extra {
+  margin: 1px 0 0;
+  font-size: .72rem;
+  text-transform: uppercase;
+  letter-spacing: .3px;
+  opacity: .7;
+}
+
+.bit-texto {
+  margin: 4px 0 0;
+  font-size: .82rem;
+  line-height: 1.35;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+@media (max-width: 560px) {
+  .bit-resumen { grid-template-columns: repeat(2, 1fr); }
+  .bit-item { flex-direction: column; gap: 2px; }
+  .bit-fecha { min-width: 0; }
+}

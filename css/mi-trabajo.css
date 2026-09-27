@@ -1,0 +1,171 @@
+/* ============================================================
+   MI TRABAJO — 14/09/2026 · SEC-HACIENDA
+   Pastilla única + modal con pestañas (Bitácoras / Actuaciones).
+
+   Reutiliza a propósito las clases de css/bitacora.css (.bit-resumen,
+   .bit-caja-num, .bit-lista, .bit-mes, .bit-item, .bit-fecha…): lo que
+   hay aquí es solo lo que NO existía.
+
+   Nota viva de la Fase 11: styles.css:146 tiene `button{width:100%}`
+   GLOBAL. Todo botón nuevo tiene que fijar su ancho o sale estirado de
+   lado a lado.
+   ============================================================ */
+
+/* ── la pastilla ── */
+
+.mt-pill {
+  width: auto !important;
+  flex: 0 0 auto;
+  font-size: .78rem;
+  font-weight: 800;
+  letter-spacing: .2px;
+}
+
+/* ── el modal ── */
+
+#modal-mitrabajo {
+  position: fixed;
+  inset: 0;
+  z-index: 10010;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(var(--surface-rgb), .30);
+}
+
+#modal-mitrabajo.hidden { display: none; }
+
+#modal-mitrabajo .mt-caja {
+  width: min(760px, 100%);
+  max-height: 88vh;
+  overflow: auto;
+  /* opaco a propósito: en modo día el desenfoque dejaba ilegible el
+     texto de detrás (mismo arreglo del lote 13/08). */
+  background: rgba(var(--surface-rgb), .98) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* ── pestañas ── */
+
+.mt-tabs {
+  display: flex;
+  gap: 6px;
+  margin: 2px 0 12px;
+  border-bottom: 2px solid rgba(6, 64, 43, .12);
+  padding-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.mt-tab {
+  width: auto !important;
+  flex: 0 0 auto;
+  border: 1px solid rgba(6, 64, 43, .18);
+  background: transparent;
+  color: inherit;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: .8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .12s ease, color .12s ease, transform .12s ease;
+}
+
+.mt-tab:hover { transform: translateY(-1px); }
+
+.mt-tab.active {
+  background: linear-gradient(135deg, #0a7a46, #06402B);
+  border-color: transparent;
+  color: #fff;
+}
+
+/* ── barra: de quién + interruptor de pantalla ── */
+
+.mt-barra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.mt-campo { display: flex; flex-direction: column; gap: 4px; min-width: 240px; flex: 1 1 240px; }
+
+.mt-campo label {
+  font-size: .7rem;
+  font-weight: 800;
+  letter-spacing: .4px;
+  opacity: .75;
+  text-transform: uppercase;
+}
+
+.mt-select {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(6, 64, 43, .22);
+  background: rgba(var(--surface-rgb), .98);
+  color: inherit;
+  font-size: .85rem;
+}
+
+.mt-switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: .82rem;
+  cursor: pointer;
+  padding-bottom: 8px;
+}
+
+.mt-switch input { width: auto; margin: 0; }
+
+.mt-nota {
+  margin: 0;
+  font-size: .8rem;
+  opacity: .8;
+  flex: 1 1 240px;
+}
+
+.mt-aviso {
+  margin: 8px 0 2px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px dashed rgba(6, 64, 43, .25);
+  font-size: .76rem;
+  line-height: 1.35;
+  opacity: .9;
+}
+
+/* ── grupos de la pestaña ACTUACIONES ── */
+/* .bit-mes ya trae el verde de bitácoras; aquí solo se cambia el fondo
+   para que la urgencia se lea de un vistazo. */
+
+.mt-g-rojo  { background: linear-gradient(135deg, #b91c1c, #7f1d1d) !important; }
+.mt-g-ambar { background: linear-gradient(135deg, #b45309, #78350f) !important; }
+.mt-g-verde { background: linear-gradient(135deg, #0a7a46, #06402B) !important; }
+.mt-g-gris  { background: linear-gradient(135deg, #4b5563, #1f2937) !important; }
+
+.mt-seg {
+  margin: 4px 0 0;
+  font-size: .74rem;
+  opacity: .85;
+}
+
+.mt-huerfana { opacity: .78; border-style: dashed; }
+
+/* ── botones del pie ── */
+
+.mt-botones button { width: auto !important; flex: 1 1 auto; }
+
+/* ── la lista no puede crecer sin freno dentro del modal ── */
+
+.mt-lista { max-height: 52vh; overflow: auto; padding-right: 2px; }
+
+@media (max-width: 560px) {
+  .mt-resumen { grid-template-columns: repeat(2, 1fr); }
+  .mt-barra { gap: 8px; }
+  .mt-campo { min-width: 100%; flex: 1 1 100%; }
+  .mt-lista { max-height: 46vh; }
+}

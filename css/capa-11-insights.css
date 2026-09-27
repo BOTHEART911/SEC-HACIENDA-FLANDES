@@ -1,0 +1,223 @@
+/* ===========================================================================
+   SEC-HACIENDA · css/capa-11-insights.css   (FASE 11 — INSIGHTS)
+   Se carga DESPUÉS de css/visor.css. Solo añade clases nuevas con prefijo
+   iq- : no pisa nada de styles.css ni de las otras capas.
+
+   Todo sale de los tokens de la Fase 3 (--primary, --card-bg, --text-main…),
+   así que el modo oscuro funciona solo, sin una sola regla extra.
+   =========================================================================== */
+
+/* ══════════════ BOTÓN FLOTANTE ══════════════ */
+.iq-fab {
+  position: fixed;
+  right: 14px;
+  bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+  z-index: 9450;
+  /* styles.css le pone width 100% a TODO button: sin esta línea el botón
+     se estira de lado a lado y sale una barra verde abajo, no un botón. */
+  width: auto !important; max-width: none;
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 0 16px 0 13px; height: 46px;
+  border: 0; border-radius: 999px;
+  background: linear-gradient(135deg, var(--primary, #06402b), var(--primary-2, #0b6b48));
+  color: #fff; font-weight: 800; font-size: .84rem; letter-spacing: .2px;
+  box-shadow: 0 10px 26px rgba(6,64,43,.34), 0 2px 6px rgba(0,0,0,.18);
+  cursor: pointer; touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform .16s ease, box-shadow .16s ease, filter .16s ease;
+}
+.iq-fab:hover  { filter: brightness(1.06); }
+.iq-fab:active { transform: scale(.94); }
+.iq-fab-ic { display: inline-flex; }
+.iq-fab-tx { white-space: nowrap; }
+.iq-fab-mov { transform: scale(1.08); box-shadow: 0 16px 34px rgba(0,0,0,.38); cursor: grabbing; }
+
+/* Anillo que late para que se note que está ahí */
+.iq-fab-ring {
+  position: absolute; inset: -3px; border-radius: 999px;
+  border: 2px solid rgba(255,255,255,.55);
+  opacity: 0; pointer-events: none;
+  animation: iq-late 2.8s ease-out infinite;
+}
+@keyframes iq-late {
+  0%   { transform: scale(.96); opacity: .55; }
+  70%  { transform: scale(1.14); opacity: 0; }
+  100% { transform: scale(1.14); opacity: 0; }
+}
+.iq-sin-motor .iq-fab-ring { animation: none; display: none; }
+
+@media (max-width: 380px) {
+  .iq-fab-tx { display: none; }
+  .iq-fab { padding: 0 13px; }
+}
+
+/* ══════════════ HOJA ══════════════ */
+.iq-wrap { position: fixed; inset: 0; z-index: 10020; }
+.iq-fondo {
+  position: absolute; inset: 0;
+  background: var(--scrim, rgba(0,0,0,.45));
+  opacity: 0; transition: opacity .22s ease;
+  backdrop-filter: blur(2px);
+}
+.iq-on .iq-fondo { opacity: 1; }
+
+.iq-hoja {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  display: flex; flex-direction: column;
+  max-height: 88vh; height: 88vh;
+  background: var(--card-bg, #fff);
+  background-color: rgba(var(--surface-rgb, 255,255,255), .98);
+  border-radius: 22px 22px 0 0;
+  border: 1px solid var(--card-border, rgba(6,64,43,.12));
+  box-shadow: 0 -14px 40px rgba(0,0,0,.28);
+  transform: translateY(102%);
+  transition: transform .26s cubic-bezier(.22,.9,.3,1);
+  overflow: hidden;
+}
+.iq-on .iq-hoja { transform: translateY(0); }
+
+@media (min-width: 900px) {
+  .iq-hoja {
+    left: auto; right: 18px; bottom: 18px;
+    width: 460px; height: 78vh; max-height: 78vh;
+    border-radius: 20px;
+    transform: translateY(20px) scale(.98);
+    opacity: 0;
+  }
+  .iq-on .iq-hoja { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+/* ── cabecera ── */
+.iq-h {
+  display: flex; align-items: center; gap: 10px;
+  padding: 13px 14px;
+  background: linear-gradient(135deg, var(--primary, #06402b), var(--primary-2, #0b6b48));
+  color: #fff; flex: 0 0 auto;
+}
+.iq-h-ic {
+  width: 36px; height: 36px; border-radius: 12px;
+  background: rgba(255,255,255,.16);
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.iq-h-tx { display: flex; flex-direction: column; line-height: 1.15; flex: 1 1 auto; min-width: 0; }
+.iq-h-tx b { font-size: .95rem; font-weight: 900; }
+.iq-h-tx small { font-size: .72rem; opacity: .85; }
+.iq-x {
+  border: 0; background: rgba(255,255,255,.16); color: #fff;
+  width: 34px !important; height: 34px; flex: 0 0 auto; border-radius: 50%; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.iq-x:active { transform: scale(.9); }
+
+/* ── cuerpo tipo chat ── */
+.iq-body {
+  flex: 1 1 auto; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  padding: 14px 12px 6px; display: flex; flex-direction: column; gap: 10px;
+}
+.iq-hint {
+  align-self: center; text-align: center;
+  font-size: .74rem; color: var(--text-muted, #6b7c74);
+  background: rgba(var(--surface-rgb, 255,255,255), .6);
+  border: 1px dashed var(--card-border, rgba(6,64,43,.16));
+  border-radius: 12px; padding: 7px 10px; max-width: 94%;
+}
+.iq-msg {
+  max-width: 92%; padding: 10px 13px; border-radius: 16px;
+  font-size: .87rem; line-height: 1.5; word-break: break-word;
+  animation: iq-entra .22s ease both;
+}
+@keyframes iq-entra { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: none; } }
+.iq-yo {
+  align-self: flex-end; background: var(--primary, #06402b); color: #fff;
+  font-weight: 700; border-bottom-right-radius: 5px;
+}
+.iq-bot {
+  align-self: flex-start; background: rgba(var(--surface-rgb, 255,255,255), .96);
+  color: var(--text-main, #14261d);
+  border: 1px solid var(--card-border, rgba(6,64,43,.12));
+  border-bottom-left-radius: 5px;
+  box-shadow: 0 2px 10px rgba(0,0,0,.05);
+}
+.iq-err {
+  align-self: flex-start; background: rgba(220,38,38,.1); color: #dc2626;
+  border: 1px solid rgba(220,38,38,.25); font-weight: 700;
+}
+.iq-tx p  { margin: 0 0 7px; }
+.iq-tx p:last-child { margin-bottom: 0; }
+.iq-tx ul { margin: 0 0 7px; padding-left: 17px; }
+.iq-tx li { margin: 2px 0; }
+.iq-tx b  { color: var(--primary, #06402b); font-weight: 900; }
+html[data-tema="oscuro"] .iq-tx b { color: var(--primary-light, #8ee4bd); }
+.iq-escribiendo { white-space: pre-wrap; }
+.iq-muted { color: var(--text-muted, #6b7c74); }
+
+/* puntitos de "escribiendo" */
+.iq-cargando { display: inline-flex; align-items: center; gap: 8px; }
+.iq-pts { display: inline-flex; gap: 3px; }
+.iq-pts i {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--primary, #06402b); display: inline-block;
+  animation: iq-pt 1s infinite ease-in-out;
+}
+.iq-pts i:nth-child(2) { animation-delay: .15s; }
+.iq-pts i:nth-child(3) { animation-delay: .3s; }
+@keyframes iq-pt { 0%,80%,100% { transform: translateY(0); opacity: .45; } 40% { transform: translateY(-4px); opacity: 1; } }
+.iq-carga-tx { font-size: .78rem; color: var(--text-muted, #6b7c74); }
+
+/* ── personas con WhatsApp ── */
+.iq-personas {
+  margin-top: 9px; border-top: 1px dashed var(--card-border, rgba(6,64,43,.18));
+  padding-top: 7px; display: flex; flex-direction: column; gap: 3px;
+}
+.iq-per { display: flex; align-items: center; gap: 8px; font-size: .8rem; }
+.iq-per-n { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.iq-per-wa {
+  flex: 0 0 auto; border: 0; cursor: pointer;
+  width: 26px !important; height: 26px; border-radius: 50%;
+  background: #25d366; color: #fff;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.iq-per-wa:active { transform: scale(.9); }
+
+/* ── botonera bajo cada respuesta ── */
+.iq-acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.iq-act {
+  width: auto !important;        /* si no, el button global lo estira */
+  display: inline-flex; align-items: center; gap: 5px;
+  border: 1px solid var(--card-border, rgba(6,64,43,.18));
+  background: rgba(var(--surface-rgb, 255,255,255), .7);
+  color: var(--text-sub, #3d5248);
+  border-radius: 999px; padding: 5px 11px;
+  font-size: .74rem; font-weight: 800; cursor: pointer;
+}
+.iq-act:active { transform: scale(.95); }
+.iq-act.on { background: var(--primary, #06402b); color: #fff; border-color: transparent; }
+
+/* ── pie con las consultas ── */
+.iq-pie {
+  flex: 0 0 auto; display: flex; flex-wrap: wrap; gap: 6px;
+  padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--card-border, rgba(6,64,43,.12));
+  background: rgba(var(--surface-rgb, 255,255,255), .96);
+  max-height: 30vh; overflow-y: auto;
+}
+.iq-chip {
+  width: auto !important;        /* si no, el button global lo estira */
+  border: 1px solid var(--card-border, rgba(6,64,43,.18));
+  background: rgba(var(--surface-rgb, 255,255,255), .8);
+  color: var(--text-main, #14261d);
+  border-radius: 999px; padding: 7px 12px;
+  font-size: .78rem; font-weight: 800; cursor: pointer;
+  transition: transform .12s ease, background .16s ease, color .16s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.iq-chip:hover  { background: var(--accent-dim, rgba(6,64,43,.08)); }
+.iq-chip:active { transform: scale(.94); }
+.iq-chip.on {
+  background: linear-gradient(135deg, var(--primary, #06402b), var(--primary-2, #0b6b48));
+  color: #fff; border-color: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .iq-fab, .iq-hoja, .iq-msg, .iq-fondo, .iq-pts i { transition: none !important; animation: none !important; }
+}

@@ -1,0 +1,168 @@
+/* ═══════════════════════════════════════════════════════════════════
+   FASE 7 · VISTA POR VISTA
+   1) Selectores compactos de BD Predial
+   2) Vistas que se ensanchan en PC (sin max-width escrito a mano)
+   3) Detalles de Drive Anexos y Atenciones
+   Todo con las variables del modo oscuro de la Fase 3: nada de colores
+   fijos, para que claro y oscuro salgan solos.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── 2) Ancho en PC ─────────────────────────────────────────────────
+   Antes iba en un style="max-width:1200px" dentro del HTML, y el estilo
+   en línea le ganaba a la regla de ancho de la Fase 3: la vista se
+   quedaba angosta en pantallas grandes. Ahora es una clase y manda la
+   regla de html[data-ancho="1"]. */
+.card.vista-ancha { max-width: 1200px; }
+
+/* ── 1) SELECTORES COMPACTOS ───────────────────────────────────────── */
+.vf-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 4px 0 10px;
+}
+
+.vf { position: relative; }
+
+.vf-chip {
+  width: auto !important;          /* anula el button { width:100% } global */
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1.5px solid var(--card-border);
+  background: rgba(var(--surface-rgb), .78);
+  cursor: pointer;
+  line-height: 1.1;
+  transition: border-color .14s ease, background .14s ease, transform .12s ease;
+}
+.vf-chip:hover { transform: translateY(-1px); }
+.vf-chip:active { transform: translateY(0); }
+
+.vf-titulo {
+  font-size: .62rem;
+  font-weight: 900;
+  letter-spacing: .5px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+.vf-valor {
+  font-size: .78rem;
+  font-weight: 800;
+  color: var(--text-strong, var(--primary));
+  max-width: 42vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.vf-flecha {
+  font-size: .7rem;
+  color: var(--text-muted);
+  transition: transform .18s ease;
+}
+.vf.abierto .vf-flecha { transform: rotate(180deg); }
+
+/* Con algo elegido, el selector se marca: se ve de un vistazo que la
+   lista está recortada aunque el panel esté cerrado. */
+.vf-chip.sel {
+  border-color: var(--primary);
+  background: rgba(var(--brand-rgb, 6, 64, 43), .10);
+}
+.vf-chip.sel .vf-valor { color: var(--primary); }
+
+/* ── Panel de opciones ── */
+.vf-panel {
+  display: none;
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 210px;
+  max-width: min(320px, 88vw);
+  max-height: 46vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 6px;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--card-border);
+  background: rgba(var(--surface-rgb), .99);
+  box-shadow: var(--shadow-card);
+}
+.vf.abierto .vf-panel { display: block; }
+
+.vf-op {
+  width: 100%;
+  display: block;
+  margin: 0;
+  padding: 9px 11px;
+  text-align: left;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  font-size: .8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.vf-op:hover { background: rgba(var(--surface-rgb), .55); }
+.vf-op.activa {
+  background: rgba(var(--brand-rgb, 6, 64, 43), .12);
+  color: var(--primary);
+  font-weight: 900;
+}
+
+/* En móvil: dos selectores por fila (así los 4 caben en dos renglones en
+   vez de cuatro) y el panel a todo el ancho de la barra. */
+@media (max-width: 560px) {
+  .vf-row {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .vf { position: static; }
+  .vf-chip {
+    width: 100% !important;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1px;
+    padding: 6px 10px;
+  }
+  .vf-flecha { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); }
+  .vf.abierto .vf-flecha { transform: translateY(-50%) rotate(180deg); }
+  .vf-chip { position: relative; }
+  .vf-valor { max-width: calc(50vw - 46px); }
+  .vf-panel { left: 0; right: 0; max-width: none; }
+}
+
+/* La pastilla "SOLO LAS MÍAS" queda pegada a la barra, no suelta. */
+#bdp-pills-mias-wrap { margin-top: 0 !important; margin-bottom: 10px; }
+
+/* ── 3) DRIVE ANEXOS ────────────────────────────────────────────────
+   Con ADMIN viendo a todo el equipo, la rejilla necesita respirar. */
+#drive-grid { display: grid; gap: 12px; grid-template-columns: 1fr; }
+@media (min-width: 700px)  { #drive-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+@media (min-width: 1100px) { #drive-grid { grid-template-columns: repeat(3, minmax(0,1fr)); } }
+#drive-grid > .drive-card { margin: 0; height: 100%; }
+
+/* ── LOTE 08/09 (ajuste) · las pastillas de BD Predial, en UNA fila ──
+   Eran tres bloques uno debajo de otro y dejaban media pantalla vacía en
+   PC. Pasándolas a inline-flex fluyen en la misma línea y bajan solas
+   cuando no caben (móvil), sin tocar el HTML ni el orden de nadie.
+   OJO: SIN !important a propósito. app.js esconde "SOLO LAS MÍAS" con
+   style.display='none' y eso tiene que seguir mandando. */
+#bdp-pills-mias-wrap,
+#view-bd-predial .bit-wrap,
+#bdp-noap-wrap {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  vertical-align: middle;
+  margin: 0 8px 10px 0;
+}
+
+/* Los botones de acción abren su propia fila, pase lo que pase arriba. */
+#view-bd-predial .btn-row { clear: both; }

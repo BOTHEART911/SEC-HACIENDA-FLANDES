@@ -1,0 +1,208 @@
+/* ============================================================
+   DESCARGAS — FASE 6 · SEC-HACIENDA
+   Estilos del modal de los 3 botones de descarga a Excel.
+   Solo clases dsc-*: no toca nada de styles.css.
+   Los colores salen de las variables del tema, así el modal
+   sirve igual en claro y en oscuro (Fase 3).
+   ============================================================ */
+
+/* LOTE 13/08 — el modal ya no se ve transparente ni oscuro en modo día.
+   Por qué pasaba: `.card` de styles.css es cristal (--card-bg = blanco al
+   10% + backdrop-filter). Sobre la app se ve bien, pero dentro de un modal
+   el desenfoque toma el velo negro de atrás y la caja sale oscura. Aquí se
+   hace lo mismo que styles.css ya hacía con los otros modales: velo claro
+   y caja opaca. Sirve igual en oscuro, porque --surface-rgb cambia con el
+   tema. */
+#modal-descargas {
+  position: fixed;
+  inset: 0;
+  background: rgba(var(--surface-rgb), .30);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+#modal-descargas.hidden { display: none; }
+
+.dsc-caja {
+  margin: 0;
+  width: min(680px, 100%);
+  max-height: 88vh;
+  overflow-y: auto;
+  background: rgba(var(--surface-rgb), .98) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: 0 20px 60px rgba(6, 64, 43, .22) !important;
+}
+
+.dsc-alcance {
+  margin: 0 0 12px;
+  font-weight: 700;
+  font-size: .9rem;
+  color: var(--text-muted);
+}
+
+/* ── filtros ── */
+
+.dsc-filtros { margin-bottom: 12px; }
+
+.dsc-campo { margin-bottom: 10px; }
+.dsc-campo label { display: block; margin-bottom: 4px; }
+.dsc-campo select { width: 100%; }
+
+.dsc-rango {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.dsc-rango label { display: block; margin-bottom: 4px; }
+.dsc-rango input { width: 100%; }
+
+.dsc-nota {
+  margin: 6px 0 0;
+  font-size: .82rem;
+  color: var(--text-muted);
+}
+
+.dsc-orden {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: .9rem;
+  cursor: pointer;
+}
+.dsc-orden input { width: 18px; height: 18px; margin: 0; }
+
+/* ── LOTE 13/08 — bloque de rango opcional/obligatorio ── */
+
+.dsc-bloque {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--input-border);
+  border-radius: 12px;
+  background: rgba(var(--surface-rgb), .55);
+}
+.dsc-bloque .dsc-rango { margin-top: 6px; }
+.dsc-bloque.dsc-off .dsc-rango { opacity: .45; pointer-events: none; }
+
+.dsc-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: .82rem;
+  font-weight: 700;
+  letter-spacing: .4px;
+  text-transform: uppercase;
+  color: var(--primary);
+  cursor: pointer;
+}
+.dsc-check input { width: 18px; height: 18px; margin: 0; flex: 0 0 auto; }
+
+/* ── columnas ── */
+
+.dsc-cols-cab {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.dsc-cols-cab label { margin: 0; }
+
+.dsc-cols-acc { display: flex; gap: 6px; }
+
+.dsc-mini {
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--input-border);
+  background: transparent;
+  color: var(--primary);
+  font-size: .78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.dsc-mini:hover { background: var(--accent-dim); }
+
+.dsc-columnas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 2px 10px;
+  max-height: 34vh;
+  overflow-y: auto;
+  padding: 8px;
+  border: 1px solid var(--input-border);
+  border-radius: 12px;
+}
+
+.dsc-col {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 4px;
+  margin: 0;
+  font-size: .86rem;
+  font-weight: 600;
+  line-height: 1.2;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.dsc-col:hover { background: var(--accent-dim); }
+.dsc-col input { width: 18px; height: 18px; margin: 0; flex: 0 0 auto; }
+.dsc-col span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── avance ── */
+
+.dsc-avance {
+  margin: 10px 0 0;
+  min-height: 1.2em;
+  font-weight: 700;
+  font-size: .88rem;
+  color: var(--primary);
+}
+
+/* LOTE 06/09 — el mismo renglón sirve de aviso cuando algo sale mal (antes
+   el aviso solo existía en SweetAlert y quedaba DEBAJO del modal). */
+.dsc-avance-malo {
+  color: #dc2626;
+  background: rgba(220, 38, 38, .08);
+  border: 1px solid rgba(220, 38, 38, .35);
+  border-radius: 10px;
+  padding: 8px 10px;
+  line-height: 1.35;
+}
+
+/* El mismo renglón cuando el aviso no es un error, solo una explicación
+   ("no hay filas para descargar"). */
+.dsc-avance-aviso {
+  color: #b45309;
+  background: rgba(217, 119, 6, .10);
+  border: 1px solid rgba(217, 119, 6, .35);
+  border-radius: 10px;
+  padding: 8px 10px;
+  line-height: 1.35;
+}
+
+/* FASE 8 — cuántas filas se van a descargar con los filtros de ahora.
+   Va más apagado que el avance para que no compitan. */
+.dsc-conteo {
+  margin: 8px 0 0;
+  min-height: 1.1em;
+  font-weight: 800;
+  font-size: .8rem;
+  text-align: center;
+  color: var(--text-muted, var(--text-sub));
+}
+.dsc-conteo:empty { display: none; }
+
+/* ── móvil ── */
+
+@media (max-width: 560px) {
+  .dsc-columnas { grid-template-columns: 1fr; max-height: 40vh; }
+  .dsc-rango { grid-template-columns: 1fr; }
+  .dsc-caja { max-height: 92vh; }
+}

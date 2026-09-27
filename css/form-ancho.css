@@ -1,0 +1,54 @@
+/* ============================================================
+   FORM-ANCHO · LOTE 08/09/2026 — formularios repartidos a lo ancho
+   Va con js/form-ancho.js, que es quien empareja cada etiqueta con su
+   campo dentro de un `.fa-g`.
+   ============================================================ */
+
+/* En móvil todo sigue EXACTAMENTE igual que hoy: una columna.
+   El grupo no pinta nada por sí mismo, solo agrupa. */
+.fa-g { min-width: 0; }
+.fa-g > label { display: block; }
+.fa-g > input,
+.fa-g > select,
+.fa-g > textarea { width: 100%; }
+
+/* ── 2 columnas ──────────────────────────────────────────── */
+@media (min-width: 820px) {
+
+  /* La tarjeta de estos formularios deja de ser angosta. Se pisa con el
+     id de la vista para ganarle a `html[data-ancho="1"] .card.narrow`
+     de css/base-visual.css, que las mantiene en 560 px. */
+  #view-bdp-form .card.narrow,
+  #view-agregar-asignacion .card.narrow,
+  #view-editar-asignacion .card.narrow {
+    max-width: 100%;
+  }
+
+  .fa-cont {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 18px;
+    row-gap: 2px;
+    align-items: start;
+  }
+
+  /* Todas las etiquetas ocupan el mismo alto (caben dos líneas) y se
+     apoyan sobre su campo. Así, cuando una se parte en dos —"Ficha
+     Catastral (12-15 dígitos, opcional)"— su campo NO se baja respecto
+     a los vecinos de la misma línea. */
+  .fa-g { display: grid; grid-template-rows: 2.6em; }
+  .fa-g > label { align-self: end; }
+
+  /* Lo que no es un campo (títulos, avisos, filas de botones) ocupa la
+     fila entera y no se mezcla con la rejilla. */
+  .fa-cont > *:not(.fa-g) { grid-column: 1 / -1; }
+  .fa-g.fa-full           { grid-column: 1 / -1; }
+
+  /* Cada campo respira igual que cuando iban en columna. */
+  .fa-g { margin-bottom: 10px; }
+}
+
+/* ── 3 columnas ──────────────────────────────────────────── */
+@media (min-width: 1180px) {
+  .fa-cont { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}

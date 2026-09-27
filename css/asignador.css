@@ -1,0 +1,103 @@
+/* ============================================================
+   ASIGNADOR — FASE 13 · SEC-HACIENDA
+   Ojo: styles.css tiene `button { width:100% }` global, así que
+   TODO botón de esta capa fija su propio ancho con !important.
+   ============================================================ */
+
+.asg-wrap{
+  position:fixed; inset:0; z-index:10020;
+  display:flex; align-items:flex-end; justify-content:center;
+  opacity:0; transition:opacity .18s ease;
+}
+.asg-wrap.asg-on{ opacity:1; }
+@media (min-width:720px){ .asg-wrap{ align-items:center; } }
+
+.asg-fondo{ position:absolute; inset:0; background:var(--scrim, rgba(0,0,0,.45)); }
+
+.asg-hoja{
+  position:relative; width:min(560px,100%);
+  max-height:86vh; display:flex; flex-direction:column;
+  background:var(--card, #fff); color:var(--text, #14231c);
+  border-radius:18px 18px 0 0;
+  box-shadow:0 -10px 40px rgba(0,0,0,.28);
+  transform:translateY(14px); transition:transform .2s ease;
+  padding-bottom:env(safe-area-inset-bottom, 0);
+}
+.asg-wrap.asg-on .asg-hoja{ transform:translateY(0); }
+@media (min-width:720px){ .asg-hoja{ border-radius:18px; } }
+
+.asg-h{
+  display:flex; align-items:center; gap:10px;
+  padding:14px 14px 10px; border-bottom:1px solid rgba(6,64,43,.12);
+}
+.asg-h-tx{ flex:1; min-width:0; display:flex; flex-direction:column; }
+.asg-h-tx b{ color:var(--primary, #06402B); font-size:1rem; letter-spacing:.4px; }
+.asg-h-tx small{ color:var(--text-sub, #5b6b62); font-size:.78rem;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+.asg-x{
+  width:34px !important; height:34px; flex:0 0 34px;
+  border:none; border-radius:50%; cursor:pointer;
+  background:rgba(6,64,43,.08); color:var(--primary, #06402B);
+  font-size:1rem; line-height:1; padding:0;
+}
+
+.asg-body{ padding:12px 14px; overflow:auto; }
+
+.asg-sec{ margin-bottom:14px; }
+.asg-sec-t{
+  display:flex; align-items:center; gap:8px;
+  font-weight:800; font-size:.86rem; color:var(--primary, #06402B);
+  text-transform:uppercase; letter-spacing:.3px;
+}
+.asg-lock{
+  font-size:.66rem; font-weight:700; text-transform:none; letter-spacing:0;
+  background:rgba(6,64,43,.08); color:var(--text-sub, #5b6b62);
+  padding:2px 7px; border-radius:20px;
+}
+.asg-actual{ font-size:.78rem; color:var(--text-sub, #5b6b62); margin:2px 0 8px; }
+.asg-actual b{ color:var(--text, #14231c); }
+
+.asg-chips{ display:flex; flex-wrap:wrap; gap:7px; }
+.asg-chip{
+  width:auto !important; max-width:100%;
+  border:1.5px solid rgba(6,64,43,.18); border-radius:22px;
+  background:var(--card, #fff); color:var(--text, #14231c);
+  font-size:.78rem; font-weight:700; padding:7px 12px;
+  cursor:pointer; line-height:1.15; text-align:left;
+  transition:background .15s ease, border-color .15s ease, color .15s ease;
+}
+.asg-chip:hover:not(:disabled){ border-color:var(--primary, #06402B); }
+.asg-chip.asg-on-chip{
+  background:var(--primary, #06402B); border-color:var(--primary, #06402B); color:#fff;
+}
+.asg-chip:disabled{ opacity:.5; cursor:not-allowed; }
+.asg-chip.asg-quitar{ border-style:dashed; color:#b91c1c; border-color:rgba(185,28,28,.4); }
+.asg-chip.asg-quitar.asg-on-chip{ background:#b91c1c; border-color:#b91c1c; color:#fff; }
+
+.asg-vacio{ font-size:.78rem; color:var(--text-sub, #5b6b62); margin:4px 0; }
+.asg-nota{ font-size:.74rem; color:var(--text-sub, #5b6b62); margin:10px 0 0; }
+
+.asg-pie{
+  display:flex; gap:8px; padding:12px 14px;
+  border-top:1px solid rgba(6,64,43,.12);
+}
+.asg-ok, .asg-cancel{
+  flex:1 1 0; width:auto !important;
+  border:none; border-radius:12px; padding:11px 12px;
+  font-weight:800; font-size:.86rem; cursor:pointer;
+}
+.asg-ok{ background:var(--primary, #06402B); color:#fff; }
+.asg-ok:disabled{ opacity:.45; cursor:not-allowed; }
+.asg-cancel{ background:rgba(6,64,43,.08); color:var(--text, #14231c); }
+
+/* El botón nuevo de la tarjeta usa .bdp-icon-btn, que ya tiene estilo.
+   Solo se le da un matiz para distinguirlo del resto. */
+.bdp-icon-btn.asg-btn{
+  background:linear-gradient(135deg,#1d4ed8,#1e3a8a);
+}
+.bdp-icon-btn.asg-btn img{ filter:brightness(0) invert(1); }
+
+@media (prefers-reduced-motion: reduce){
+  .asg-wrap, .asg-hoja{ transition:none !important; }
+}

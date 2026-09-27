@@ -1,0 +1,86 @@
+/* ============================================================
+   KIT-FLANDES · VISTA INSTALAR — estilos
+   Pareja de kit/instalar.js.
+   ============================================================ */
+
+.kit-inst__hoja { width: min(440px, 100%); }
+.kit-inst__cuerpo { display: flex; flex-direction: column; gap: 14px; }
+
+.kit-inst__p { margin: 0; font: 400 14px/1.55 var(--k-fuente); color: var(--k-tinta-2); }
+.kit-inst__p b { color: var(--k-tinta); font-weight: 600; }
+
+.kit-inst__pasos {
+  margin: 0;
+  padding-left: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  font: 400 14px/1.5 var(--k-fuente);
+  color: var(--k-tinta-2);
+}
+.kit-inst__pasos li::marker { color: var(--k-marca); font-weight: 700; }
+.kit-inst__pasos b { color: var(--k-tinta); font-weight: 600; }
+
+.kit-inst__ico {
+  display: inline-block;
+  padding: 1px 6px;
+  background: rgba(var(--k-marca-rgb), .12);
+  border-radius: var(--k-r-sm);
+}
+
+.kit-inst__ojo {
+  margin: 0;
+  font: 400 13px/1.5 var(--k-fuente);
+  color: var(--k-aviso);
+  background: var(--k-aviso-fondo);
+  border-radius: var(--k-r-md);
+  padding: 11px 13px;
+}
+.kit-inst__ojo b { font-weight: 700; }
+
+.kit-inst__video {
+  width: 100%;
+  max-height: 340px;
+  object-fit: contain;
+  border-radius: var(--k-r-md);
+  background: var(--k-papel-2);
+  display: block;
+}
+
+.kit-inst__copiar { justify-content: center; }
+
+/* 4.5 · la hoja de "ya la tienes instalada": un sello verde con su halo,
+   para que se entienda de un vistazo que no hay nada que hacer. */
+.kit-inst__listo {
+  position: relative;
+  width: 84px; height: 84px;
+  margin: 2px auto 14px;
+  display: grid; place-items: center;
+}
+.kit-inst__listo-ico {
+  position: relative;
+  width: 68px; height: 68px; border-radius: 50%;
+  display: grid; place-items: center;
+  color: #fff; background: #1f9d55;
+  animation: kit-inst-sello .5s cubic-bezier(.2, 1.5, .4, 1) both;
+}
+.kit-inst__listo-halo {
+  position: absolute; inset: 0; border-radius: 50%;
+  border: 2px solid rgba(31, 157, 85, .55);
+  animation: kit-inst-halo 2.6s ease-out infinite;
+}
+@keyframes kit-inst-sello { from { transform: scale(.3); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes kit-inst-halo {
+  0%   { transform: scale(.86); opacity: .9; }
+  70%  { transform: scale(1.22); opacity: 0; }
+  100% { transform: scale(1.22); opacity: 0; }
+}
+.kit-inst__reinstalar {
+  border: 0; background: none; padding: 0;
+  font: inherit; color: var(--brand, #06402B);
+  text-decoration: underline; cursor: pointer;
+}
+@media (prefers-reduced-motion: reduce) {
+  .kit-inst__listo-ico, .kit-inst__listo-halo { animation: none; }
+  .kit-inst__listo-halo { opacity: .5; }
+}
