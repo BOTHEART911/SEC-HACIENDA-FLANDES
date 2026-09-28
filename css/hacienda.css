@@ -790,3 +790,9 @@ html.hf-en-puerta .container { padding-top: 0 !important; }
 #modal-pin .kit-sesion__clave { display: block; }
 #modal-pin .kit-sesion__ojo { color: var(--k-apagado); display: inline-grid; place-items: center; }
 #modal-pin .kit-sesion__ojo[aria-pressed="true"] { color: var(--k-marca); }
+
+/* FASE 4 — la etiqueta de etapa jurídica ("Investigaciones de Bienes /
+   Medidas Cautelares") no partía la línea y en móvil se salía de la tarjeta. */
+.etapa-badge-mini { flex-shrink: 1 !important; min-width: 0; max-width: 100%; white-space: normal; }
+.etapa-badge-mini > span { min-width: 0; overflow-wrap: anywhere; line-height: 1.25; }
+.etapa-badge-mini img, .etapa-badge-mini .hi-img { flex-shrink: 0; }
