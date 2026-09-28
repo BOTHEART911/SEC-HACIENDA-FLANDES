@@ -63,6 +63,8 @@ var APP_SHELL = [
   './manifest.webmanifest',
   './version.js',
   './js/marca.js',
+  './js/sesion.js',
+  './kit/avisos.js',
   './js/iconos-hacienda.js',
   './js/guia.js',
   './js/hacienda.js',

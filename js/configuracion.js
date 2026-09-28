@@ -560,10 +560,14 @@
        la explicación de dónde se usa cada llave a la vista. */
     var GRUPOS = [
       { t: 'Carpetas y archivos de Drive', ic: 'carpeta', pre: ['drive.', 'media.'] },
-      { t: 'WhatsApp (BuilderBot)', ic: 'whatsapp', pre: ['bb.'] },
+      { t: 'WhatsApp (BuilderBot)', ic: 'whatsapp', pre: ['bb.', 'wa.'] },
+      /* FASE 3 — Semáforo y Seguimientos de las 7 a.m. (antes eran dos
+         proyectos aparte con todo escrito en el código) */
+      { t: 'Tareas diarias: Semáforo y Seguimientos', ic: 'reloj', pre: ['sem.', 'seg.', 'tareas.'] },
+      { t: 'Avisos push al teléfono', ic: 'campana', pre: ['push.'] },
       { t: 'Firebase: chat y EN VIVO', ic: 'nube', pre: ['chat.', 'envivo.'] },
       { t: 'Voz de las consultas', ic: 'altavoz', pre: ['voz.'] },
-      { t: 'Ingreso, enlaces y topes', ic: 'candado', pre: ['pin.', 'app.', 'visor.'] }
+      { t: 'Ingreso, enlaces y topes', ic: 'candado', pre: ['pin.', 'sesion.', 'app.', 'visor.'] }
     ];
     function grupoDe(clave) {
       for (var g = 0; g < GRUPOS.length; g++) {
@@ -590,7 +594,10 @@
             '</label>';
         }).join('') + '</section>';
     }).join('') +
-    '<div class="cfg-acc-pie"><button type="button" id="cfg-av-guardar" class="kit-btn kit-btn--marca">' + ICOS('check') + 'Guardar cambios</button></div>';
+    '<div class="cfg-acc-pie">' +
+      '<button type="button" id="cfg-av-push" class="kit-btn kit-btn--plano">' + ICOS('campana') + 'Probar aviso push en mi teléfono</button>' +
+      '<button type="button" id="cfg-av-guardar" class="kit-btn kit-btn--marca">' + ICOS('check') + 'Guardar cambios</button>' +
+    '</div>';
 
     cont.querySelectorAll('.cfg-ojo').forEach(function (o) {
       o.addEventListener('click', function () {
@@ -600,6 +607,15 @@
     });
     cont.querySelectorAll('input[data-clave]').forEach(function (inp) {
       inp.addEventListener('input', function () { estado.sucias[inp.dataset.clave] = true; });
+    });
+
+    /* FASE 3 — aviso de prueba a los teléfonos registrados de quien está en sesión */
+    el_('cfg-av-push').addEventListener('click', async function () {
+      try {
+        var rp = await apiPost('cfgprobaraviso', {});
+        if (rp && rp.ok) Swal.fire({ icon: 'success', title: 'Aviso enviado', text: 'Llegó a ' + (rp.enviados || 0) + ' teléfono(s).', timer: 2200, showConfirmButton: false });
+        else Swal.fire({ icon: 'info', title: 'No salió el aviso', text: (rp && rp.error) || 'Sin teléfonos registrados.' });
+      } catch (e) { aviso_('error', 'No se pudo probar', e.message || String(e)); }
     });
 
     el_('cfg-av-guardar').addEventListener('click', async function () {

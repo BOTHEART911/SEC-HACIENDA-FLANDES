@@ -31,14 +31,86 @@
 
   /* ══════════════ 1) EL KIT NO HABLA CON EL CORE ══════════════ */
   var pedirOriginal = K.pedir;
-  K.pedir = function (accion) {
+  K.pedir = function (accion, datos) {
     if (accion === 'config') return Promise.resolve({});
     if (accion === 'ping') {
       var url = (M.API_URL || '') + '?action=ping&t=' + Date.now();
       return fetch(url, { cache: 'no-store' }).then(function () { return { ok: true }; });
     }
+    /* FASE 3 — la pieza de avisos (kit/avisos.js) habla con ESTE backend:
+       la configuración de Firebase ya llegó en el login y el teléfono se
+       registra con la acción 'registrardispositivo' (con la llave de sesión). */
+    if (accion === 'configPush') {
+      var pp = (window.HAC_PUBLICO && window.HAC_PUBLICO.push) || null;
+      return pp ? Promise.resolve(pp) : Promise.reject(new Error('Sin configuración de avisos'));
+    }
+    if (accion === 'registrarDispositivo') {
+      return fetch((M.API_URL || '') + '?action=registrardispositivo', {
+        method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ fcm: datos && datos.fcm, plataforma: datos && datos.plataforma })
+      }).then(function (r) { return r.json(); }).then(function (j) {
+        if (!j || !j.ok) throw new Error((j && j.error) || 'No se pudo registrar el teléfono');
+        return j.data;
+      });
+    }
     return pedirOriginal.apply(K, arguments);
   };
+
+  /* FASE 3 — la sesión de esta app es la de js/sesion.js (no la del CORE) */
+  K.token = function () { return window.HAC_SESION ? window.HAC_SESION.tk() : ''; };
+
+  /* ══════════════ 1b) AVISOS PUSH ══════════════
+     El service worker de los avisos no puede traer la configuración de
+     Firebase escrita: se la pasamos en la dirección con la que se registra
+     (firebase-messaging-sw.js?c=...). La dirección es estable (misma
+     configuración = misma dirección), así que no se re-registra de más. */
+  (function () {
+    var sw = navigator.serviceWorker;
+    if (!sw || !sw.register) return;
+    var registrar = sw.register.bind(sw);
+    sw.register = function (url, opciones) {
+      try {
+        var cfg = window.HAC_PUBLICO && window.HAC_PUBLICO.push && window.HAC_PUBLICO.push.firebase;
+        if (/firebase-messaging-sw\.js$/.test(String(url)) && cfg && cfg.apiKey) {
+          url = url + '?c=' + encodeURIComponent(btoa(JSON.stringify(cfg)));
+        }
+      } catch (e) {}
+      return registrar(url, opciones);
+    };
+  }());
+
+  function avisos() { return K.piezas && K.piezas.avisos; }
+  var escuchando = false;
+  window.addEventListener('hac:login', function () {
+    var a = avisos();
+    if (!a) return;
+    var pp = window.HAC_PUBLICO && window.HAC_PUBLICO.push;
+    if (!pp || !pp.firebase || !pp.vapid || pp.activo === false) return;
+    a.configurar(pp);
+    /* Igual que en las apps Flandes: el permiso se pide con el PRIMER toque
+       dentro de la app (el navegador solo lo muestra si sale de un toque) y
+       el teléfono queda registrado en silencio. */
+    a.autoActivar();
+    if (!escuchando) {
+      escuchando = true;
+      a.alLlegar(function (x) {
+        K.aviso((x.titulo ? x.titulo + ': ' : '') + (x.cuerpo || ''), 'info', 6000);
+      });
+    }
+  });
+  window.addEventListener('hac:logout', function () { var a = avisos(); if (a) a.olvidar(); });
+
+  function activarAvisos() {
+    var a = avisos();
+    var pp = window.HAC_PUBLICO && window.HAC_PUBLICO.push;
+    if (!a || !pp || !pp.firebase || !pp.vapid) {
+      K.aviso('Los avisos al teléfono aún no están configurados.', 'aviso', 4000);
+      return;
+    }
+    a.configurar(pp);
+    if (a.estado() === 'listo') { K.aviso('Los avisos ya están activos en este teléfono.', 'ok', 3000); return; }
+    a.activar({ forzar: true });
+  }
 
   /* ══════════════ 2) TEMA ══════════════ */
   var K_TEMA = 'hac.tema.v1';
@@ -131,6 +203,7 @@
         { texto: 'Guía rápida', al: function () { if (window.GUIA) window.GUIA.abrir(); } },
         { texto: 'Cambiar mi PIN', al: function () { abrirPin(); } },
         { texto: 'Cambiar foto de perfil', al: cambiarFoto },
+        { texto: 'Avisos al teléfono', al: activarAvisos },
         { texto: 'Instalar la app', al: function () { if (K.piezas.instalar) K.piezas.instalar.abrir(); } },
         { texto: 'Cambiar de usuario', al: cambiarUsuario },
         { texto: 'Cerrar sesión', peligro: true, al: salir }

@@ -502,6 +502,9 @@
   var procesarOriginal = window.procesarLoginExitoso_;
 
   window.procesarLoginExitoso_ = function (res, doc) {
+    /* FASE 3 — la llave de sesión que manda el servidor al entrar con el
+       PIN. js/sesion.js la pega a cada petición. */
+    if (res && res.tk && window.HAC_SESION) window.HAC_SESION.poner(res.tk);
     perfil = normaliza_(res);
     procesarOriginal(Object.assign({}, res, { isSuper: perfil.isSuper }), doc || perfil.documento);
 
@@ -515,10 +518,44 @@
     pintarCabecera_();
     guardarSesion_();
     guardarCuenta_();
+    if (res && res.publico) window.HAC_PUBLICO = res.publico;
+    try { window.dispatchEvent(new CustomEvent('hac:login', { detail: { uid: perfil.uid } })); } catch (_) {}
   };
+
+  /* FASE 3 — el documento ya NO abre la sesión de quien tiene PIN: solo
+     identifica la cuenta. Se guarda en este dispositivo y se pide el PIN. */
+  function pedirPin_(res) {
+    var cuentas = cuentas_().filter(function (c) { return c.uid !== res.uid; });
+    cuentas.unshift({ uid: res.uid, nombre: String(res.nombre || '').toUpperCase(), foto: res.foto || '' });
+    escribir_(K_CUENTAS, cuentas.slice(0, 6));
+    uidElegido = res.uid;
+    pinBuf = '';
+    irATab_('pin');
+    pintarPaso_();
+    try { playSoundOnce(SOUNDS.menu); } catch (_) {}
+  }
+
+  /* FASE 3 — sesión vencida o cerrada desde otro lado: se avisa una vez y
+     se vuelve al ingreso (la cuenta queda guardada para el PIN). */
+  window.addEventListener('hac:sesionVencida', function (ev) {
+    if (!perfil) return;
+    var msg = (ev && ev.detail && ev.detail.mensaje) || 'Tu sesión se venció.';
+    try {
+      Swal.fire({ icon: 'info', title: 'Vuelve a entrar', text: msg + ' Entra de nuevo con tu PIN.', timer: 4000, showConfirmButton: false });
+    } catch (_) {}
+    cerrarSesion_(false);
+  });
 
   // Cerrar sesión: limpia también lo guardado
   document.getElementById('btn-logout')?.addEventListener('click', function () {
+    /* FASE 3 — la llave se mata también en el servidor (sin esperar). */
+    try {
+      if (window.HAC_SESION && window.HAC_SESION.tk() && window.MARCA && window.MARCA.API_URL) {
+        fetch(window.MARCA.API_URL + '?action=salir', { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: '{}' }).catch(function () {});
+      }
+    } catch (_) {}
+    setTimeout(function () { if (window.HAC_SESION) window.HAC_SESION.borrar(); }, 0);
+    try { window.dispatchEvent(new CustomEvent('hac:logout')); } catch (_) {}
     borrar_(K_SESION);
     perfil = null;
     uidElegido = ''; pinBuf = '';
@@ -575,6 +612,12 @@
     yaArranco = true;
 
     var ses = leer_(K_SESION);
+    /* FASE 3 — una sesión guardada SIN llave (de antes de la Fase 3) ya no
+       le sirve al servidor: se va directo al ingreso con la cuenta lista. */
+    if (ses && ses.perfil && ses.perfil.uid && !(window.HAC_SESION && window.HAC_SESION.tk())) {
+      borrar_(K_SESION);
+      ses = null;
+    }
     if (ses && ses.perfil && ses.perfil.uid) {
       /* FASE 2 — la revalidación trae el alcance: que alcance.js no lo pida
          aparte mientras tanto (un solo viaje al abrir la app). */
@@ -614,6 +657,7 @@
     esAtencion: function () { return tieneRol_('ATENCION'); },
     cerrarSesion: function () { cerrarSesion_(false); },
     elegido: function () { return uidElegido; },
+    _pedirPin: function (res) { pedirPin_(res); },
     cuentas: function () { return cuentas_(); },
     olvidarCuenta: function (uid) { return olvidarCuenta_(uid); },
     _pintarLogin: pintarLogin_

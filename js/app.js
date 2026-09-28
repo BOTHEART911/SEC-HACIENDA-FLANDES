@@ -1,6 +1,7 @@
 /* ================== CONFIGURACIÓN ================== */
 // TODO: pega aquí la URL /exec de tu Apps Script desplegado
-const API_BASE = (window.MARCA && window.MARCA.API_URL) || 'https://script.google.com/macros/s/AKfycby_TJ_vPiqPJdJdqBMuhya_Prwb7UMoFEUMISeHv_nAqT0jepMDfu5kNBn5ayTKiuJB_A/exec';
+/* FASE 3 — la dirección del backend vive SOLO en js/marca.js. */
+const API_BASE = (window.MARCA && window.MARCA.API_URL) || '';
  
 /* ================== SONIDOS (mismos tags/estilo indexref) ================== */
 const SOUNDS = {
@@ -57,7 +58,7 @@ async function apiGet(action, params = {}){
     url.search = new URLSearchParams({ action, ...params }).toString();
     const r = await fetch(url.toString(), { method: 'GET' });
     const j = await r.json();
-    if(!j.ok) throw new Error(j.error || 'Error');
+    if(!j.ok){ const er = new Error(j.error || 'Error'); er.codigo = j.codigo || ''; throw er; }
     return j.data;
   } finally { stopLoading(); }
 }
@@ -71,7 +72,7 @@ async function apiPost(action, body = {}){
       body: JSON.stringify(body)
     });
     const j = await r.json();
-    if(!j.ok) throw new Error(j.error || 'Error');
+    if(!j.ok){ const er = new Error(j.error || 'Error'); er.codigo = j.codigo || ''; throw er; }
     return j.data;
   } finally { stopLoading(); }
 }
@@ -529,6 +530,12 @@ document.getElementById('btn-login')?.addEventListener('click', async ()=>{
 
     if(!res?.encontrado){
       await Swal.fire({ icon:'info', title:'NO TIENES ACCESO AÚN', text:'Solicitar acceso a Secretaría de Hacienda.', timer:6000, showConfirmButton:false });
+      return;
+    }
+    /* FASE 3 — con PIN, el documento solo identifica la cuenta: se pide el PIN. */
+    if(res.requierePin){
+      const ld = document.getElementById('login-doc'); if (ld) ld.value = '';
+      if (window.IDN && window.IDN._pedirPin) window.IDN._pedirPin(res);
       return;
     }
 
@@ -3891,17 +3898,8 @@ document.getElementById('btn-dec-guardar')?.addEventListener('click', async () =
 })();
 
 /* ── 2. Config Firebase ─────────────────────────────────── */
-/* FASE 2 — la configuración del chat viaja en el login (Configuración →
-   Avanzado → chat.firebase). La de abajo es solo el respaldo de fábrica. */
-const FIREBASE_CONFIG_FABRICA = {
-  apiKey:            "AIzaSyBgvBSKz-R1XDW5xUdxKyfcrmoQyJ2l5gs",
-  authDomain:        "semaforo-hacienda.firebaseapp.com",
-  databaseURL:       "https://semaforo-hacienda-default-rtdb.firebaseio.com",
-  projectId:         "semaforo-hacienda",
-  storageBucket:     "semaforo-hacienda.firebasestorage.app",
-  messagingSenderId: "372729856735",
-  appId:             "1:372729856735:web:abddede02bcc431c07df6a"
-};
+/* FASE 3 — la configuración del chat viaja SOLO en el login
+   (Configuración → Avanzado → chat.firebase); ya no hay copia escrita aquí. */
 
 /* ── 3. Estado global del chat ──────────────────────────── */
 let __fbApp      = null;
@@ -3931,9 +3929,12 @@ function initFirebase_() {
         return;
       }
       try {
-        __fbApp = firebase.apps.length
-          ? firebase.app()
-          : firebase.initializeApp((window.HAC_PUBLICO && window.HAC_PUBLICO.chatFirebase && window.HAC_PUBLICO.chatFirebase.databaseURL) ? window.HAC_PUBLICO.chatFirebase : FIREBASE_CONFIG_FABRICA);
+        /* FASE 3 — app de Firebase CON NOMBRE ('chat'): la de por defecto
+           queda para los avisos push (otro proyecto de Firebase). Antes el
+           chat tomaba la primera que hubiera y se habrían cruzado. */
+        const cfgChat = window.HAC_PUBLICO && window.HAC_PUBLICO.chatFirebase;
+        if (!cfgChat || !cfgChat.databaseURL) { resolve(null); return; }
+        __fbApp = firebase.apps.filter(a => a.name === 'chat')[0] || firebase.initializeApp(cfgChat, 'chat');
         __fbDB = firebase.database(__fbApp);
         resolve(__fbDB);
       } catch (e) {
