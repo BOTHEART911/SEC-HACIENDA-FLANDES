@@ -817,3 +817,7 @@ html.hf-en-puerta .container { padding-top: 0 !important; }
 .hf-foto__nota { text-align: center; min-height: 1.2em; }
 #modal-foto .hf-modal__pie { justify-content: center; }
 #modal-foto .kit-btn.hidden { display: none; }
+
+/* 28/09 — "¿Olvidaste tu PIN?" debajo del teclado */
+#idn-login .idn-olvide { width: 100%; margin-top: 8px; font-size: .84rem; padding: 9px 10px; color: var(--k-marca); }
+:root[data-tema="oscuro"] #idn-login .idn-olvide { color: var(--k-marca-clara); }

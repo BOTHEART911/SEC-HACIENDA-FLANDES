@@ -317,6 +317,7 @@
               '<button type="button" class="kit-btn kit-btn--plano" id="idn-volver">' + ico_('cambiar-usuario', 16) + ' Otra cuenta</button>' +
               '<button type="button" class="kit-btn kit-btn--plano" id="idn-cambiar-pin">' + ico_('pin', 16) + ' Cambiar mi PIN</button>' +
             '</div>' +
+            '<button type="button" class="kit-btn kit-btn--plano idn-olvide" id="idn-olvide">' + ico_('whatsapp', 16) + ' ¿Olvidaste tu PIN? Te lo enviamos por WhatsApp</button>' +
           '</div>' +
         '</div>';
 
@@ -324,6 +325,7 @@
         verPin = !verPin;
         pintarPuntos_();
       });
+      document.getElementById('idn-olvide').addEventListener('click', recordarPin_);
       document.getElementById('idn-volver').addEventListener('click', function () {
         uidElegido = ''; pinBuf = ''; verPin = false; pintarPaso_();
       });
@@ -385,12 +387,23 @@
     return Array.isArray(c) ? c.filter(function (x) { return x && x.uid; }) : [];
   }
 
+  /* 28/09 — la pestaña se cambia DIRECTO, no con un clic simulado: justo
+     al volver la respuesta del documento el escudo anti doble clic (capa 12)
+     todavía estaba arriba y se tragaba ese clic, así que la persona se
+     quedaba en "Documento" sin saber que ahora tocaba el PIN. */
   function irATab_(cual) {
     var tabs = document.querySelectorAll('.login-tab');
+    var hay = false;
     for (var i = 0; i < tabs.length; i++) {
-      if (tabs[i].dataset.tab === cual) { tabs[i].click(); return true; }
+      var es = tabs[i].dataset.tab === cual;
+      tabs[i].classList.toggle('active', es);
+      if (es) hay = true;
     }
-    return false;
+    if (!hay) return false;
+    var tp = document.getElementById('tab-pin'), td = document.getElementById('tab-doc');
+    if (tp) tp.classList.toggle('hidden', cual !== 'pin');
+    if (td) td.classList.toggle('hidden', cual !== 'doc');
+    return true;
   }
 
   function olvidarCuenta_(uid) {
@@ -460,6 +473,8 @@
     if (!pu || !pp) return;
 
     if (!uidElegido) {
+      var pide0 = document.querySelector('#idn-paso-pin .idn-pide');
+      if (pide0) pide0.textContent = 'Escribe tu PIN de 4 dígitos';
       pu.classList.remove('hidden');
       pp.classList.add('hidden');
       pintarCuentas_();
@@ -562,7 +577,33 @@
     pinBuf = ''; verPin = false;
     irATab_('pin');
     pintarPaso_();
+    var pide = document.querySelector('#idn-paso-pin .idn-pide');
+    if (pide) pide.textContent = 'Te encontramos. Ahora escribe tu PIN de 4 dígitos';
+    try { if (window.KIT) KIT.aviso('Te encontramos. Ahora escribe tu PIN.', 'ok', 3500); } catch (_) {}
     try { playSoundOnce(SOUNDS.menu); } catch (_) {}
+  }
+
+  /* 28/09 — "¿Olvidaste tu PIN?": el servidor lo manda al WhatsApp
+     registrado de la cuenta elegida (nunca se muestra aquí). */
+  async function recordarPin_() {
+    if (!uidElegido) return;
+    var u = cuentas_().filter(function (x) { return x.uid === uidElegido; })[0];
+    var ok = await Swal.fire({
+      icon: 'question', title: '¿Olvidaste tu PIN?',
+      text: 'Te lo enviamos por WhatsApp al celular registrado' + (u ? ' de ' + u.nombre : '') + '.',
+      showCancelButton: true, confirmButtonText: 'Enviarme el PIN', cancelButtonText: 'Cancelar'
+    });
+    if (!ok.isConfirmed) return;
+    try {
+      var r = await apiPost('recordarpin', { uid: uidElegido });
+      if (r && r.ok) {
+        Swal.fire({ icon: 'success', title: 'Revisa tu WhatsApp', text: 'Te enviamos tu PIN al celular terminado en ' + String(r.telefono || '').replace('…', '') + '.' });
+      } else {
+        Swal.fire({ icon: 'info', title: 'No se pudo enviar', text: (r && r.error) || 'Inténtalo de nuevo.' });
+      }
+    } catch (e) {
+      Swal.fire({ icon: 'error', title: 'No se pudo enviar', text: e.message || String(e) });
+    }
   }
 
   /* FASE 3 — sesión vencida o cerrada desde otro lado: se avisa una vez y
