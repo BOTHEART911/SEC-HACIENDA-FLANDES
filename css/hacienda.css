@@ -776,3 +776,17 @@ html.hf-en-puerta .container { padding-top: 0 !important; }
   .hf-modal { align-items: flex-end; padding: 0; }
   .hf-modal__hoja { width: 100%; border-radius: 22px 22px 0 0; max-height: 92dvh; padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
 }
+
+/* FASE 4 — el ojo del PIN en el ingreso: al lado de los puntos, mismo botón
+   del kit (kit-sesion__ojo), pero en la fila y no montado sobre un campo. */
+#idn-login .pin-pad { align-items: center; }
+#idn-login .idn-ojo { position: static; transform: none; margin-left: 2px; color: var(--k-apagado); display: inline-grid; place-items: center; }
+#idn-login .idn-ojo[aria-pressed="true"] { color: var(--k-marca); }
+#idn-login .pin-pad--ver .pin-dot.filled {
+  width: 22px; height: 22px; background: transparent; color: var(--k-marca);
+  display: grid; place-items: center; font: 700 1.05rem/1 var(--k-fuente-titulo); transform: none;
+}
+/* y en el modal de cambiar PIN: el campo con el ojo a la derecha */
+#modal-pin .kit-sesion__clave { display: block; }
+#modal-pin .kit-sesion__ojo { color: var(--k-apagado); display: inline-grid; place-items: center; }
+#modal-pin .kit-sesion__ojo[aria-pressed="true"] { color: var(--k-marca); }

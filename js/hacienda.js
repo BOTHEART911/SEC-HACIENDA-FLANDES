@@ -285,13 +285,29 @@
     }
     var m = $('modal-pin');
     ['pin-actual', 'pin-nuevo', 'pin-repite'].forEach(function (i) { var e = $(i); if (e) e.value = ''; });
+    ojosPin(false);
     errorPin('');
     var q = $('pin-quien');
     if (q) q.textContent = tituloCaso(nombreCorto(pinPara.nombre || ''));
     m.classList.remove('hidden');
     setTimeout(function () { var a = $('pin-actual'); if (a) a.focus(); }, 60);
   }
-  function cerrarPin() { var m = $('modal-pin'); if (m) m.classList.add('hidden'); pinPara = null; }
+  function cerrarPin() { var m = $('modal-pin'); if (m) m.classList.add('hidden'); pinPara = null; ojosPin(false); }
+
+  /* FASE 4 — el ojo de cada campo del PIN (mismo botón del kit que el de la
+     contraseña en las apps Flandes): muestra u oculta lo escrito. */
+  function pintarOjo(b, visible) {
+    b.innerHTML = K.icono(visible ? 'ojo-tapado' : 'ojo', 18);
+    b.setAttribute('aria-pressed', visible ? 'true' : 'false');
+    b.setAttribute('aria-label', visible ? 'Ocultar el PIN' : 'Mostrar el PIN');
+  }
+  function ojosPin(visible) {
+    document.querySelectorAll('#modal-pin [data-ojo-de]').forEach(function (b) {
+      var campo = $(b.getAttribute('data-ojo-de'));
+      if (campo) campo.type = visible ? 'text' : 'password';
+      pintarOjo(b, visible);
+    });
+  }
   function errorPin(t) {
     var e = $('pin-error');
     if (!e) return;
@@ -337,6 +353,18 @@
       var e = $(i);
       e.addEventListener('input', function () { soloDigitos(e); });
       e.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') guardarPin(); });
+    });
+    m.querySelectorAll('[data-ojo-de]').forEach(function (b) {
+      pintarOjo(b, false);
+      b.addEventListener('click', function (ev) {
+        ev.preventDefault();
+        var campo = $(b.getAttribute('data-ojo-de'));
+        if (!campo) return;
+        var ver = campo.type === 'password';
+        campo.type = ver ? 'text' : 'password';
+        pintarOjo(b, ver);
+        campo.focus();
+      });
     });
     m.addEventListener('click', function (ev) { if (ev.target === m) cerrarPin(); });
     document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && !m.classList.contains('hidden')) cerrarPin(); });

@@ -26,6 +26,7 @@
   var perfil = null;            // perfil completo del usuario en sesión
   var uidElegido = '';
   var pinBuf = '';
+  var verPin = false;           // FASE 4 — el ojo del PIN (se cierra al salir del paso)
 
   var ROLES = ['DEV', 'ADMIN', 'ABOGADO', 'ASISTENTE', 'ARCHIVO', 'ATENCION'];
 
@@ -250,7 +251,7 @@
     }
     perfil = null;
     uidElegido = '';
-    pinBuf = '';
+    pinBuf = ''; verPin = false;
     var b = document.getElementById('btn-logout');
     if (b) b.click(); // reusa el apagado de botones que ya hace app.js
     else showView('view-login');
@@ -282,6 +283,8 @@
             '<div class="pin-pad">' +
               '<div class="pin-dot" data-pos="0"></div><div class="pin-dot" data-pos="1"></div>' +
               '<div class="pin-dot" data-pos="2"></div><div class="pin-dot" data-pos="3"></div>' +
+              /* FASE 4 — el ojo: muestra u oculta los números escritos */
+              '<button type="button" class="kit-sesion__ojo idn-ojo" id="idn-ojo" aria-label="Mostrar el PIN" aria-pressed="false" title="Mostrar u ocultar">' + ico_('ojo', 18) + '</button>' +
             '</div>' +
             '<div class="pin-keypad">' +
               '<button type="button" class="idn-key" data-key="1">1</button>' +
@@ -304,8 +307,12 @@
           '</div>' +
         '</div>';
 
+      document.getElementById('idn-ojo').addEventListener('click', function () {
+        verPin = !verPin;
+        pintarPuntos_();
+      });
       document.getElementById('idn-volver').addEventListener('click', function () {
-        uidElegido = ''; pinBuf = ''; pintarPaso_();
+        uidElegido = ''; pinBuf = ''; verPin = false; pintarPaso_();
       });
       document.getElementById('idn-cambiar-pin').addEventListener('click', function () {
         var u = cuentas_().filter(function (x) { return x.uid === uidElegido; })[0];
@@ -333,9 +340,19 @@
   }
 
   function pintarPuntos_() {
+    var pad = document.querySelector('#idn-paso-pin .pin-pad');
+    if (pad) pad.classList.toggle('pin-pad--ver', verPin);
     document.querySelectorAll('#idn-paso-pin .pin-dot').forEach(function (d, i) {
       d.classList.toggle('filled', i < pinBuf.length);
+      /* FASE 4 — con el ojo abierto se ve el número; si no, solo el punto */
+      d.textContent = (verPin && i < pinBuf.length) ? pinBuf.charAt(i) : '';
     });
+    var ojo = document.getElementById('idn-ojo');
+    if (ojo) {
+      ojo.innerHTML = ico_(verPin ? 'ojo-tapado' : 'ojo', 18);
+      ojo.setAttribute('aria-pressed', verPin ? 'true' : 'false');
+      ojo.setAttribute('aria-label', verPin ? 'Ocultar el PIN' : 'Mostrar el PIN');
+    }
   }
 
   function teclaPin_(key) {
@@ -366,7 +383,7 @@
   function olvidarCuenta_(uid) {
     var quedan = cuentas_().filter(function (c) { return c.uid !== uid; });
     escribir_(K_CUENTAS, quedan);
-    if (uidElegido === uid) { uidElegido = ''; pinBuf = ''; }
+    if (uidElegido === uid) { uidElegido = ''; pinBuf = ''; verPin = false; }
     pintarPaso_();
     if (!quedan.length) irATab_('doc');
     return quedan;
@@ -401,7 +418,7 @@
         '<span class="idn-nom">' + u.nombre + '</span>';
       b.addEventListener('click', function () {
         uidElegido = u.uid;
-        pinBuf = '';
+        pinBuf = ''; verPin = false;
         try { playSoundOnce(SOUNDS.menu); } catch (_) {}
         pintarPaso_();
       });
@@ -529,7 +546,7 @@
     cuentas.unshift({ uid: res.uid, nombre: String(res.nombre || '').toUpperCase(), foto: res.foto || '' });
     escribir_(K_CUENTAS, cuentas.slice(0, 6));
     uidElegido = res.uid;
-    pinBuf = '';
+    pinBuf = ''; verPin = false;
     irATab_('pin');
     pintarPaso_();
     try { playSoundOnce(SOUNDS.menu); } catch (_) {}
@@ -558,7 +575,7 @@
     try { window.dispatchEvent(new CustomEvent('hac:logout')); } catch (_) {}
     borrar_(K_SESION);
     perfil = null;
-    uidElegido = ''; pinBuf = '';
+    uidElegido = ''; pinBuf = ''; verPin = false;
     setTimeout(pintarLogin_, 0);
   });
 

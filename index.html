@@ -1389,9 +1389,9 @@
       <div class="hf-modal__cab"><i class="hi" data-ico="pin"></i><h2 id="pin-t">Cambiar mi PIN</h2></div>
       <p class="hf-modal__p" id="pin-quien"></p>
       <div class="hf-pin-campos">
-        <label class="kit-sesion__campo"><span>PIN actual</span><input id="pin-actual" type="password" inputmode="numeric" maxlength="4" autocomplete="current-password" placeholder="••••"></label>
-        <label class="kit-sesion__campo"><span>PIN nuevo</span><input id="pin-nuevo" type="password" inputmode="numeric" maxlength="4" autocomplete="new-password" placeholder="••••"></label>
-        <label class="kit-sesion__campo"><span>Repite el PIN nuevo</span><input id="pin-repite" type="password" inputmode="numeric" maxlength="4" autocomplete="new-password" placeholder="••••"></label>
+        <label class="kit-sesion__campo"><span>PIN actual</span><span class="kit-sesion__clave"><input id="pin-actual" type="password" inputmode="numeric" maxlength="4" autocomplete="current-password" placeholder="••••"><button type="button" class="kit-sesion__ojo" data-ojo-de="pin-actual" aria-label="Mostrar el PIN" aria-pressed="false" title="Mostrar u ocultar"></button></span></label>
+        <label class="kit-sesion__campo"><span>PIN nuevo</span><span class="kit-sesion__clave"><input id="pin-nuevo" type="password" inputmode="numeric" maxlength="4" autocomplete="new-password" placeholder="••••"><button type="button" class="kit-sesion__ojo" data-ojo-de="pin-nuevo" aria-label="Mostrar el PIN" aria-pressed="false" title="Mostrar u ocultar"></button></span></label>
+        <label class="kit-sesion__campo"><span>Repite el PIN nuevo</span><span class="kit-sesion__clave"><input id="pin-repite" type="password" inputmode="numeric" maxlength="4" autocomplete="new-password" placeholder="••••"><button type="button" class="kit-sesion__ojo" data-ojo-de="pin-repite" aria-label="Mostrar el PIN" aria-pressed="false" title="Mostrar u ocultar"></button></span></label>
       </div>
       <p class="formulario__nota">4 dígitos. No uses números repetidos (1111) ni seguidos (1234). Te llegará un aviso por WhatsApp, sin el PIN.</p>
       <p class="kit-sesion__error" id="pin-error" role="alert"></p>

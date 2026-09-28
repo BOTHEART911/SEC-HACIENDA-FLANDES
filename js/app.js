@@ -1454,14 +1454,6 @@ document.getElementById('btn-drive-guardar')?.addEventListener('click', async ()
    Agregar al final del bloque <script> de index.html
    ============================================================ */
 
-/* FASE 5 — GRUPOS_SEMAFORO y COORDINADORES_CONTACTO3 eliminados.
-   Ya no hay parejas fijas abogado–asistente ni tabla de teléfonos:
-   cada persona lleva el suyo en la columna CONTACTO de USUARIOS y el
-   servidor lo manda en el alcance. */
-
-function getContacto3ByCoordinador_(nombre) {
-  return alcContactoDe_(nombre);
-}
 
 /* Teléfono del usuario que tiene la sesión abierta. */
 function getContactoUsuarioLogueado_() {
@@ -1654,14 +1646,6 @@ const ICONO_MEMORIA    = 'img/memoria.webp';
    FASE 5 — antes era el nombre y el teléfono de SOL MAR escritos a
    mano. Ahora es el rol ARCHIVO de la hoja USUARIOS: si mañana lo
    lleva otra persona, se le da el rol y ya. */
-
-function getPrefijo_(nombreCompleto) {
-  // Retorna los dos primeros nombres en mayúsculas
-  const partes = String(nombreCompleto || '')
-    .replace(/\s+/g, ' ').trim().toUpperCase().split(' ').filter(Boolean);
-  return partes.slice(0, 2).join(' ');
-}
-
 function esArchivo_() {
   return alcRol_('ARCHIVO');
 }
@@ -1677,8 +1661,6 @@ function telsArchivo_() {
   return out;
 }
 
-/* Compatibilidad con el nombre viejo. */
-function esSolMar_() { return esArchivo_(); }
 
 /* ── Filtro por estado (pastillas) ───────────────────────── */
 let __procStatusFilter = 'ALL';
@@ -2098,14 +2080,6 @@ function confirmarProcPicker() {
   cancelarProcPicker();
 }
 
-/* ── Contactos de los formularios ───────────────────────
-   FASE 5 — el asistente ya NO se deduce del abogado: se elige en su
-   propio selector y puede quedar vacío. Lo único automático es el
-   teléfono de cada uno, que sale de USUARIOS. */
-function getGrupoByAsignado_(nombre) {
-  const c = alcContactoDe_(nombre);
-  return c ? { asignado: nombre, contacto1: c } : null;
-}
 
 /** Rellena solo los teléfonos ocultos a partir de lo elegido. */
 function autoFillContactos_(prefijo) {
@@ -2117,10 +2091,6 @@ function autoFillContactos_(prefijo) {
   if (c2) c2.value = (asist && asist.value) ? alcContactoDe_(asist.value) : '';
 }
 
-/* Compatibilidad: el nombre viejo sigue funcionando. */
-function autoFillAsistente_(asignadoVal, prefijo) {
-  autoFillContactos_(prefijo);
-}
 
 /* ── Selector de categorías con iconos ──────────────────── */
 function renderCatSelector_(containerId, selectId, selectedValue, prefijo) {
@@ -3901,6 +3871,15 @@ document.getElementById('btn-dec-guardar')?.addEventListener('click', async () =
 /* FASE 3 — la configuración del chat viaja SOLO en el login
    (Configuración → Avanzado → chat.firebase); ya no hay copia escrita aquí. */
 
+/* FASE 4 — el chat vive bajo una RUTA PRIVADA que el servidor entrega solo
+   después del PIN (HAC_PUBLICO.chatRuta = 'chats/<clave>/'). Las reglas de
+   la base cierran todo lo demás: sin esa ruta no se lee ni se borra nada.
+   Mientras el servidor no la mande, se usa la ruta de siempre. */
+function chatRaiz_() {
+  const r = window.HAC_PUBLICO && window.HAC_PUBLICO.chatRuta;
+  return (typeof r === 'string' && /^chats\/[A-Za-z0-9_-]{40,}\/$/.test(r)) ? r : 'chats/';
+}
+
 /* ── 3. Estado global del chat ──────────────────────────── */
 let __fbApp      = null;
 let __fbDB       = null;
@@ -3946,16 +3925,6 @@ function initFirebase_() {
   });
 }
 
-/* ── 5. Utilidades de tiempo ────────────────────────────── */
-function tsRelativo_(ts) {
-  if (!ts) return '';
-  const diff = Date.now() - ts;
-  if (diff < 60000)  return 'ahora';
-  if (diff < 3600000) return Math.floor(diff / 60000) + ' min';
-  if (diff < 86400000) return Math.floor(diff / 3600000) + 'h';
-  const d = new Date(ts);
-  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
-}
 
 function fechaCorta_(ts) {
   if (!ts) return '';
@@ -4085,8 +4054,8 @@ if (resetBtn) {
   }
 
   // Refs
-  __chatRef   = db.ref('chats/' + __chatProcId + '/mensajes');
-  __typingRef = db.ref('chats/' + __chatProcId + '/typing/' +
+  __chatRef   = db.ref(chatRaiz_() + __chatProcId + '/mensajes');
+  __typingRef = db.ref(chatRaiz_() + __chatProcId + '/typing/' +
     encodeURIComponent(currentUser.nombre || 'usuario'));
 
   // Escuchar mensajes en tiempo real
@@ -4129,7 +4098,7 @@ __chatUnsubMsg = __chatRef.on('child_added', (snap) => {
   });
 
   // Escuchar indicadores de escritura (otros usuarios)
-  const typingRootRef = db.ref('chats/' + __chatProcId + '/typing');
+  const typingRootRef = db.ref(chatRaiz_() + __chatProcId + '/typing');
   __chatUnsubTyping = typingRootRef.on('value', (snap) => {
     const typing = snap.val() || {};
     const others = Object.entries(typing)
@@ -4226,23 +4195,7 @@ function chatInputAutoResize_() {
 }
 
 /* ── 14. Badges de no leídos en botones de la lista ─────── */
-let __chatBadgeListeners = {}; // id_proceso → unsubscribe
 
-function suscribirBadgeChat_(idProceso, btnEl) {
-  if (__chatBadgeListeners[idProceso]) return; // ya suscrito
-  initFirebase_().then(db => {
-    if (!db) return;
-    const ref = db.ref('chats/' + idProceso + '/mensajes');
-    const handler = ref.on('value', snap => {
-      const data = snap.val() || {};
-      const total = Object.keys(data).length;
-      // Badge en botón chat de la tarjeta (si existe)
-      const badge = btnEl?.querySelector('.chat-unread-badge');
-      if (badge) badge.textContent = total > 99 ? '99+' : String(total);
-    });
-    __chatBadgeListeners[idProceso] = () => ref.off('value', handler);
-  });
-}
 
 /* ── 15. Eventos ────────────────────────────────────────── */
 document.getElementById('btn-chat-close')?.addEventListener('click', () => {
@@ -4323,7 +4276,7 @@ abrirVerAsignacion_ = function(row) {
     initFirebase_().then(db => {
       if (!db) return;
 
-      const badgeRef = db.ref('chats/' + row.id_proceso + '/mensajes');
+      const badgeRef = db.ref(chatRaiz_() + row.id_proceso + '/mensajes');
       const badgeHandler = badgeRef.on('value', snap => {
         const badge = document.getElementById('chat-badge-ver');
         if (!badge) return;
@@ -4361,7 +4314,7 @@ document.getElementById('btn-chat-reset')?.addEventListener('click', async () =>
 
   try {
     // Borrar todo el nodo del chat en Firebase
-    await __fbDB.ref('chats/' + __chatProcId).remove();
+    await __fbDB.ref(chatRaiz_() + __chatProcId).remove();
 
     // Limpiar visualmente el contenedor de mensajes
     const container = document.getElementById('chat-messages');
@@ -4407,10 +4360,6 @@ function abrirExpedienteModal_(row) {
               text: 'Falta js/solicitud-exp.js. Recarga la app.' });
 }
 
-function cerrarExpedienteModal_() {
-  if (window.SOLEXP && typeof window.SOLEXP.cerrar === 'function') window.SOLEXP.cerrar();
-  else document.getElementById('modal-expediente')?.classList.add('hidden');
-}
 
 /* ── PATCH renderProcList_: botón expediente + chat en tarjeta ── */
 const __origRenderProcListFinal = renderProcList_;
@@ -4495,7 +4444,7 @@ renderProcList_ = function(items) {
       initFirebase_().then(db => {
         if (!db) return;
 
-        const badgeRef = db.ref('chats/' + row.id_proceso + '/mensajes');
+        const badgeRef = db.ref(chatRaiz_() + row.id_proceso + '/mensajes');
         const badgeHandler = badgeRef.on('value', snap => {
           const badge = document.getElementById('chat-card-badge-' + row.id_proceso);
           if (!badge) return;
@@ -6145,7 +6094,6 @@ function buildDataZonasChunks_(rows) {
 function canSeeBDPredial_()     { return alcVer_('bdPredial'); }
 function canEditarTodoPredial_(){ return alcPuede_('editarTodoPredial'); }
 function canAgregarPredial_()   { return alcPuede_('agregarPredial'); }
-function canEditarPredial_()    { return canEditarTodoPredial_(); }
 function canEliminarPredial_()  { return alcPuede_('eliminarPredial'); }
 function canDecisionPredial_()  { return alcPuede_('decisionPredial'); }
 function canVerPanelPredial_()  { return alcPuede_('verPanelPredial'); }
@@ -6155,11 +6103,6 @@ function bdpVerPastillaMias_() {
   return alcListo_() && !!window.ALC.alcance && window.ALC.alcance.predial === 'TODO';
 }
 
-/** ¿Trabaja expedientes prediales (como sustanciador o asistente)? */
-function esSustanciadorPredial_() {
-  return alcListo_() && window.ALC.alcance &&
-         window.ALC.alcance.predial === 'MIAS';
-}
 
 /* ── ¿El usuario es sustanciador o asistente DE ESTE expediente? ── */
 function esSustanciadorOAsistenteDePredial_(row) {
@@ -6697,15 +6640,6 @@ function bdpPagerHTML_(page, totalPages) {
   );
 }
 
-function _bdpMkBtn_(src, title) {
-  const btn = document.createElement('button');
-  btn.type = 'button';
-  btn.className = 'bdp-icon-btn';
-  btn.title = title;
-  btn.setAttribute('aria-label', title);
-  btn.innerHTML = `<img src="${src}" alt="${title}" />`;
-  return btn;
-}
 
 /* ── Botón principal: abrir BD ─────────────────────────── */
 document.getElementById('btn-bd-predial')?.addEventListener('click', () => {

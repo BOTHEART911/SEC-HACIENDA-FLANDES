@@ -43,7 +43,14 @@
   if (fetchOriginal) {
     raiz.fetch = function (entrada, opciones) {
       if (!esApi(entrada)) return fetchOriginal(entrada, opciones);
-      return fetchOriginal(conLlave(entrada), opciones).then(function (r) {
+      /* FASE 4 — la llave con la que salió ESTA petición. Si el servidor dice
+         "sesión vencida" pero la llave ya no es la de ahora (una respuesta
+         vieja que llega después de volver a entrar, o una petición que traía
+         otra llave), no se cierra la sesión buena. */
+      var urlConLlave = conLlave(entrada);
+      var m = /[?&]tk=([^&]*)/.exec(urlConLlave);
+      var llaveUsada = m ? decodeURIComponent(m[1]) : '';
+      return fetchOriginal(urlConLlave, opciones).then(function (r) {
         /* Solo se mira la respuesta si es un error pequeño (las listas
            grandes no se leen dos veces). */
         var largo = Number(r.headers && r.headers.get && r.headers.get('content-length')) || 0;
@@ -52,7 +59,7 @@
           if (txt.length > 4096 || txt.indexOf('SESION_VENCIDA') === -1) return r;
           var j = null;
           try { j = JSON.parse(txt); } catch (e) { return r; }
-          if (j && j.ok === false && j.codigo === 'SESION_VENCIDA') vencida(j.error);
+          if (j && j.ok === false && j.codigo === 'SESION_VENCIDA' && llaveUsada === leer()) vencida(j.error);
           return r;
         }, function () { return r; });
       });

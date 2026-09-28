@@ -50,6 +50,8 @@
     '.proc-action-btn', '.estad-pager-btn', '.pdf-acc', '.tema-btn'
   ];
   var SEL_CONTROL = CONTROLES.join(',');
+  var SEL_SIN_CANDADO = '.idn-key, .pin-key, #idn-ojo, [data-ojo-de]';
+  var SEL_SIN_CANDADO = '.idn-key, .pin-key, #idn-ojo, [data-ojo-de]';
 
   /* Salidas: nunca se bloquean (uno puede equivocarse de vista y no
      debe esperar a que cargue para poder salir). */
@@ -205,6 +207,14 @@
           if (tipo !== 'click') return;
           var el = ev.target && ev.target.closest ? ev.target.closest(SEL_CONTROL) : null;
           if (!el) return;
+          /* FASE 4 — teclas del PIN y ojos: se tocan rápido y a veces la misma
+             dos veces (PIN 1122). El candado de 500 ms se comía el segundo
+             toque. Siguen bajo el escudo mientras haya una petición en vuelo. */
+          if (el.matches && el.matches(SEL_SIN_CANDADO)) return;
+          /* FASE 4 — teclas del PIN y ojos: se tocan rápido y a veces la misma
+             dos veces (PIN 1122). El candado de 500 ms se comía el segundo
+             toque. Siguen bajo el escudo mientras haya una petición en vuelo. */
+          if (el.matches && el.matches(SEL_SIN_CANDADO)) return;
           if (ocupado_(el)) { tragar_(ev); return; }   /* 2.º toque */
           candado_(el);
         }, true);

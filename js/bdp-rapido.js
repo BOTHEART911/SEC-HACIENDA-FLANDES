@@ -185,7 +185,7 @@
     var porFila = {};
     for (var i = 0; i < tarjetas.length && filas.length < TOPE_BLOQUE; i++) {
       var row = lista[Number(tarjetas[i].getAttribute('data-bdp-idx'))];
-      if (!row || row.__completa || row.__pidiendo) continue;
+      if (!row || row.__completa || row.__pidiendo || (row.__intentos || 0) >= 2) continue;
       var n = Number(row.rowIndex) || 0;
       if (n < 2 || porFila[n]) continue;
       porFila[n] = row;
@@ -197,18 +197,30 @@
     if (!u) return;
 
     enVuelo = true;
-    filas.forEach(function (n) { porFila[n].__pidiendo = true; });
+    filas.forEach(function (n) { porFila[n].__pidiendo = true; porFila[n].__intentos = (porFila[n].__intentos || 0) + 1; });
 
     pedir('getpredialbloque', { uid: u, filas: filas.join(',') })
       .then(function (llegaron) {
+        /* FASE 4 — si mientras llegaba el bloque la lista se volvió a pintar
+           (datos frescos del servidor o del EN VIVO), las filas en pantalla
+           son objetos NUEVOS: se completan también, buscándolas por fila.
+           Antes solo se completaban las viejas y "Ver" volvía a esperar. */
+        var ahora = {};
+        var lista2 = listaActual() || [];
+        for (var k = 0; k < lista2.length; k++) {
+          var nn = Number(lista2[k] && lista2[k].rowIndex) || 0;
+          if (nn >= 2 && porFila[nn] && !ahora[nn]) ahora[nn] = lista2[k];
+        }
         (llegaron || []).forEach(function (full) {
-          var row = porFila[Number(full && full.rowIndex)];
-          /* El id tiene que cuadrar: si alguien borró una fila entre
-             medias, se prefiere no precargar antes que mezclar datos. */
-          if (row && full && String(row.id_predial) === String(full.id_predial)) {
-            Object.assign(row, full);
-            row.__completa = true;
-          }
+          var n2 = Number(full && full.rowIndex);
+          [porFila[n2], ahora[n2]].forEach(function (row) {
+            /* El id tiene que cuadrar: si alguien borró una fila entre
+               medias, se prefiere no precargar antes que mezclar datos. */
+            if (row && full && String(row.id_predial) === String(full.id_predial)) {
+              Object.assign(row, full);
+              row.__completa = true;
+            }
+          });
         });
       })
       .catch(function () { /* en silencio: el clic sigue funcionando */ })
@@ -217,6 +229,8 @@
         filas.forEach(function (n) {
           if (porFila[n]) porFila[n].__pidiendo = false;
         });
+        /* y si en pantalla quedaron filas sin completar, otra vuelta */
+        setTimeout(precargarVisible, 0);
       });
   }
 
