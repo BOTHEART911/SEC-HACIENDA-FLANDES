@@ -519,7 +519,11 @@
     if (!existe(orig)) return false;
     window[nombre] = function () {
       var args = arguments;
-      try { if (antes) antes.apply(null, args); } catch (e) {}
+      /* 28/09 — sin esqueleto en un refresco EN VIVO (cambio de otro usuario)
+         ni cuando la lista ya viene en la mano: antes la vista entera se
+         borraba y parpadeaba cada vez que alguien guardaba algo. */
+      var silencio = window.__HAC_VIVO || Array.isArray(args[0]);
+      try { if (antes && !silencio) antes.apply(null, args); } catch (e) {}
       var r = orig.apply(this, args);
       if (r && existe(r.then) && despues) return r.then(function (v) { try { despues(); } catch (e) {} return v; });
       if (despues) { try { despues(); } catch (e) {} }

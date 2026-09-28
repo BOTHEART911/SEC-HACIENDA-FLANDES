@@ -166,6 +166,32 @@
     return !el.classList.contains('hidden');
   }
 
+  /* 28/09 — ¿la persona está trabajando en la lista? Un filtro abierto, el
+     asunto de una tarjeta desplegado, texto seleccionado o un toque, tecla o
+     scroll en los últimos QUIETO_MS. Si sí, el cambio de otro usuario espera
+     y se aplica solo cuando la persona se queda quieta: nunca debajo de su mano. */
+  var QUIETO_MS = 15000;
+  var ultimaActividad = 0;
+  ['pointerdown', 'keydown', 'wheel', 'touchstart'].forEach(function (t) {
+    window.addEventListener(t, function () { ultimaActividad = Date.now(); }, { capture: true, passive: true });
+  });
+  window.addEventListener('scroll', function () { ultimaActividad = Date.now(); }, { passive: true });
+  function trabajando_() {
+    if (Date.now() - ultimaActividad < QUIETO_MS) return true;
+    if (document.querySelector('.view.active .vf.abierto, .view.active .proc-desc-text.expanded')) return true;
+    try { var sel = window.getSelection && window.getSelection(); if (sel && String(sel).trim()) return true; } catch (e) {}
+    return false;
+  }
+  var reintento = null;
+  function reintentar_(col) {
+    if (reintento) return;
+    reintento = setTimeout(function () {
+      reintento = null;
+      var conf = VISTAS[vistaActiva_()];
+      if (conf && conf.col === col && sucias[col]) { sucias[col] = false; refrescarVista_(col); }
+    }, 5000);
+  }
+
   /* ¿hay algo encima que no se debe pisar? */
   function tapado_() {
     if (document.querySelector('.swal2-container')) return true;
@@ -223,25 +249,31 @@
     if (!conf || conf.col !== col) return false;
     if (!existe(conf.f)) return false;
     if (refrescando) return false;
-    if (tapado_()) { sucias[col] = true; return false; }
+    if (tapado_() || trabajando_()) { sucias[col] = true; reintentar_(col); return false; }
 
     refrescando = true;
     var y = window.scrollY;
     var p;
-    /* La bandera solo tiene que durar la parte SÍNCRONA: todos estos
-       cargadores llaman a apiGet en su primera línea. */
+    /* La bandera de silencio solo tiene que durar la parte SÍNCRONA: todos
+       estos cargadores llaman a apiGet en su primera línea.
+       28/09 — __HAC_VIVO dura TODO el refresco: le dice a app.js que es un
+       cambio de otro usuario (se queda en la misma página y, si nada
+       cambió, no vuelve a pintar). */
+    window.__HAC_VIVO = true;
+    window.__HAC_VIVO_SINCAMBIO = false;
     window.__HAC_SILENCIO = true;
     try { p = conf.f(); }
-    catch (e) { window.__HAC_SILENCIO = false; refrescando = false; return false; }
+    catch (e) { window.__HAC_SILENCIO = false; window.__HAC_VIVO = false; refrescando = false; return false; }
     window.__HAC_SILENCIO = false;
 
     Promise.resolve(p).then(function () {
+      if (window.__HAC_VIVO_SINCAMBIO) return;
       reaplicarFiltro_(conf);
       try { window.scrollTo(0, y); } catch (e) {}
       chip_('Actualizado');
     }).catch(function () {
       /* silencioso a propósito: no se molesta al usuario por un fallo puntual */
-    }).then(function () { refrescando = false; });
+    }).then(function () { window.__HAC_VIVO = false; refrescando = false; });
     return true;
   }
 

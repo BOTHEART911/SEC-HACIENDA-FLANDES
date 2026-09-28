@@ -2240,6 +2240,13 @@ async function loadAndRenderProcesos_(listaYa) {
      donde esa persona es ASIGNADO o ASISTENTE (o todas, si es ADMIN,
      DEV o ARCHIVO). Aquí desapareció la suplantación por pareja. */
   const data = await apiGet('listProcesos', { uid: uidActual_() });
+  /* 28/09 — aviso EN VIVO de otro usuario: si la lista llegó igual, no se
+     vuelve a pintar nada (la vista no parpadea ni pierde la página). */
+  if (window.__HAC_VIVO && Array.isArray(data) &&
+      JSON.stringify(data) === JSON.stringify(__procListCache)) {
+    window.__HAC_VIVO_SINCAMBIO = true;
+    return;
+  }
   __procListCache = Array.isArray(data) ? data : [];
   /* FASE 7 — antes pintaba la caché entera: la pastilla de estado seguía
      marcada pero la lista se veía completa, y con el motor EN VIVO pasaba
@@ -6485,7 +6492,8 @@ const __BDP_PAGE_SIZE    = 100;  // tarjetas por página
 /* Punto de entrada que ya usa applyBDPredialFilters_ — NO cambia su firma */
 function renderBDPredial_(items) {
   __bdpFilteredCache = Array.isArray(items) ? items : [];
-  __bdpPage = 0;
+  /* 28/09 — un cambio EN VIVO de otro usuario no devuelve a la página 1 */
+  if (!window.__HAC_VIVO) __bdpPage = 0;
   bdpPaintPage_();
 }
 
@@ -9214,7 +9222,8 @@ let   __procPage       = 0;
   // Nuevo renderProcList_ paginado
   renderProcList_ = function(items) {
     __procPagedCache = Array.isArray(items) ? items : [];
-    __procPage = 0;
+    /* 28/09 — un cambio EN VIVO de otro usuario no devuelve a la página 1 */
+    if (!window.__HAC_VIVO) __procPage = 0;
     procPaintPage_();
   };
 })();
@@ -9260,7 +9269,7 @@ let   __atencPage       = 0;
 
   renderAtenciones_ = function(items) {
     __atencPagedCache = Array.isArray(items) ? items : [];
-    __atencPage = 0;
+    if (!window.__HAC_VIVO) __atencPage = 0;   /* 28/09 — EN VIVO no devuelve a la página 1 */
     atencPaintPage_();
   };
 })();
