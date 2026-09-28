@@ -70,7 +70,7 @@
   var PESTANAS = {
     bitacoras: {
       id: 'bitacoras',
-      et: '🗒️ Bitácoras',
+      et: 'Bitácoras', ico: 'libro',
       campo: 'bitacora',
       cosa: 'anotación',
       cosas: 'anotaciones',
@@ -82,7 +82,7 @@
     },
     actuaciones: {
       id: 'actuaciones',
-      et: '⚖️ Actuaciones',
+      et: 'Actuaciones', ico: 'balanza',
       campo: 'actuaciones',
       cosa: 'actuación',
       cosas: 'actuaciones',
@@ -93,7 +93,7 @@
     /* 17/09 — SOLICITUD EXPEDIENTE */
     solicitudes: {
       id: 'solicitudes',
-      et: '📨 Solicitudes',
+      et: 'Solicitudes', ico: 'sobre',
       campo: '',            /* depende de la vista: SOLEXP.campo(vista) */
       cosa: 'mensaje',
       cosas: 'mensajes',
@@ -397,7 +397,7 @@
     wrap.id = 'mt-wrap-' + vista;
     wrap.innerHTML =
       '<button type="button" id="mt-pill-' + vista + '" class="proc-status-pill mt-pill" data-salida="1">' +
-        '📂 MI TRABAJO<span class="bit-num" id="mt-num-' + vista + '"></span>' +
+        ICOS('carpeta-abierta') + 'Mi trabajo<span class="bit-num" id="mt-num-' + vista + '"></span>' +
       '</button>';
     ancla.parentNode.insertBefore(wrap, ancla.nextSibling);
 
@@ -440,7 +440,7 @@
         '<div id="mt-resumen" class="bit-resumen mt-resumen"></div>' +
         '<div id="mt-lista" class="bit-lista mt-lista"></div>' +
         '<div class="btn-row mt-botones" style="margin-top:14px;">' +
-          '<button id="btn-mt-descargar" class="btn-primary">📥 DESCARGAR</button>' +
+          '<button id="btn-mt-descargar" class="kit-btn kit-btn--marca">' + ICOS('descargar') + 'Descargar</button>' +
           '<button id="btn-mt-cerrar" class="danger">CERRAR</button>' +
         '</div>' +
       '</div>';
@@ -530,7 +530,7 @@
     var h = '';
     for (var i = 0; i < pests.length; i++) {
       h += '<button type="button" class="mt-tab' + (pests[i].id === pest.id ? ' active' : '') +
-           '" data-mt-tab="' + pests[i].id + '" data-salida="1">' + pests[i].et + '</button>';
+           '" data-mt-tab="' + pests[i].id + '" data-salida="1">' + (pests[i].ico && window.ICOS ? ICOS(pests[i].ico) : '') + pests[i].et + '</button>';
     }
     $('mt-tabs').innerHTML = h;
     $('mt-tabs').style.display = pests.length > 1 ? '' : 'none';
@@ -771,7 +771,7 @@
                  ' · último de ' + escapar(u.autor || 'SIN AUTOR') + '</p>' +
                '<p class="bit-texto">' + escapar(corto || '(sin texto)') + '</p>' +
                '<button type="button" class="mt-sx-abrir' + (h.estado === 'PENDIENTE' ? ' sex-pendiente-txt' : '') +
-                 '" data-mt-sx="' + idx + '" data-salida="1">💬 Abrir conversación</button>' +
+                 '" data-mt-sx="' + idx + '" data-salida="1">' + ICOS('chat') + 'Abrir conversación</button>' +
              '</div>' +
            '</div>';
   }

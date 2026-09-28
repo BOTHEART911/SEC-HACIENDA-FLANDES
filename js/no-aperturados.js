@@ -57,7 +57,7 @@
     /* La capa 12 deja candado ~500 ms tras cada clic; esto no llama al
        servidor, así que se marca como salida para poder alternar rápido. */
     btn.setAttribute('data-salida', '1');
-    btn.textContent = '🗂️ NO APERTURADOS';
+    btn.innerHTML = ICOS('carpeta') + 'No aperturados';
 
     btn.addEventListener('click', function () {
       try { playSoundOnce(SOUNDS.menu); } catch (e) {}
@@ -85,7 +85,7 @@
     var btn = crear();
     if (!btn) return;
     var wrap = document.getElementById('bdp-noap-wrap');
-    btn.textContent = '🗂️ NO APERTURADOS (' + n + ')';
+    btn.innerHTML = ICOS('carpeta') + 'No aperturados (' + n + ')';
     if (activo) btn.classList.add('active');
     else btn.classList.remove('active');
     if (wrap) wrap.style.display = (n > 0 || activo) ? '' : 'none';

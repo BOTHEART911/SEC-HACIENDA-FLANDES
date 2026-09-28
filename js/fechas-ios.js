@@ -342,7 +342,11 @@
   /* ============================================================
      3) Las 5 fechas de Asignaciones — dd/mm, AÑO FIJO 2026
      ============================================================ */
-  var ANIO_PROC = 2026;          /* misma condición que tenía app.js */
+  /* FASE 2 SEC-HACIENDA-FLANDES — el año ya no está fijo en 2026: desde el
+     1 de enero de 2027 todas las fechas nuevas habrían salido con el año
+     viejo. Se puede elegir el año anterior, el actual y el siguiente (una
+     asignación recibida en diciembre puede responderse en enero). */
+  var ANIO_PROC = new Date().getFullYear();
   var MAPA_PROC = {
     'recibido':       'proc-recibido',
     'respuesta':      'proc-respuesta',
@@ -358,9 +362,10 @@
       var v = el ? deDDMMYYYY(el.value) : null;
       abrir({
         titulo: 'Selecciona la fecha',
-        anioFijo: ANIO_PROC,
-        valor: v ? { y: ANIO_PROC, m: v.m, d: v.d } : null,
-        onOk: function (f) { if (el) el.value = pad(f.d) + '/' + pad(f.m) + '/' + ANIO_PROC; }
+        anioDesde: ANIO_PROC - 1,
+        anioHasta: ANIO_PROC + 1,
+        valor: v ? { y: v.y || ANIO_PROC, m: v.m, d: v.d } : { y: ANIO_PROC, m: new Date().getMonth() + 1, d: new Date().getDate() },
+        onOk: function (f) { if (el) el.value = pad(f.d) + '/' + pad(f.m) + '/' + (f.y || ANIO_PROC); }
       });
     };
     window.abrirProcPicker_ = fn;

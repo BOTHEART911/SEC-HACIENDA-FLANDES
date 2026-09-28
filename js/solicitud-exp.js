@@ -433,7 +433,7 @@
 
   function chipEstado(est) {
     if (est === 'PENDIENTE') return '<span class="sex-chip sex-chip-rojo">● Falta respuesta de ARCHIVO</span>';
-    if (est === 'RESPONDIDA') return '<span class="sex-chip sex-chip-verde">✔ Respondida</span>';
+    if (est === 'RESPONDIDA') return '<span class="sex-chip sex-chip-verde">' + ICOS('check', 14) + 'Respondida</span>';
     return '<span class="sex-chip">Sin mensajes</span>';
   }
 

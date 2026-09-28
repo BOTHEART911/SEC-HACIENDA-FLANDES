@@ -1,22 +1,23 @@
-<!doctype html> 
+<!doctype html>
 <html lang="es">
 <head>
-  <meta charset="utf-8"/>
+  <meta charset="utf-8">
   <title>Sec. Hacienda · Alcaldía de Flandes</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="description" content="App de la Secretaría de Hacienda de la Alcaldía de Flandes." />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="App de la Secretaría de Hacienda de la Alcaldía de Flandes.">
+  <meta name="theme-color" content="#06402B">
 
-  <!-- SEC-HACIENDA-FLANDES: fuentes del kit Flandes (IBM Plex Sans + Sora) -->
+  <!-- Las fuentes del kit Flandes (IBM Plex Sans + Sora) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Sora:wght@600;700;800&display=swap">
-  <!-- El icono es el escudo SEC. HACIENDA APP-DIGITAL. El de 180 va sin
-       transparencia porque iOS pinta de negro lo transparente. -->
+
+  <!-- El escudo SEC. HACIENDA APP-DIGITAL. El de 180 va sin transparencia
+       porque iOS pinta de negro lo transparente. -->
   <link rel="icon" type="image/png" sizes="32x32" href="img/icono-32.png">
   <link rel="icon" type="image/png" sizes="192x192" href="img/icono-192.png">
   <link rel="apple-touch-icon" sizes="180x180" href="img/icono-180.png">
   <link rel="manifest" href="manifest.webmanifest">
-  <meta name="theme-color" content="#06402B"/> 
 
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
@@ -25,9 +26,10 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
 
- <!-- KIT-FLANDES: la base va ANTES que los estilos de la app -->
+  <!-- KIT-FLANDES: la base va ANTES que los estilos de la app -->
   <link rel="stylesheet" href="kit/base.css">
   <link rel="stylesheet" href="kit/banner.css">
+  <link rel="stylesheet" href="kit/sesion.css">
   <link rel="stylesheet" href="kit/cielo.css">
   <link rel="stylesheet" href="kit/personas.css">
   <link rel="stylesheet" href="kit/guardado.css">
@@ -36,30 +38,31 @@
   <link rel="stylesheet" href="kit/conexion.css">
   <link rel="stylesheet" href="kit/creditos.css">
 
- <!-- ✅ TUS ESTILOS PROPIOS -->
+  <!-- Estilos de los módulos de la app (sus clases las pintan los .js) -->
   <link rel="stylesheet" href="styles.css">
-  <link rel="stylesheet" href="css/identidad.css"><!-- FASE 0 -->
-  <link rel="stylesheet" href="css/configuracion.css"><!-- FASE 1 -->
-  <link rel="stylesheet" href="css/base-visual.css"><!-- FASE 3 -->
+  <link rel="stylesheet" href="css/identidad.css">
+  <link rel="stylesheet" href="css/configuracion.css">
+  <link rel="stylesheet" href="css/base-visual.css">
   <link rel="stylesheet" href="css/descargas.css">
-  <link rel="stylesheet" href="css/bitacora.css"><!-- LOTE 06/09 -->
-  <link rel="stylesheet" href="css/vistas.css"><!-- FASE 6 -->
-  <link rel="stylesheet" href="css/visor.css"><!-- FASE 8 -->
-  <link rel="stylesheet" href="css/capa-11-insights.css"><!-- FASE 11 -->
-  <link rel="stylesheet" href="css/asignador.css"><!-- FASE 13 -->
-  <link rel="stylesheet" href="css/fechas-ios.css"><!-- FASE 13 -->
-  <link rel="stylesheet" href="css/form-ancho.css"><!-- LOTE 08/09 -->
-  <link rel="stylesheet" href="css/bitacora-export.css"><!-- LOTE 10/09 -->
-  <link rel="stylesheet" href="css/mi-trabajo.css"><!-- 14/09: MI TRABAJO (bitacoras + actuaciones) -->
-  <link rel="stylesheet" href="css/solicitud-exp.css"><!-- 17/09: SOLICITUD EXPEDIENTE (modal, boton rojo con latido) -->
-  <!-- SEC-HACIENDA-FLANDES: la identidad Flandes encima de todo (EL ÚLTIMO) -->
-  <link rel="stylesheet" href="css/flandes.css">
+  <link rel="stylesheet" href="css/bitacora.css">
+  <link rel="stylesheet" href="css/vistas.css">
+  <link rel="stylesheet" href="css/visor.css">
+  <link rel="stylesheet" href="css/capa-11-insights.css">
+  <link rel="stylesheet" href="css/asignador.css">
+  <link rel="stylesheet" href="css/fechas-ios.css">
+  <link rel="stylesheet" href="css/form-ancho.css">
+  <link rel="stylesheet" href="css/bitacora-export.css">
+  <link rel="stylesheet" href="css/mi-trabajo.css">
+  <link rel="stylesheet" href="css/solicitud-exp.css">
+  <!-- FASE 2: la cara del ecosistema Flandes, vista por vista (EL ÚLTIMO) -->
+  <link rel="stylesheet" href="css/hacienda.css">
 
   <!-- version.js y marca.js ANTES que el kit: el kit lee APP_VERSION y MARCA al cargarse -->
   <script src="version.js"></script>
   <script src="js/marca.js"></script>
   <script src="kit/kit.js"></script>
   <script src="kit/iconos.js"></script>
+  <script src="js/iconos-hacienda.js"></script>
   <script src="kit/version.js"></script>
   <script src="kit/personas.js"></script>
   <script src="kit/banner.js"></script>
@@ -70,275 +73,228 @@
   <script src="kit/creditos.js"></script>
   <script src="kit/bienvenida.js"></script>
   <script>
-    /* FASE 3 — el tema se aplica ANTES del primer pintado (sin parpadeo) */
+    /* El tema se aplica ANTES del primer pintado (sin parpadeo). Una sola
+       llave para toda la app: la misma que usa el botón luna/sol. */
     (function(){try{var t=localStorage.getItem('hac.tema.v1');
       if(!t){t=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'oscuro':'claro';}
       document.documentElement.setAttribute('data-tema',t==='oscuro'?'oscuro':'claro');
       if(t==='oscuro'){var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content','#0d1512');}
     }catch(e){}})();
   </script>
-  
 </head>
-<body>
-  <!-- Loader -->
-  <div id="loader" class="loader hidden" aria-live="polite" aria-busy="true">
-    <div class="spinner-ios" role="status" aria-label="Cargando">
-      <i></i><i></i><i></i><i></i><i></i><i></i>
-      <i></i><i></i><i></i><i></i><i></i><i></i>
-    </div>
-  </div>
-
-  <!-- MODAL: RESPUESTA LIMPIA -->
-<div id="modal-respuesta-limpia" class="hidden"
-  style="position:fixed; inset:0; background:var(--scrim); z-index:10000; display:flex; align-items:center; justify-content:center; padding:16px;">
-  <div class="card narrow" style="margin:0; width:min(560px, 100%);">
-    <h2 style="color:var(--primary); margin-bottom:8px;">RESPUESTA LIMPIA</h2>
-    <p class="muted center" style="margin-top:0; font-weight:800;">
-      Solo si es necesario.
-    </p>
-
-    <label>Respuesta</label>
-    <textarea
-      id="respuesta-limpia"
-      rows="5"
-      required
-      placeholder="Envía esta respuesta solo si el contribuyente no solicito un recibo existente o necesita ser retroalimentado con respecto a tu solicitud."
-    ></textarea>
-
-    <div class="btn-row" style="margin-top:14px;">
-      <button id="btn-enviar-respuesta-limpia" class="btn-primary">Enviar</button>
-      <button id="btn-cerrar-respuesta-limpia" class="danger">Cerrar</button>
-    </div>
-  </div>
-</div>
+<body class="kit-fondo">
+  <!-- app.js lo enciende y lo apaga; lo que se ve es el cohete del kit -->
+  <div id="loader" class="loader hidden" aria-hidden="true"></div>
 
   <div class="container">
-    <!-- VISTA INSTALAR -->
-    <section id="view-instalar" class="view">
-      <div class="card narrow" style="text-align:center;">
-        <h2 style="color:var(--primary);">SECRETARIA DE HACIENDA</h2>
-        <img class="brand" alt="Instalar" src="img/slider.gif" />
-        <p style="font-weight:700;">Herramienta de uso exclusivo para personal autorizado</p>
-        <p class="muted" style="margin-top:14px;"><b>Si NO visualizas el botón Instalar</b> INICIA sesión de google.</p>
-        <div class="btn-row" style="justify-content:center; margin-top:12px;">
-          <button id="btn-instalar" class="btn-primary" style="display:none;">Instalar la App</button>
+
+    <!-- ══════════════ INSTALAR (la portada del kit hace este trabajo) ══════════════ -->
+    <section id="view-instalar" class="view"></section>
+
+    <!-- ══════════════ INGRESO ══════════════ -->
+    <section id="view-login" class="view active">
+      <div class="hf-puerta">
+        <div class="kit-sesion__caja hf-puerta__caja">
+          <div class="kit-sesion__marca">
+            <img class="kit-sesion__logo" src="img/icono-512.png" alt="Escudo Sec. Hacienda">
+            <h1 class="kit-sesion__t">Sec. Hacienda</h1>
+            <p class="kit-sesion__sub">Alcaldía de Flandes · solo personal autorizado de la Secretaría</p>
+          </div>
+
+          <div class="login-tabs hf-tabs" role="tablist">
+            <button type="button" class="login-tab active" data-tab="pin" role="tab">PIN</button>
+            <button type="button" class="login-tab" data-tab="doc" role="tab">Documento</button>
+          </div>
+
+          <!-- PIN: lo pinta js/identidad.js (cuentas de este dispositivo → PIN) -->
+          <div id="tab-pin"></div>
+
+          <!-- Documento: la primera vez en un dispositivo -->
+          <div id="tab-doc" class="hidden">
+            <div class="kit-sesion__form">
+              <label class="kit-sesion__campo">
+                <span>Documento</span>
+                <div class="kit-sesion__clave">
+                  <input id="login-doc" type="password" inputmode="numeric" autocomplete="off" placeholder="Sin puntos ni espacios">
+                  <button type="button" id="toggle-doc" class="kit-sesion__ojo" aria-label="Mostrar documento"><i class="hi" data-ico="ojo"></i></button>
+                </div>
+              </label>
+              <button type="button" class="kit-btn kit-btn--marca kit-sesion__entrar" id="btn-login">Entrar</button>
+              <p class="hf-nota">Entra una vez con tu documento. Tu cuenta queda guardada en este dispositivo y las siguientes veces entras con tu PIN.</p>
+            </div>
+          </div>
+
+          <div class="kit-sesion__pie"><span>Alcaldía Municipal de Flandes</span></div>
+          <footer class="kit-cred kit-sesion__cred" id="hf-cred-login"></footer>
         </div>
-        <p class="muted" style="margin-top:14px;"><b>Si ya instalaste la App</b> refresca la página o búscala en el escritorio.</p>
       </div>
     </section>
 
-    <!-- VISTA LOGIN -->
-    <section id="view-login" class="view active">
-      <div class="card narrow">
-        <h1 style="color:var(--primary); text-shadow: 0 2px 2px #031732;">SECRETARIA DE HACIENDA</h1>
-        <p class="helper"><b>Solo el personal autorizado de esta secretaría tiene acceso a esta App</b></p>
+    <!-- ══════════════ INICIO ══════════════ -->
+    <section id="view-inicio" class="view">
+      <div class="vista kit-ancho hf-inicio">
+        <section class="saludo hf-saludo">
+          <div class="saludo__txt">
+            <p class="saludo__hola">Hola,</p>
+            <h2 class="saludo__nombre" id="inicio-nombre"></h2>
+            <p class="saludo__doc" id="inicio-sub"></p>
+          </div>
+          <button type="button" class="hf-cara" id="hf-cara" aria-label="Cambiar foto de perfil"></button>
+        </section>
 
-       <!-- Tabs de acceso -->
-        <div class="login-tabs">
-<button type="button" class="login-tab" data-tab="doc">Documento</button>
-          <button type="button" class="login-tab active" data-tab="pin">PIN rápido</button>
-        </div>
-
-        <!-- TAB DOCUMENTO (acceso actual, intacto) -->
-        <div id="tab-doc" class="hidden">
-          <label>Documento</label>
-          <div style="position:relative;">
-            <input id="login-doc" type="password" inputmode="numeric" autocomplete="off" placeholder="Sin puntos ni espacios" />
-            <button type="button" id="toggle-doc" aria-label="Mostrar documento"
-              style="position:absolute;top:50%;right:10px;transform:translateY(-50%);background:transparent;border:0;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:6px;">
-              <img id="toggle-doc-img" src="img/mostrar.png" alt="Mostrar" style="width:22px;height:22px;">
+        <!-- Los botones de siempre (mismos id): app.js y alcance.js los
+             encienden o apagan según lo que diga el servidor. -->
+        <section class="bloque" data-bloque="predial">
+          <h3 class="bloque__t">Predial</h3>
+          <div class="kit-rejilla kit-rejilla--auto accesos" id="predial-submenu">
+            <button type="button" class="acceso" id="btn-agregar" style="display:none;">
+              <span class="acceso__img acceso__img--ico"><i class="hi" data-ico="atencion" data-t="24"></i></span>
+              <span class="acceso__txt"><span class="acceso__t">Agregar atención predial</span><span class="acceso__p">Registra la atención presencial de un contribuyente</span></span>
+            </button>
+            <button type="button" class="acceso" id="btn-pendientes" style="display:none;">
+              <span class="acceso__img acceso__img--ico"><i class="hi" data-ico="bandeja-entrada" data-t="24"></i></span>
+              <span class="acceso__txt"><span class="acceso__t">Pendientes predial</span><span class="acceso__p">Solicitudes por chat que esperan respuesta</span></span>
+            </button>
+            <button type="button" class="acceso" id="btn-atenciones-registradas" style="display:none;">
+              <span class="acceso__img acceso__img--ico"><i class="hi" data-ico="bandeja-salida" data-t="24"></i></span>
+              <span class="acceso__txt"><span class="acceso__t">Atenciones registradas</span><span class="acceso__p">Lo que ya se atendió por chat y en persona</span></span>
+            </button>
+            <button type="button" class="acceso" id="btn-mis-informes" style="display:none;">
+              <span class="acceso__img acceso__img--ico"><i class="hi" data-ico="excel" data-t="24"></i></span>
+              <span class="acceso__txt"><span class="acceso__t">Mis informes predial</span><span class="acceso__p">Descarga a Excel tus atenciones por fechas</span></span>
+            </button>
+            <button type="button" class="acceso" id="btn-estadisticas" style="display:none;">
+              <span class="acceso__img acceso__img--ico"><i class="hi" data-ico="grafica" data-t="24"></i></span>
+              <span class="acceso__txt"><span class="acceso__t">Estadísticas</span><span class="acceso__p">Tiempos, zonas y tendencia de las solicitudes</span></span>
+            </button>
+            <button type="button" class="acceso" id="btn-bd-predial" style="display:none;">
+              <span class="acceso__img acceso__img--ico"><i class="hi" data-ico="base-datos" data-t="24"></i></span>
+              <span class="acceso__txt"><span class="acceso__t">Base de datos predial</span><span class="acceso__p">Expedientes, actuaciones, bitácoras y seguimientos</span></span>
             </button>
           </div>
+          <!-- compatibilidad: app.js lo busca para decidir si hay PREDIAL -->
+          <button type="button" id="btn-cat-predial" hidden></button>
+        </section>
 
-          <div class="btn-row" style="margin-top:12px;">
-            <button class="btn-primary" id="btn-login">Iniciar Sesión</button>
+        <section class="bloque" data-bloque="gestion">
+          <h3 class="bloque__t">Gestión</h3>
+          <div class="kit-rejilla kit-rejilla--auto accesos">
+            <button type="button" class="acceso" id="btn-semaforo" style="display:none;">
+              <span class="acceso__img acceso__img--ico"><i class="hi" data-ico="semaforo" data-t="24"></i></span>
+              <span class="acceso__txt"><span class="acceso__t">Mi semáforo</span><span class="acceso__p">Asignaciones y vencimientos por días hábiles</span></span>
+            </button>
+            <button type="button" class="acceso" id="btn-drive-anexos" style="display:none;">
+              <span class="acceso__img acceso__img--ico"><i class="hi" data-ico="carpeta" data-t="24"></i></span>
+              <span class="acceso__txt"><span class="acceso__t">Drive anexos</span><span class="acceso__p">Carpetas de anexos de cada funcionario</span></span>
+            </button>
           </div>
+        </section>
+
+        <section class="bloque" data-bloque="app">
+          <h3 class="bloque__t">La app</h3>
+          <div class="kit-rejilla kit-rejilla--auto accesos">
+            <button type="button" class="acceso" id="btn-guia">
+              <span class="acceso__img acceso__img--ico"><i class="hi" data-ico="libro" data-t="24"></i></span>
+              <span class="acceso__txt"><span class="acceso__t">Guía rápida</span><span class="acceso__p">Cómo se usa la app y qué hace cada tipo de usuario</span></span>
+            </button>
+            <button type="button" class="acceso" id="btn-cambiar-pin">
+              <span class="acceso__img acceso__img--ico"><i class="hi" data-ico="pin" data-t="24"></i></span>
+              <span class="acceso__txt"><span class="acceso__t">Cambiar mi PIN</span><span class="acceso__p">Tu llave de entrada: cámbiala cuando quieras</span></span>
+            </button>
+            <button type="button" class="acceso" id="btn-config" style="display:none;">
+              <span class="acceso__img acceso__img--ico"><i class="hi" data-ico="engranaje" data-t="24"></i></span>
+              <span class="acceso__txt"><span class="acceso__t">Configuración</span><span class="acceso__p">Usuarios y roles; plantillas e IDs para el desarrollador</span></span>
+            </button>
+          </div>
+        </section>
+
+        <p class="hf-vacio" id="hf-vacio" hidden>Tu usuario todavía no tiene un rol con accesos. Pide a un administrador que te asigne uno desde Configuración.</p>
+
+        <!-- Salir: app.js y identidad.js escuchan estos dos -->
+        <div class="hf-salidas">
+          <button type="button" class="kit-btn" id="btn-cambiar-usuario"><i class="hi" data-ico="cambiar-usuario"></i> Cambiar de usuario</button>
+          <button type="button" class="kit-btn" id="btn-logout"><i class="hi" data-ico="salir"></i> Cerrar sesión</button>
         </div>
-
-        <!-- TAB PIN RÁPIDO -->
-        <div id="tab-pin">
-          <div class="pin-pad">
-            <div class="pin-dot" data-pos="0"></div>
-            <div class="pin-dot" data-pos="1"></div>
-            <div class="pin-dot" data-pos="2"></div>
-            <div class="pin-dot" data-pos="3"></div>
-          </div>
-          <div class="pin-keypad">
-            <button type="button" class="pin-key" data-key="1">1</button>
-            <button type="button" class="pin-key" data-key="2">2</button>
-            <button type="button" class="pin-key" data-key="3">3</button>
-            <button type="button" class="pin-key" data-key="4">4</button>
-            <button type="button" class="pin-key" data-key="5">5</button>
-            <button type="button" class="pin-key" data-key="6">6</button>
-            <button type="button" class="pin-key" data-key="7">7</button>
-            <button type="button" class="pin-key" data-key="8">8</button>
-            <button type="button" class="pin-key" data-key="9">9</button>
-            <button type="button" class="pin-key action" data-key="clear">Borrar</button>
-            <button type="button" class="pin-key" data-key="0">0</button>
-            <button type="button" class="pin-key action" data-key="back">⌫</button>
-          </div>
-        </div>
-
-        <footer class="kit-cred hf-cred" id="hf-cred-login"></footer>
+        <footer class="kit-cred" id="hf-cred-inicio"></footer>
       </div>
     </section>
 
-    <!-- VISTA INICIO -->
-    <section id="view-inicio" class="view">
-      <div class="card narrow">
-        <div class="btn-row" style="margin-bottom:12px;">
-          <button class="chip danger" id="btn-logout">Cerrar Sesión</button>
-        </div>
-
-        <h2 id="inicio-nombre" style="color:var(--primary); font-weight:1000; margin-top:6px;"></h2>
-        <p id="inicio-sub" class="center muted" style="margin-top:0; font-weight:700;"></p>
-
-                <!-- ── Categoría PREDIAL ── -->
-        <div class="btn-row" style="margin-top:14px;">
-          <button id="btn-cat-predial" class="btn-primary btn-icon-label">
-            <img src="img/predial.png"
-                 alt="Predial" />
-            PREDIAL
-          </button>
-        </div>
-
-        <!-- Sub-botones PREDIAL (colapsables) -->
-<div id="predial-submenu" style="display:none;">
-  <div class="btn-row" style="margin-top:10px;">
-    <button id="btn-agregar" class="btn-primary" style="display:none;">AGREGAR ATENCIÓN PREDIAL</button>
-    <button id="btn-pendientes" class="btn-primary" style="display:none;">PENDIENTES PREDIAL</button>
-  </div>
-  <div class="btn-row" style="margin-top:10px;">
-    <button id="btn-atenciones-registradas" class="btn-primary" style="display:none;">ATENCIONES REGISTRADAS</button>
-  </div>
-<div class="btn-row" style="margin-top:10px;">
-    <!-- FASE 6: vuelve como MODAL de descarga a Excel (ya no es un enlace de Drive). -->
-    <button id="btn-mis-informes" class="btn-primary" style="display:none;">MIS INFORMES PREDIAL</button>
-    <button id="btn-estadisticas" class="btn-primary" style="display:none;">ESTADISTICAS 📊</button>
-  </div>
-  <div class="btn-row" style="margin-top:10px;">
-    <button id="btn-bd-predial" class="btn-primary btn-icon-label" style="display:none; background:linear-gradient(135deg,#1e40af 0%,#1d4ed8 100%);">
-      <img src="img/base-de-datos.webp" alt="BD Predial" />
-      BASE DE DATOS
-    </button>
-  </div>
-</div>
-
-        <!-- ── DRIVE ANEXOS ── -->
-        <div class="btn-row" style="margin-top:10px;">
-          <button id="btn-drive-anexos" class="btn-primary btn-icon-label">
-            <img src="img/drive.webp"
-                 alt="Drive" />
-            DRIVE ANEXOS
-          </button>
-        </div>
-
-        <!-- ── MI SEMÁFORO ── -->
-                <div class="btn-row" style="margin-top:10px;">
-          <button id="btn-semaforo" class="btn-primary btn-icon-label"
-            style="background:linear-gradient(135deg,#f87171 0%,#fbbf24 50%,#4ade80 100%);display:none;">
-            <img src="img/semaforo.png"
-                 alt="Semáforo" />
-            MI SEMÁFORO
-          </button>
-        </div>
-        
-      </div>
+    <!-- ══════════════ GUÍA RÁPIDA ══════════════ -->
+    <section id="view-guia" class="view">
+      <div class="vista kit-ancho" id="guia-cuerpo"></div>
     </section>
 
-    <!-- VISTA PENDIENTES / LISTAS -->
+    <!-- ══════════════ PENDIENTES / LISTAS ══════════════ -->
     <section id="view-lista" class="view">
-      <div class="card">
-        <h2 id="lista-title" style="color:var(--primary); margin-bottom:8px;">PENDIENTES PREDIAL</h2>
-
-        <div class="count-row">
-          <span class="count-pill">TOTAL: <span id="lista-count">0</span></span>
-          <input id="lista-filter" class="filter-input" type="text" placeholder="Filtrar por cualquier dato…" />
+      <div class="vista kit-ancho">
+        <span id="lista-title" hidden>PENDIENTES PREDIAL</span>
+        <div class="hf-barra">
+          <span class="hf-conteo"><b id="lista-count">0</b> solicitudes</span>
+          <label class="hf-buscar"><i class="hi" data-ico="buscar"></i><input id="lista-filter" type="text" placeholder="Buscar por nombre, documento, barrio…" autocomplete="off"></label>
         </div>
-
-        <!-- (Cambio #2) botón regresar ANTES de las tarjetas -->
-        <div class="btn-row" style="margin-top:10px;">
-          <button id="lista-back" class="danger">Regresar</button>
-        </div>
-
-        <div id="lista-wrap" class="sol-list"></div>
+        <div id="lista-wrap" class="sol-list hf-rejilla"></div>
+        <button type="button" id="lista-back" class="hf-atras" hidden>Regresar</button>
       </div>
     </section>
 
-    <!-- VISTA RESPUESTA SOLICITUD -->
+    <!-- ══════════════ RESPONDER SOLICITUD ══════════════ -->
     <section id="view-respuesta" class="view">
-      <div class="card narrow">
-        <h2 style="color:var(--primary); margin-bottom:8px;">RESPUESTA SOLICITUD</h2>
+      <div class="vista kit-ancho--estrecho">
+        <div id="resp-head" class="hf-ficha"></div>
+        <div class="formulario hf-form">
+          <label>Respuesta (opcional)</label>
+          <textarea id="respuesta" rows="4" placeholder="Escribe si tienes algo anexo que referir; si no, solo adjunta los recibos."></textarea>
 
-        <!-- (Cambio solicitado) quitamos el "resumen" (el bloque head) -->
-        <div id="resp-head"
-     style="margin:10px auto 12px; text-align:center; background:rgba(var(--surface-rgb),.92); border:2px solid var(--card-border); border-radius:14px; padding:12px;">
-</div
+          <label>Vigencia</label>
+          <select id="vigencia" required>
+            <option value="" disabled selected>Selecciona una opción</option>
+            <option value="VIGENCIA ACTUAL">VIGENCIA ACTUAL</option>
+            <option value="VIGENCIAS ANTERIORES">VIGENCIAS ANTERIORES</option>
+          </select>
 
-        <label>Respuesta (opcional)</label>
-        <textarea id="respuesta" rows="4" placeholder="Escribe si tienes algo anexo que referir, de lo contrario, solo adjunta los recibos."></textarea>
-
-                <label>Vigencia</label>
-        <select id="vigencia" required>
-          <option value="" disabled selected>Selecciona una opción</option>
-          <option value="VIGENCIA ACTUAL">VIGENCIA ACTUAL</option>
-          <option value="VIGENCIAS ANTERIORES">VIGENCIAS ANTERIORES</option>
-        </select>
-
-        <div style="margin-top:10px;">
-          <h3 style="text-align:left; margin:10px 0 6px; color:var(--text-sub);">Adjuntar Recibos (PDF o Word)</h3>
-          <div class="muted" style="margin:0 0 10px;"><b>Máximo 2 MB por archivo.</b> Debes adjuntar al menos 1 archivo (PDF o Word).</div>
-
+          <div class="hf-sub">
+            <h3 class="grupo__t">Recibos</h3>
+            <p class="formulario__nota">PDF o Word, máximo 2 MB cada uno. Adjunta al menos uno.</p>
+          </div>
           <label>Recibo 1</label>
-          <input id="recibo1" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+          <input id="recibo1" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
           <div id="recibo1-status" class="pdf-status"></div>
-
           <label>Recibo 2</label>
-          <input id="recibo2" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+          <input id="recibo2" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
           <div id="recibo2-status" class="pdf-status"></div>
-
           <label>Recibo 3</label>
-          <input id="recibo3" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+          <input id="recibo3" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
           <div id="recibo3-status" class="pdf-status"></div>
-
           <label>Recibo 4</label>
-          <input id="recibo4" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+          <input id="recibo4" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
           <div id="recibo4-status" class="pdf-status"></div>
-
           <label>Recibo 5</label>
-          <input id="recibo5" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+          <input id="recibo5" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
           <div id="recibo5-status" class="pdf-status"></div>
-        </div>
 
-        <!-- (Cambio #2) botón regresar ANTES (en esta vista: arriba de Guardar/Regresar no aplica, pero lo movemos a arriba del footer) -->
-        <div class="btn-row" style="margin-top:14px;">
-          <button id="resp-back" class="danger">Regresar</button>
+          <div class="hf-acciones">
+            <button type="button" id="resp-guardar" class="kit-btn kit-btn--marca"><i class="hi" data-ico="enviar"></i> Enviar respuesta</button>
+          </div>
         </div>
-        <div class="btn-row" style="margin-top:10px;">
-          <button id="resp-guardar" class="btn-primary">Guardar</button>
-        </div>
+        <button type="button" id="resp-back" class="hf-atras" hidden>Regresar</button>
       </div>
     </section>
 
-    <!-- VISTA AGREGAR SOLICITUD -->
+    <!-- ══════════════ AGREGAR ATENCIÓN PREDIAL ══════════════ -->
     <section id="view-agregar" class="view">
-      <div class="card narrow">
-        <h2 style="color:var(--primary);">AGREGAR SOLICITUD PREDIAL</h2>
+      <div class="vista kit-ancho--estrecho">
+        <div class="formulario hf-form">
+          <label>Nombre del propietario</label>
+          <input id="Propietario" type="text" placeholder="Nombre del propietario">
 
-        <label>Nombre del propietario</label>
-        <input id="Propietario" type="text" placeholder="Nombre del propietario" />
+          <label>Documento o NIT</label>
+          <div class="input-icon-wrap hf-con-boton">
+            <input id="identidad" type="text" inputmode="numeric" placeholder="Sin puntos, espacios ni guiones">
+            <button type="button" id="btn-buscar-contacto" class="icon-in-input" aria-label="Buscar contacto" title="Buscar contacto"><i class="hi" data-ico="buscar"></i></button>
+          </div>
 
-        <label>Documento o NIT</label>
-        <!-- input con icono buscar (clic) -->
-        <div class="input-icon-wrap">
-          <input id="identidad" type="text" inputmode="numeric" placeholder="sin puntos, espacios ni guiones" />
-          <button type="button" id="btn-buscar-contacto" class="icon-in-input" aria-label="Buscar contacto" title="Buscar contacto">
-            <img src="img/buscar.webp" alt="Buscar">
-          </button>
-        </div>
-
-        <label>Residencia</label>
-        <select id="upd-residencia">
+          <label>Residencia</label>
+          <select id="upd-residencia">
           <option value="" disabled selected>Selecciona tu Residencia</option>
           <option value="ACAPULCO I">ACAPULCO I</option>
           <option value="ACAPULCO II">ACAPULCO II</option>
@@ -474,1593 +430,1000 @@
           <option value="VILLAS DEL MEDITERANEO">VILLAS DEL MEDITERANEO</option>
         </select>
 
-        <label>Teléfono</label>
-        <input id="celular" type="tel" inputmode="numeric" placeholder="sin puntos ni espacios" />
+          <label>Teléfono</label>
+          <input id="celular" type="tel" inputmode="numeric" placeholder="Sin puntos ni espacios">
 
-        <div class="btn-row" style="margin-top:14px;">
-          <button id="add-guardar" class="btn-primary">Guardar</button>
-          <button id="add-back" class="danger">Regresar</button>
+          <div class="hf-acciones">
+            <button type="button" id="add-guardar" class="kit-btn kit-btn--marca"><i class="hi" data-ico="check"></i> Guardar atención</button>
+          </div>
+        </div>
+        <button type="button" id="add-back" class="hf-atras" hidden>Regresar</button>
+      </div>
+    </section>
+
+    <!-- ══════════════ DRIVE ANEXOS ══════════════ -->
+    <section id="view-drive-anexos" class="view">
+      <div class="vista kit-ancho">
+        <p class="hf-intro">Carpetas de Drive para anexar los informes del equipo. Con el lápiz das permiso de edición a un correo de Gmail.</p>
+        <div class="hf-barra" id="drive-filter-row" style="display:none;">
+          <span class="hf-conteo"><b id="drive-count">0</b> carpetas</span>
+          <label class="hf-buscar"><i class="hi" data-ico="buscar"></i><input id="drive-filter" type="text" placeholder="Buscar por nombre o correo…" autocomplete="off"></label>
+        </div>
+        <div id="drive-grid" class="grid hf-rejilla"></div>
+        <button type="button" id="btn-drive-regresar" class="hf-atras" hidden>Regresar</button>
+      </div>
+    </section>
+
+    <!-- ══════════════ EDITAR CORREO DE DRIVE ══════════════ -->
+    <section id="view-drive-editar" class="view">
+      <div class="vista kit-ancho--estrecho">
+        <div class="formulario hf-form">
+          <div class="hf-quien"><i class="hi" data-ico="carpeta"></i><b id="drive-edit-nombre"></b></div>
+          <label for="drive-edit-correo">Correo de edición (Gmail)</label>
+          <input id="drive-edit-correo" type="email" inputmode="email" autocomplete="off" placeholder="usuario@gmail.com">
+          <p class="formulario__nota">Se da permiso de edición a la carpeta. Si había otro correo, se le retira el permiso.</p>
+          <div class="hf-acciones">
+            <button type="button" id="btn-drive-guardar" class="kit-btn kit-btn--marca"><i class="hi" data-ico="check"></i> Guardar</button>
+          </div>
+        </div>
+        <button type="button" id="btn-drive-back-edit" class="hf-atras" hidden>Regresar</button>
+      </div>
+    </section>
+
+    <!-- ══════════════ ESTADÍSTICAS ══════════════ -->
+    <section id="view-estadisticas" class="view">
+      <div class="vista kit-ancho estad-dash-card">
+        <div class="estad-dash-subtitle hf-intro" id="estad-dash-subtitle"></div>
+        <div class="panel-toolbar hf-pestanas">
+          <button class="panel-tab active" id="estad-tab-btn-tiempo" onclick="estadShowTab_('tiempo')"><i class="hi" data-ico="calendario"></i> <span id="estad-tab-tiempo-t">Año en curso</span></button>
+          <button class="panel-tab" id="estad-tab-btn-zonas" onclick="estadShowTab_('zonas')"><i class="hi" data-ico="mapa"></i> Zonas</button>
+          <button class="panel-tab" id="estad-tab-btn-tendencia" onclick="estadShowTab_('tendencia')"><i class="hi" data-ico="tendencia"></i> Tendencia</button>
+        </div>
+        <button type="button" id="estad-back" class="hf-atras" onclick="estadGoBack_()" hidden>Regresar</button>
+
+        <div id="estad-view-tiempo" class="estad-tab-content">
+          <div class="estad-kpi-row" id="estad-kpis-tiempo"></div>
+          <div class="estad-tend-pills" id="estad-totals-tiempo"></div>
+          <div class="estad-chart-premium">
+            <div class="estad-chart-label"><i class="hi" data-ico="calendario"></i> <span id="estad-label-tiempo">Atención predial por mes</span></div>
+            <div class="hf-lienzo hf-lienzo--alto"><canvas id="estad-canvas-tiempo"></canvas></div>
+          </div>
+        </div>
+
+        <div id="estad-view-zonas" class="estad-tab-content" style="display:none;">
+          <div class="estad-kpi-row" id="estad-kpis-zonas"></div>
+          <div class="panel-section">
+            <div class="panel-section-title"><i class="hi" data-ico="mapa"></i> Zonas con más solicitudes</div>
+            <div class="estad-top-list" id="estad-top-zonas"></div>
+          </div>
+          <div class="estad-chart-premium">
+            <div class="estad-chart-label"><i class="hi" data-ico="mapa"></i> Distribución por zona <span id="estad-zonas-page-label" class="hf-derecha"></span></div>
+            <div class="hf-lienzo hf-lienzo--alto"><canvas id="estad-canvas-zonas"></canvas></div>
+            <div class="estad-pager" id="estad-pager-zonas"></div>
+          </div>
+        </div>
+
+        <div id="estad-view-tendencia" class="estad-tab-content" style="display:none;">
+          <div class="estad-kpi-row" id="estad-kpis-tendencia"></div>
+          <div class="estad-chart-premium">
+            <div class="estad-chart-label"><i class="hi" data-ico="tendencia"></i> Evolución mensual</div>
+            <div class="hf-lienzo"><canvas id="estad-canvas-tendencia"></canvas></div>
+          </div>
+          <div class="estad-chart-premium">
+            <div class="estad-chart-label"><i class="hi" data-ico="calendario"></i> Detalle mensual</div>
+            <div class="hf-tabla-scroll">
+              <table class="estad-month-table">
+                <thead><tr><th>Mes</th><th>Chat</th><th>Presencial</th><th>Total</th><th>Var.</th></tr></thead>
+                <tbody id="estad-month-tbody"></tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
     </section>
 
-<!-- VISTA DRIVE ANEXOS -->
-<section id="view-drive-anexos" class="view">
-  <div class="card">
-    <h2 style="color:var(--primary)">DRIVE ANEXOS</h2>
-    <p class="helper"><b>Uso exclusivo del Equipo para anexar informes</b></p>
+    <!-- ══════════════ MI SEMÁFORO (ASIGNACIONES) ══════════════ -->
+    <section id="view-asignaciones" class="view">
+      <div class="vista kit-ancho">
+        <div class="hf-herramientas">
+          <button type="button" id="btn-agregar-asignacion" class="kit-btn kit-btn--marca" style="display:none;"><i class="hi" data-ico="mas"></i> Agregar asignación</button>
+          <button type="button" id="btn-panel-dashboard" class="kit-btn" style="display:none;"><i class="hi" data-ico="grafica"></i> Panel</button>
+          <button type="button" id="btn-mis-procesos" class="kit-btn" style="display:none;"><i class="hi" data-ico="excel"></i> Mis procesos</button>
+        </div>
+        <div class="hf-barra">
+          <span class="hf-conteo" id="proc-count-pill"><b id="proc-count">0</b> asignaciones</span>
+          <label class="hf-buscar"><i class="hi" data-ico="buscar"></i><input id="proc-filter" type="text" placeholder="Buscar por asunto, consecutivo, peticionario…" autocomplete="off"></label>
+        </div>
+        <!-- barra compacta de filtros (estado · asignado · vencimiento), la pinta app.js -->
+        <div id="proc-filtros" class="vf-row"></div>
+        <!-- las pastillas de estado siguen siendo la fuente de verdad del filtro -->
+        <div id="proc-pills-fuente" style="display:none;">
+          <div id="proc-status-filter" class="proc-status-filter">
+            <button type="button" class="proc-status-pill active" data-status="ALL">TODAS</button>
+            <button type="button" class="proc-status-pill" data-status="ASIGNADO">ASIGNADO</button>
+            <button type="button" class="proc-status-pill" data-status="EN PROYECCIÓN">EN PROYECCIÓN</button>
+            <button type="button" class="proc-status-pill" data-status="PENDIENTE EVIDENCIA">PENDIENTE EVIDENCIA</button>
+            <button type="button" class="proc-status-pill" data-status="FINALIZADO">FINALIZADO</button>
+          </div>
+        </div>
+        <div id="proc-list" class="sol-list hf-rejilla"></div>
+        <button type="button" id="btn-asignaciones-back" class="hf-atras" hidden>Regresar</button>
+      </div>
+    </section>
 
-    <!-- FASE 7: ADMIN y DEV ven las carpetas de todo el equipo, así que
-         necesitan buscador. Para el resto (una sola tarjeta) se esconde. -->
-    <div class="count-row" id="drive-filter-row" style="display:none; margin-bottom:12px;">
-      <span class="count-pill">TOTAL: <span id="drive-count">0</span></span>
-      <input id="drive-filter" class="filter-input" type="text" placeholder="Filtrar por nombre o correo…" />
-    </div>
+    <!-- ══════════════ AGREGAR ASIGNACIÓN ══════════════ -->
+    <section id="view-agregar-asignacion" class="view">
+      <div class="vista kit-ancho">
+        <div class="formulario hf-form">
+          <label>Fecha de recibido</label>
+          <input id="proc-recibido" type="text" placeholder="dd/mm/aaaa" readonly onclick="abrirProcPicker('recibido')" required class="hf-fecha">
 
-    <div id="drive-grid" class="grid"></div>
+          <label>Consecutivo</label>
+          <input id="proc-consecutivo" type="text" placeholder="Ingresa el consecutivo" required>
 
-    <!-- Botón Regresar (requisito) -->
-    <div class="spaced">
-      <button id="btn-drive-regresar" class="danger btn-big">Regresar</button>
-    </div>
-  </div>
-</section>
+          <label>Asunto</label>
+          <textarea id="proc-descripcion" rows="2" placeholder="Relaciona brevemente el asunto" required></textarea>
 
-<!-- VISTA EDITAR DRIVE -->
-<section id="view-drive-editar" class="view">
-  <div class="card" style="max-width:640px;">
-    <div class="edit-head">
-      <div id="drive-edit-nombre" class="edit-badge"></div>
-    </div>
-    <h2 style="color:var(--primary); margin-top:6px;">EDITAR</h2>
+          <label>Peticionario</label>
+          <input id="proc-peticionario" type="text" placeholder="Nombre del peticionario">
 
-    <label for="drive-edit-correo">Correo de Edición (Gmail)</label>
-    <input id="drive-edit-correo" type="email" inputmode="email" autocomplete="off" placeholder="usuario@gmail.com">
+          <label>N° exp. interno</label>
+          <input id="proc-expediente" type="text" placeholder="Ej: SH-0525">
 
-    <div class="spaced">
-      <button id="btn-drive-guardar" class="btn-primary btn-big">Guardar</button>
-    </div>
-    <div class="spaced">
-      <button id="btn-drive-back-edit" class="danger btn-big">Regresar</button>
-    </div>
+          <label>Fecha de respuesta oportuna <span class="muted">(al menos 1 día hábil antes del vencimiento)</span></label>
+          <input id="proc-respuesta" type="text" placeholder="dd/mm/aaaa" readonly onclick="abrirProcPicker('respuesta')" required class="hf-fecha">
 
-    <p class="muted center" style="margin-top:10px;">
-      Se concede permiso de edición a la carpeta del registro. Si existía un correo anterior, se retira el permiso.
-    </p>
-  </div>
-</section>
+          <label>Medio</label>
+          <select id="proc-medio" required>
+            <option value="" disabled selected>Selecciona el medio</option>
+            <option value="CORRESPONDENCIA">CORRESPONDENCIA</option>
+            <option value="CORREO">CORREO</option>
+          </select>
 
-   <!-- VISTA ESTADÍSTICAS DASHBOARD v2 -->
-<section id="view-estadisticas" class="view">
-  <div class="estad-dash-card">
+          <label>Categoría</label>
+          <div id="proc-cat-selector" class="cat-selector"></div>
+          <select id="proc-categoria" style="display:none;" required></select>
 
-    <!-- ── Header ── -->
-    <div class="estad-dash-header">
-      <div class="estad-dash-title-wrap">
-        <img src="img/tendencia.png" alt="Estadísticas" />
-        <div>
-          <h2 class="estad-dash-title">ESTADÍSTICAS 📊</h2>
-          <div class="estad-dash-subtitle" id="estad-dash-subtitle">Solo SUPER USUARIO</div>
+          <label>Subcategoría</label>
+          <div id="proc-subcat-selector" class="cat-selector"></div>
+          <select id="proc-subcategoria" style="display:none;"></select>
+
+          <label>Asignado <span class="muted">(opcional)</span></label>
+          <select id="proc-asignado"><option value="">— Sin asignar —</option></select>
+          <input id="proc-contacto1" type="hidden">
+
+          <label>Asistente <span class="muted">(opcional)</span></label>
+          <select id="proc-asistente"><option value="">— Sin asistente —</option></select>
+          <input id="proc-contacto2" type="hidden">
+          <input id="proc-coordinador" type="hidden">
+          <input id="proc-contacto3" type="hidden">
+
+          <label>Documento recibido 1 <span class="muted">(opcional · PDF o Word · 10 MB)</span></label>
+          <input id="proc-recibido1" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+          <div id="proc-recibido1-status" class="proc-file-status"></div>
+
+          <label>Documento recibido 2 <span class="muted">(opcional · PDF o Word · 10 MB)</span></label>
+          <input id="proc-recibido2" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+          <div id="proc-recibido2-status" class="proc-file-status"></div>
+
+          <label>Documento recibido 3 <span class="muted">(opcional · PDF o Word · 10 MB)</span></label>
+          <input id="proc-recibido3" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+          <div id="proc-recibido3-status" class="proc-file-status"></div>
+
+          <div class="btn-row hf-acciones">
+            <button type="button" id="btn-proc-add-guardar" class="kit-btn kit-btn--marca"><i class="hi" data-ico="check"></i> Guardar asignación</button>
+          </div>
+        </div>
+        <button type="button" id="btn-proc-add-back" class="hf-atras" hidden>Regresar</button>
+      </div>
+    </section>
+
+    <!-- ══════════════ VER ASIGNACIÓN ══════════════ -->
+    <section id="view-ver-asignacion" class="view">
+      <div class="vista kit-ancho">
+        <div class="hf-ficha-grande">
+          <div id="proc-ver-header" class="proc-detalle-header"></div>
+          <div id="proc-ver-body" class="hf-datos"></div>
+          <div id="proc-ver-evidencia" class="proc-evidencia-wrap" style="display:none;">
+            <p class="hf-rotulo">Evidencia</p>
+            <img id="proc-ver-evidencia-img" class="proc-evidencia-img" alt="Evidencia">
+          </div>
+          <div id="proc-ver-files" class="proc-files-row"></div>
+          <div id="proc-ver-creacion" class="hf-pie-dato"></div>
+          <div class="btn-row hf-acciones" id="proc-ver-actions"></div>
+        </div>
+        <button type="button" id="btn-ver-asignacion-back" class="hf-atras" hidden>Regresar</button>
+      </div>
+    </section>
+
+    <!-- ══════════════ EDITAR ASIGNACIÓN ══════════════ -->
+    <section id="view-editar-asignacion" class="view">
+      <div class="vista kit-ancho">
+        <div id="edit-badge-row" class="hf-insignias"></div>
+        <div class="formulario hf-form">
+          <div id="edit-super-fields">
+            <label>Fecha de recibido</label>
+            <input id="edit-recibido" type="text" placeholder="dd/mm/aaaa" readonly onclick="abrirProcPicker('edit-recibido')" class="hf-fecha">
+
+            <label>Consecutivo</label>
+            <input id="edit-consecutivo" type="text" placeholder="Ingresa el consecutivo">
+
+            <label>Asunto</label>
+            <textarea id="edit-descripcion" rows="2" placeholder="Relaciona brevemente el asunto"></textarea>
+
+            <label>Peticionario</label>
+            <input id="edit-peticionario" type="text" placeholder="Nombre del peticionario">
+
+            <label>N° exp. interno</label>
+            <input id="edit-expediente" type="text" placeholder="Ej: SH-0525">
+
+            <label>Fecha de respuesta oportuna</label>
+            <input id="edit-respuesta" type="text" placeholder="dd/mm/aaaa" readonly onclick="abrirProcPicker('edit-respuesta')" class="hf-fecha">
+
+            <label>Medio</label>
+            <select id="edit-medio">
+              <option value="">— Sin cambio —</option>
+              <option value="CORRESPONDENCIA">CORRESPONDENCIA</option>
+              <option value="CORREO">CORREO</option>
+            </select>
+
+            <label>Asignado</label>
+            <select id="edit-asignado"><option value="">— Sin asignar —</option></select>
+            <input id="edit-contacto1" type="hidden">
+          </div>
+
+          <label>Categoría</label>
+          <div id="edit-cat-selector" class="cat-selector"></div>
+          <select id="edit-categoria" style="display:none;"></select>
+
+          <label>Subcategoría</label>
+          <div id="edit-subcat-selector" class="cat-selector"></div>
+          <select id="edit-subcategoria" style="display:none;"></select>
+
+          <label>Asistente <span class="muted">(opcional)</span></label>
+          <select id="edit-asistente"><option value="">— Sin asistente —</option></select>
+          <input id="edit-contacto2" type="hidden">
+          <input id="edit-coordinador" type="hidden">
+          <input id="edit-contacto3" type="hidden">
+
+          <div id="edit-recibidos-super">
+            <label>Documento recibido 1 <span class="muted">(opcional · PDF o Word · 10 MB)</span></label>
+            <input id="edit-recibido1" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+            <div id="edit-recibido1-status" class="proc-file-status"></div>
+            <label>Documento recibido 2 <span class="muted">(opcional · PDF o Word · 10 MB)</span></label>
+            <input id="edit-recibido2" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+            <div id="edit-recibido2-status" class="proc-file-status"></div>
+            <label>Documento recibido 3 <span class="muted">(opcional · PDF o Word · 10 MB)</span></label>
+            <input id="edit-recibido3" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+            <div id="edit-recibido3-status" class="proc-file-status"></div>
+          </div>
+
+          <label>Documento respuesta 1 <span class="muted">(opcional · PDF o Word · 10 MB)</span></label>
+          <input id="edit-respuesta1" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+          <div id="edit-respuesta1-status" class="proc-file-status"></div>
+          <label>Documento respuesta 2 <span class="muted">(opcional · PDF o Word · 10 MB)</span></label>
+          <input id="edit-respuesta2" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+          <div id="edit-respuesta2-status" class="proc-file-status"></div>
+          <label>Documento respuesta 3 <span class="muted">(opcional · PDF o Word · 10 MB)</span></label>
+          <input id="edit-respuesta3" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+          <div id="edit-respuesta3-status" class="proc-file-status"></div>
+
+          <label>Bitácora</label>
+          <textarea id="edit-bitacora" rows="5" placeholder="Registra aquí tus bitácoras"></textarea>
+
+          <label>Etapa jurídica</label>
+          <select id="edit-etapa"><option value="">— Selecciona —</option></select>
+
+          <label>Evidencia de respuesta <span class="muted">(imagen · 5 MB)</span></label>
+          <input id="edit-evidencia" type="file" accept="image/*">
+          <div id="edit-evidencia-status" class="proc-file-status"></div>
+          <div id="edit-evidencia-preview"><img id="edit-evidencia-preview-img" src="" alt="Vista previa de la evidencia"></div>
+
+          <label>Estado</label>
+          <select id="edit-estado"><option value="">— Selecciona —</option></select>
+
+          <div id="edit-cierre-super">
+            <label>Fecha de cierre <span class="muted">(opcional)</span></label>
+            <input id="edit-cierre" type="text" placeholder="dd/mm/aaaa" readonly onclick="abrirProcPicker('edit-cierre')" class="hf-fecha">
+          </div>
+
+          <div class="btn-row hf-acciones">
+            <button type="button" id="btn-edit-asig-guardar" class="kit-btn kit-btn--marca"><i class="hi" data-ico="check"></i> Guardar cambios</button>
+          </div>
+        </div>
+        <button type="button" id="btn-edit-asig-back" class="hf-atras" hidden>Regresar</button>
+      </div>
+    </section>
+
+    <!-- ══════════════ PANEL (MI SEMÁFORO) ══════════════ -->
+    <section id="view-panel" class="view">
+      <div class="vista kit-ancho panel-card">
+        <div class="panel-subtitle hf-intro" id="panel-subtitle"></div>
+        <div class="panel-toolbar hf-pestanas">
+          <button class="panel-tab active" id="panel-tab-resumen" onclick="panelShowTab_('resumen')"><i class="hi" data-ico="grafica"></i> Resumen</button>
+          <button class="panel-tab" id="panel-tab-equipo" onclick="panelShowTab_('equipo')"><i class="hi" data-ico="equipo"></i> Equipo</button>
+          <button class="panel-tab" id="panel-tab-tiempo" onclick="panelShowTab_('tiempo')"><i class="hi" data-ico="reloj"></i> Tiempos</button>
+          <button class="panel-tab" id="panel-tab-cats" onclick="panelShowTab_('cats')"><i class="hi" data-ico="diana"></i> Categorías</button>
+        </div>
+        <button type="button" id="panel-back-btn" class="hf-atras" onclick="panelGoBack_()" hidden>Regresar</button>
+
+        <div id="panel-view-resumen" class="panel-animate">
+          <div class="panel-kpis" id="panel-kpis-main"></div>
+          <div class="panel-grid-2">
+            <div class="panel-section">
+              <div class="panel-section-title"><i class="hi" data-ico="semaforo"></i> Semáforo de asignaciones</div>
+              <div class="semaforo-resumen" id="panel-semaforo"></div>
+            </div>
+            <div class="panel-section">
+              <div class="panel-section-title"><i class="hi" data-ico="grafica"></i> Distribución por estado</div>
+              <div class="panel-chart-wrap hf-lienzo"><canvas id="panel-chart-estados"></canvas></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="panel-view-equipo" class="panel-animate" style="display:none;">
+          <div class="panel-grid-2">
+            <div class="panel-section">
+              <div class="panel-section-title"><i class="hi" data-ico="equipo"></i> Ranking por asignado</div>
+              <div class="ranking-list" id="panel-ranking"></div>
+            </div>
+            <div class="panel-section">
+              <div class="panel-section-title"><i class="hi" data-ico="grafica"></i> Carga de trabajo</div>
+              <div class="panel-chart-wrap hf-lienzo"><canvas id="panel-chart-equipo"></canvas></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="panel-view-tiempo" class="panel-animate" style="display:none;">
+          <div class="panel-kpis" id="panel-kpis-tiempo"></div>
+          <div class="panel-section">
+            <div class="panel-section-title"><i class="hi" data-ico="reloj"></i> Próximos vencimientos</div>
+            <div class="timeline-list" id="panel-timeline"></div>
+          </div>
+        </div>
+
+        <div id="panel-view-cats" class="panel-animate" style="display:none;">
+          <div class="panel-grid-2">
+            <div class="panel-section">
+              <div class="panel-section-title"><i class="hi" data-ico="diana"></i> Por categoría</div>
+              <div class="cat-donut-wrap" id="panel-cats"></div>
+            </div>
+            <div class="panel-section">
+              <div class="panel-section-title"><i class="hi" data-ico="diana"></i> <span id="panel-subcats-list-title">Por subcategoría</span></div>
+              <div class="cat-donut-wrap" id="panel-subcats"></div>
+            </div>
+          </div>
+          <div class="panel-grid-2">
+            <div class="panel-section">
+              <div class="panel-section-title"><i class="hi" data-ico="grafica"></i> Gráfico por categoría</div>
+              <div class="panel-chart-wrap hf-lienzo"><canvas id="panel-chart-cats"></canvas></div>
+            </div>
+            <div class="panel-section">
+              <div class="panel-section-title"><i class="hi" data-ico="grafica"></i> <span id="panel-subcats-chart-title">Gráfico por subcategoría</span></div>
+              <div class="panel-chart-wrap hf-lienzo"><canvas id="panel-chart-subcats"></canvas></div>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    </section>
 
-    <!-- ── Toolbar tabs ── -->
-    <div class="panel-toolbar" style="margin-bottom:18px;">
-      <button class="panel-tab active" id="estad-tab-btn-tiempo"
-        onclick="estadShowTab_('tiempo')">
-        <img src="img/calendario.webp" alt="" />
-        TIEMPO 2026
-      </button>
-      <button class="panel-tab" id="estad-tab-btn-zonas"
-        onclick="estadShowTab_('zonas')">
-        <img src="img/mapa.png" alt="" />
-        ZONAS
-      </button>
-      <button class="panel-tab" id="estad-tab-btn-tendencia"
-        onclick="estadShowTab_('tendencia')">
-        <img src="img/tendencia.png" alt="" />
-        TENDENCIA
-      </button>
-      <button class="danger panel-tab" onclick="estadGoBack_()">
-        ← REGRESAR
-      </button>
-    </div>
-
-    <!-- ══════════════════════════════════════════
-         TAB: TIEMPO 2026
-    ══════════════════════════════════════════ -->
-    <div id="estad-view-tiempo" class="estad-tab-content">
-
-      <!-- KPIs -->
-      <div class="estad-kpi-row" id="estad-kpis-tiempo"></div>
-
-      <!-- Pills totales -->
-      <div class="estad-tend-pills" id="estad-totals-tiempo"></div>
-
-      <!-- Gráfico barras tiempo -->
-      <div class="estad-chart-premium">
-        <div class="estad-chart-label">
-          <img src="img/calendario.webp" alt="" />
-          ATENCIÓN PREDIAL — TIEMPO 2026
+    <!-- ══════════════ ATENCIONES REGISTRADAS ══════════════ -->
+    <section id="view-atenciones" class="view">
+      <div class="vista kit-ancho">
+        <div class="panel-toolbar hf-pestanas">
+          <button class="panel-tab active" id="tab-atenc-chat" onclick="atencionesShowTab_('chat')"><i class="hi" data-ico="chat"></i> Por chat</button>
+          <button class="panel-tab" id="tab-atenc-pres" onclick="atencionesShowTab_('pres')" style="display:none;"><i class="hi" data-ico="atencion"></i> Presenciales</button>
         </div>
-        <div style="height:420px; position:relative;">
-          <canvas id="estad-canvas-tiempo"></canvas>
+        <div class="hf-barra">
+          <span class="hf-conteo"><b id="atenc-count">0</b> atenciones</span>
+          <label class="hf-buscar"><i class="hi" data-ico="buscar"></i><input id="atenc-filter" type="text" placeholder="Buscar por nombre, documento, barrio…" autocomplete="off"></label>
+        </div>
+        <div id="atenc-wrap" class="sol-list hf-rejilla"></div>
+        <button type="button" id="atenc-back" class="hf-atras" hidden>Regresar</button>
+      </div>
+    </section>
+
+    <!-- ══════════════ BASE DE DATOS PREDIAL ══════════════ -->
+    <section id="view-bd-predial" class="view">
+      <div class="vista kit-ancho">
+        <div class="hf-herramientas">
+          <button type="button" id="btn-bdp-agregar" class="kit-btn kit-btn--marca" style="display:none;"><i class="hi" data-ico="mas"></i> Agregar expediente</button>
+          <button type="button" id="btn-bdp-panel" class="kit-btn" style="display:none;"><i class="hi" data-ico="grafica"></i> Panel</button>
+          <button type="button" id="btn-bdp-mis-exp" class="kit-btn" style="display:none;"><i class="hi" data-ico="excel"></i> Datos Excel</button>
+          <button type="button" id="btn-bdp-expedientes" class="kit-btn"><i class="hi" data-ico="expediente"></i> Mis expedientes</button>
+        </div>
+        <div class="hf-barra">
+          <span class="hf-conteo"><b id="bdp-count">0</b> expedientes</span>
+          <label class="hf-buscar"><i class="hi" data-ico="buscar"></i><input id="bdp-filter" type="text" placeholder="Buscar por nombre, NIT, ficha, dirección…" autocomplete="off"></label>
+        </div>
+        <!-- selectores compactos: los pinta app.js leyendo las pastillas ocultas -->
+        <div id="bdp-filtros" class="vf-row"></div>
+        <div id="bdp-pills-fuente" style="display:none;">
+          <div class="bdp-pills-label">CLASIFICACIÓN</div>
+          <div id="bdp-pills-clasif" class="proc-status-filter">
+            <button type="button" class="proc-status-pill active" data-clasif="ALL">TODAS</button>
+            <button type="button" class="proc-status-pill" data-clasif="ALTA">ALTA</button>
+            <button type="button" class="proc-status-pill" data-clasif="MEDIA">MEDIA</button>
+            <button type="button" class="proc-status-pill" data-clasif="BAJA">BAJA</button>
+          </div>
+          <div class="bdp-pills-label">ACTUACIÓN</div>
+          <div id="bdp-pills-actuacion" class="proc-status-filter">
+            <button type="button" class="proc-status-pill active" data-actuacion="ALL">TODAS</button>
+            <button type="button" class="proc-status-pill" data-actuacion="NINGUNA">NINGUNA</button>
+            <button type="button" class="proc-status-pill" data-actuacion="COMUNICACION PERSUASIVA">COMUNICACION PERSUASIVA</button>
+            <button type="button" class="proc-status-pill" data-actuacion="LIQUIDACION OFICIAL">LIQUIDACION OFICIAL</button>
+            <button type="button" class="proc-status-pill" data-actuacion="MANDAMIENTO DE PAGO">MANDAMIENTO DE PAGO</button>
+            <button type="button" class="proc-status-pill" data-actuacion="EMBARGO">EMBARGO</button>
+            <button type="button" class="proc-status-pill" data-actuacion="SENTENCIA">SENTENCIA</button>
+            <button type="button" class="proc-status-pill" data-actuacion="DESEMBARGO">DESEMBARGO</button>
+            <button type="button" class="proc-status-pill" data-actuacion="REVOCATORIA DIRECTA">REVOCATORIA DIRECTA</button>
+            <button type="button" class="proc-status-pill" data-actuacion="INSOLVENCIA">INSOLVENCIA</button>
+            <button type="button" class="proc-status-pill" data-actuacion="PRESCRIPCION">PRESCRIPCIÓN</button>
+          </div>
+          <div class="bdp-pills-label" id="bdp-label-sustanciador">SUSTANCIADOR</div>
+          <div id="bdp-pills-sustanciador" class="proc-status-filter">
+            <button type="button" class="proc-status-pill active" data-sustanciador="ALL">TODOS</button>
+            <button type="button" class="proc-status-pill" data-sustanciador="NINGUNO">NINGUNO</button>
+          </div>
+          <div class="bdp-pills-label">ESTADO PROCESO</div>
+          <div id="bdp-pills-estado" class="proc-status-filter">
+            <button type="button" class="proc-status-pill active" data-estado="ALL">TODOS</button>
+            <button type="button" class="proc-status-pill" data-estado="NINGUNO">NINGUNO</button>
+            <button type="button" class="proc-status-pill" data-estado="ACUERDO DE PAGO">ACUERDO DE PAGO</button>
+            <button type="button" class="proc-status-pill" data-estado="COBRO PERSUASIVO/LIQUIDACION">COBRO PERSUASIVO/LIQUIDACIÓN</button>
+            <button type="button" class="proc-status-pill" data-estado="COBRO COACTIVO">COBRO COACTIVO</button>
+            <button type="button" class="proc-status-pill" data-estado="AL DIA">AL DIA</button>
+          </div>
+          <div class="bdp-pills-label">SOLICITUD EXP.</div>
+          <div id="bdp-pills-solexp" class="proc-status-filter">
+            <button type="button" class="proc-status-pill active" data-solexp="ALL">Todas</button>
+            <button type="button" class="proc-status-pill" data-solexp="PENDIENTE">Pendientes de respuesta</button>
+            <button type="button" class="proc-status-pill" data-solexp="RESPONDIDA">Respondidas</button>
+            <button type="button" class="proc-status-pill" data-solexp="NINGUNA">Sin solicitud</button>
+          </div>
+        </div>
+        <!-- pastillas rápidas (Solo las mías, Mi trabajo, No aperturados) -->
+        <div class="hf-rapidas">
+          <div id="bdp-pills-mias-wrap" style="display:none;">
+            <button type="button" id="bdp-pill-mias" class="proc-status-pill"><i class="hi" data-ico="persona"></i> Solo las mías</button>
+          </div>
+        </div>
+        <div id="bdp-list" class="sol-list hf-rejilla"></div>
+        <button type="button" id="btn-bdp-back" class="hf-atras" hidden>Regresar</button>
+      </div>
+    </section>
+
+    <!-- ══════════════ AGREGAR / EDITAR EXPEDIENTE ══════════════ -->
+    <section id="view-bdp-form" class="view">
+      <div class="vista kit-ancho">
+        <span id="bdp-form-title" hidden>AGREGAR EXPEDIENTE</span>
+        <div id="bdp-form-badge" class="hf-insignias"></div>
+        <div class="formulario hf-form">
+          <div id="bdp-super-fields">
+            <label>Nombres del propietario <span class="hf-oblig">*</span></label>
+            <input id="bdp-nombres" type="text" placeholder="Se guarda en mayúscula">
+
+            <label>NIT o cédula <span class="hf-oblig">*</span></label>
+            <input id="bdp-nit" type="text" inputmode="numeric" placeholder="Sin puntos ni espacios">
+
+            <label>Correo electrónico</label>
+            <input id="bdp-correo" type="email" placeholder="Opcional">
+
+            <label>Dirección del predio <span class="hf-oblig">*</span></label>
+            <input id="bdp-direccion" type="text" placeholder="Calle / carrera / barrio…">
+
+            <label>Matrícula <span class="muted">(opcional)</span></label>
+            <div class="input-icon-wrap hf-prefijo">
+              <span class="hf-prefijo__t">357-</span>
+              <input id="bdp-matricula" type="text" inputmode="numeric" placeholder="Solo el número">
+            </div>
+
+            <label>Ficha catastral <span class="muted">(12 a 15 dígitos, opcional)</span></label>
+            <input id="bdp-ficha" type="text" inputmode="numeric" placeholder="Solo dígitos">
+
+            <label>¿Escaneado? <span class="hf-oblig">*</span></label>
+            <select id="bdp-escaneado">
+              <option value="NO" selected>NO</option>
+              <option value="SI">SI</option>
+            </select>
+
+            <label>Debe desde <span class="hf-oblig">*</span></label>
+            <input id="bdp-debe-desde" type="text" placeholder="Selecciona el año…" readonly onclick="abrirBDPAnio_()" class="hf-fecha">
+            <input id="bdp-debe-desde-raw" type="hidden">
+
+            <label>Deuda hasta</label>
+            <input id="bdp-deuda-hasta" type="text" readonly class="hf-solo-lectura">
+
+            <label>Valor deuda <span class="hf-oblig">*</span></label>
+            <input id="bdp-valor-deuda" type="text" inputmode="numeric" placeholder="$ 0">
+            <div id="bdp-clasif-preview" class="formulario__nota"></div>
+
+            <label>No. exp. físico <span class="hf-oblig">*</span></label>
+            <div class="hf-dos">
+              <select id="bdp-exp-letra"><option value="">Letra…</option></select>
+              <input id="bdp-exp-numero" type="text" inputmode="numeric" maxlength="4" placeholder="4 dígitos">
+            </div>
+            <p class="formulario__nota">Ej: A0001. No puede haber duplicados.</p>
+
+            <label>Sustanciador <span class="hf-oblig">*</span></label>
+            <select id="bdp-sustanciador"><option value="NINGUNO" selected>NINGUNO</option></select>
+
+            <label>Asistente <span class="muted">(opcional)</span></label>
+            <select id="bdp-asistente"><option value="">— Sin asistente —</option></select>
+            <input id="bdp-contacto-sust" type="hidden">
+            <input id="bdp-contacto-asist" type="hidden">
+            <input id="bdp-asignador" type="hidden">
+            <input id="bdp-contacto-asignador" type="hidden">
+          </div>
+
+          <label>Bitácora <span class="hf-oblig">*</span></label>
+          <textarea id="bdp-bitacora" rows="4" placeholder="Registra actuaciones y observaciones"></textarea>
+
+          <label>Actuación <span class="hf-oblig">*</span></label>
+          <select id="bdp-actuacion">
+            <option value="NINGUNA" selected>NINGUNA</option>
+            <option value="COMUNICACION PERSUASIVA">COMUNICACION PERSUASIVA</option>
+            <option value="LIQUIDACION OFICIAL">LIQUIDACION OFICIAL</option>
+            <option value="MANDAMIENTO DE PAGO">MANDAMIENTO DE PAGO</option>
+            <option value="EMBARGO">EMBARGO</option>
+            <option value="SENTENCIA">SENTENCIA</option>
+            <option value="DESEMBARGO">DESEMBARGO</option>
+            <option value="REVOCATORIA DIRECTA">REVOCATORIA DIRECTA</option>
+            <option value="INSOLVENCIA">INSOLVENCIA</option>
+            <option value="PRESCRIPCION">PRESCRIPCION</option>
+          </select>
+
+          <label>Estado del proceso <span class="hf-oblig">*</span></label>
+          <select id="bdp-estado-proceso">
+            <option value="NINGUNO" selected>NINGUNO</option>
+            <option value="ACUERDO DE PAGO">ACUERDO DE PAGO</option>
+            <option value="COBRO PERSUASIVO/LIQUIDACION">COBRO PERSUASIVO/LIQUIDACION</option>
+            <option value="COBRO COACTIVO">COBRO COACTIVO</option>
+            <option value="AL DIA">AL DÍA</option>
+          </select>
+
+          <div id="bdp-extra-fields">
+            <h3 class="grupo__t hf-sep">Persuasivo y notificaciones</h3>
+
+            <label>Oficio persuasivo <span class="muted">(opcional)</span></label>
+            <input id="bdp-oficio-persuas" type="text">
+
+            <label>Fecha oficio persuasivo <span class="muted">(opcional)</span></label>
+            <input id="bdp-fecha-oficio-persuas" type="text" placeholder="dd/mm/aaaa" readonly onclick="abrirBDPFecha_('fecha-oficio-persuas')" class="hf-fecha">
+
+            <label>Fecha entrega <span class="muted">(opcional)</span></label>
+            <input id="bdp-fecha-entrega" type="text" placeholder="dd/mm/aaaa" readonly onclick="abrirBDPFecha_('fecha-entrega')" class="hf-fecha">
+
+            <label>Resolución liquidación <span class="muted">(opcional)</span></label>
+            <input id="bdp-resol-liquidac" type="text">
+
+            <label>Fecha resolución <span class="muted">(opcional)</span></label>
+            <input id="bdp-fecha-resolucion" type="text" placeholder="dd/mm/aaaa" readonly onclick="abrirBDPFecha_('fecha-resolucion')" class="hf-fecha">
+
+            <label>Oficio citación <span class="muted">(opcional)</span></label>
+            <input id="bdp-oficio-citacion" type="text">
+
+            <label>Fecha oficio <span class="muted">(opcional)</span></label>
+            <input id="bdp-fecha-oficio" type="text" placeholder="dd/mm/aaaa" readonly onclick="abrirBDPFecha_('fecha-oficio')" class="hf-fecha">
+
+            <label>Notif. citación</label>
+            <select id="bdp-notif-citacion"><option value="NO" selected>NO</option><option value="SI">SI</option></select>
+
+            <label>Notif. electrónica</label>
+            <select id="bdp-notif-electr"><option value="NO" selected>NO</option><option value="SI">SI</option></select>
+
+            <label>Notif. personal</label>
+            <select id="bdp-notif-personal"><option value="NO" selected>NO</option><option value="SI">SI</option></select>
+
+            <label>Notif. aviso</label>
+            <select id="bdp-notif-aviso"><option value="NO" selected>NO</option><option value="SI">SI</option></select>
+
+            <label>Publicación web</label>
+            <select id="bdp-publicacion-web"><option value="NO" selected>NO</option><option value="SI">SI</option></select>
+
+            <label>Ejecutoria <span class="muted">(opcional)</span></label>
+            <input id="bdp-ejecutoria" type="text">
+
+            <label>Mandamiento de pago</label>
+            <select id="bdp-mandam-pago"><option value="NO" selected>NO</option><option value="SI">SI</option></select>
+
+            <label>F-MP <span class="muted">(opcional)</span></label>
+            <input id="bdp-f-mp" type="text">
+
+            <h3 class="grupo__t hf-sep">Seguimiento</h3>
+
+            <label>Fecha de seguimiento <span class="muted">(opcional)</span></label>
+            <input id="bdp-form-seg-fecha" type="date">
+
+            <label class="bdp-seg-check"><input type="checkbox" id="bdp-form-seg-check" disabled> Recordar</label>
+            <div id="bdp-form-seg-aviso" class="bdp-seg-aviso" style="display:none;"></div>
+          </div>
+
+          <div class="btn-row hf-acciones">
+            <button type="button" id="btn-bdp-form-archivo" class="kit-btn"><i class="hi" data-ico="pdf"></i> Expediente (archivo)</button>
+            <button type="button" id="btn-bdp-form-guardar" class="kit-btn kit-btn--marca"><i class="hi" data-ico="check"></i> Guardar expediente</button>
+          </div>
+        </div>
+        <button type="button" id="btn-bdp-form-back" class="hf-atras" hidden>Regresar</button>
+      </div>
+    </section>
+
+    <!-- ══════════════ DETALLE DEL EXPEDIENTE ══════════════ -->
+    <section id="view-bdp-detalle" class="view">
+      <div class="vista kit-ancho">
+        <div class="hf-ficha-grande">
+          <div id="bdp-det-header" class="proc-detalle-header"></div>
+          <div id="bdp-det-body" class="hf-datos"></div>
+          <div class="btn-row hf-acciones" id="bdp-det-actions"></div>
+        </div>
+        <button type="button" id="btn-bdp-det-back" class="hf-atras" hidden>Regresar</button>
+      </div>
+    </section>
+
+    <!-- ══════════════ PANEL BD PREDIAL ══════════════ -->
+    <section id="view-bdp-panel" class="view">
+      <div class="vista kit-ancho panel-card">
+        <div class="panel-subtitle hf-intro" id="bdpp-subtitle"></div>
+        <div class="panel-toolbar hf-pestanas">
+          <button class="panel-tab active" id="bdpp-tab-resumen" onclick="bdppShowTab_('resumen')"><i class="hi" data-ico="grafica"></i> Resumen</button>
+          <button class="panel-tab" id="bdpp-tab-cartera" onclick="bdppShowTab_('cartera')"><i class="hi" data-ico="dinero"></i> Cartera</button>
+          <button class="panel-tab" id="bdpp-tab-actuaciones" onclick="bdppShowTab_('actuaciones')"><i class="hi" data-ico="balanza"></i> Actuaciones</button>
+          <button class="panel-tab" id="bdpp-tab-equipo" onclick="bdppShowTab_('equipo')"><i class="hi" data-ico="equipo"></i> Equipo</button>
+        </div>
+        <button type="button" id="bdpp-back" class="hf-atras" onclick="bdppGoBack_()" hidden>Regresar</button>
+
+        <div id="bdpp-view-resumen" class="panel-animate">
+          <div class="panel-kpis" id="bdpp-kpis-resumen"></div>
+          <div class="panel-grid-2">
+            <div class="panel-section">
+              <div class="panel-section-title"><i class="hi" data-ico="diana"></i> Distribución por clasificación</div>
+              <div class="panel-chart-wrap hf-lienzo"><canvas id="bdpp-chart-clasif"></canvas></div>
+            </div>
+            <div class="panel-section">
+              <div class="panel-section-title"><i class="hi" data-ico="grafica"></i> Estado del proceso</div>
+              <div class="panel-chart-wrap hf-lienzo"><canvas id="bdpp-chart-estado"></canvas></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="bdpp-view-cartera" class="panel-animate" style="display:none;">
+          <div class="panel-kpis" id="bdpp-kpis-cartera"></div>
+          <div class="panel-grid-2">
+            <div class="panel-section">
+              <div class="panel-section-title"><i class="hi" data-ico="dinero"></i> Top 10 deudores</div>
+              <div class="ranking-list" id="bdpp-top-deudores"></div>
+            </div>
+            <div class="panel-section">
+              <div class="panel-section-title"><i class="hi" data-ico="grafica"></i> Monto acumulado por clasificación</div>
+              <div class="panel-chart-wrap hf-lienzo"><canvas id="bdpp-chart-monto-clasif"></canvas></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="bdpp-view-actuaciones" class="panel-animate" style="display:none;">
+          <div class="panel-kpis" id="bdpp-kpis-actuaciones"></div>
+          <div class="panel-grid-2">
+            <div class="panel-section">
+              <div class="panel-section-title"><i class="hi" data-ico="balanza"></i> Distribución por actuación</div>
+              <div class="panel-chart-wrap hf-lienzo hf-lienzo--alto"><canvas id="bdpp-chart-actuacion"></canvas></div>
+            </div>
+            <div class="panel-section">
+              <div class="panel-section-title"><i class="hi" data-ico="dinero"></i> Monto adeudado por actuación</div>
+              <div class="panel-chart-wrap hf-lienzo hf-lienzo--alto"><canvas id="bdpp-chart-monto-actuacion"></canvas></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="bdpp-view-equipo" class="panel-animate" style="display:none;">
+          <div class="panel-kpis" id="bdpp-kpis-equipo"></div>
+          <div class="panel-section">
+            <div class="panel-section-title"><i class="hi" data-ico="equipo"></i> Ranking por sustanciador</div>
+            <div class="ranking-list" id="bdpp-ranking-sust"></div>
+          </div>
+          <div class="panel-grid-2">
+            <div class="panel-section">
+              <div class="panel-section-title"><i class="hi" data-ico="grafica"></i> Carga por sustanciador</div>
+              <div class="panel-chart-wrap hf-lienzo hf-lienzo--alto"><canvas id="bdpp-chart-sust"></canvas></div>
+            </div>
+            <div class="panel-section">
+              <div class="panel-section-title"><i class="hi" data-ico="dinero"></i> Monto gestionado por sustanciador</div>
+              <div class="panel-chart-wrap hf-lienzo"><canvas id="bdpp-chart-monto-sust"></canvas></div>
+            </div>
+          </div>
         </div>
       </div>
+    </section>
 
+  </div><!-- /.container -->
+
+  <!-- ══════════════════════════ MODALES ══════════════════════════ -->
+
+  <!-- RESPUESTA LIMPIA -->
+  <div id="modal-respuesta-limpia" class="hf-modal hidden">
+    <div class="hf-modal__hoja">
+      <div class="hf-modal__cab"><i class="hi" data-ico="chat"></i><h2>Respuesta limpia</h2></div>
+      <p class="hf-modal__p">Solo si el contribuyente no pidió un recibo existente o hay que orientarlo sobre su solicitud.</p>
+      <label>Respuesta</label>
+      <textarea id="respuesta-limpia" rows="5" required placeholder="Escribe la respuesta que le llegará por WhatsApp."></textarea>
+      <div class="hf-modal__pie">
+        <button type="button" id="btn-cerrar-respuesta-limpia" class="kit-btn">Cancelar</button>
+        <button type="button" id="btn-enviar-respuesta-limpia" class="kit-btn kit-btn--marca"><i class="hi" data-ico="enviar"></i> Enviar</button>
+      </div>
     </div>
-
-    <!-- ══════════════════════════════════════════
-         TAB: ZONAS
-    ══════════════════════════════════════════ -->
-    <div id="estad-view-zonas" class="estad-tab-content" style="display:none;">
-
-      <!-- KPIs zonas -->
-      <div class="estad-kpi-row" id="estad-kpis-zonas"></div>
-
-      <!-- Top zonas -->
-      <div class="panel-section">
-        <div class="panel-section-title">
-          <img src="img/mapa.png" alt="" />
-          TOP ZONAS
-        </div>
-        <div class="estad-top-list" id="estad-top-zonas"></div>
-      </div>
-
-      <!-- Gráfico paginado -->
-      <div class="estad-chart-premium" style="margin-top:14px;">
-        <div class="estad-chart-label">
-          <img src="img/mapa.png" alt="" />
-          DISTRIBUCIÓN POR ZONA
-          <span id="estad-zonas-page-label"
-            style="margin-left:auto;font-size:.72rem;color:var(--text-muted);font-family:'IBM Plex Sans',sans-serif;font-weight:600;"></span>
-        </div>
-        <div style="height:440px; position:relative;">
-          <canvas id="estad-canvas-zonas"></canvas>
-        </div>
-        <div class="estad-pager" id="estad-pager-zonas"></div>
-      </div>
-
-    </div>
-
-    <!-- ══════════════════════════════════════════
-         TAB: TENDENCIA
-    ══════════════════════════════════════════ -->
-    <div id="estad-view-tendencia" class="estad-tab-content" style="display:none;">
-
-      <!-- KPIs tendencia -->
-      <div class="estad-kpi-row" id="estad-kpis-tendencia"></div>
-
-      <!-- Gráfico de línea -->
-      <div class="estad-chart-premium">
-        <div class="estad-chart-label">
-          <img src="img/tendencia.png" alt="" />
-          EVOLUCIÓN MENSUAL 2026
-        </div>
-        <div style="height:320px; position:relative;">
-          <canvas id="estad-canvas-tendencia"></canvas>
-        </div>
-      </div>
-
-      <!-- Tabla comparación mensual -->
-      <div class="estad-chart-premium">
-        <div class="estad-chart-label">
-          <img src="img/calendario.webp" alt="" />
-          DETALLE MENSUAL
-        </div>
-        <div style="overflow-x:auto;">
-          <table class="estad-month-table">
-            <thead>
-              <tr>
-                <th>MES</th>
-                <th>CHAT</th>
-                <th>PRESENCIAL</th>
-                <th>TOTAL</th>
-                <th>VAR.</th>
-              </tr>
-            </thead>
-            <tbody id="estad-month-tbody"></tbody>
-          </table>
-        </div>
-      </div>
-
-    </div>
-
   </div>
-</section>
 
-     <!-- ============================================================
-     MI SEMÁFORO — NUEVAS VISTAS
-     Agregar antes del cierre </div> del .container en index.html
-     ============================================================ -->
-
-<!-- VISTA ASIGNACIONES -->
-<section id="view-asignaciones" class="view">
-  <!-- FASE 7: el max-width inline (1100px) le ganaba a la regla de ancho en
-       PC de la Fase 3, así que esta vista nunca se ensanchaba. Ahora va por
-       clase y styles/base-visual deciden. -->
-  <div class="card vista-ancha">
-
-    <h2 class="proc-view-title">ASIGNACIONES</h2>
-
-    <div class="count-row" style="margin-bottom:12px;">
-      <span class="count-pill" id="proc-count-pill">TOTAL: <span id="proc-count">0</span></span>
-      <input id="proc-filter" class="filter-input" type="text" placeholder="Filtrar por cualquier dato…" />
-    </div>
-
-    <!-- FASE 9 · barra compacta de filtros (ESTADO · ASIGNADO · VENCIMIENTO).
-         La pinta js (procMontarFiltros_), igual que en BD Predial. -->
-    <div id="proc-filtros" class="vf-row"></div>
-
-    <!-- Pastillas filtro por estado: siguen siendo la FUENTE DE VERDAD del
-         filtro de estado, pero ya no se ven (las maneja la barra de arriba). -->
-<div id="proc-pills-fuente" style="display:none;">
-<div id="proc-status-filter" class="proc-status-filter">
-  <button type="button" class="proc-status-pill active" data-status="ALL">TODAS</button>
-  <button type="button" class="proc-status-pill" data-status="ASIGNADO">ASIGNADO</button>
-  <button type="button" class="proc-status-pill" data-status="EN PROYECCIÓN">EN PROYECCIÓN</button>
-  <button type="button" class="proc-status-pill" data-status="PENDIENTE EVIDENCIA">PENDIENTE EVIDENCIA</button>
-  <button type="button" class="proc-status-pill" data-status="FINALIZADO">FINALIZADO</button>
-</div>
-</div>
-
-      <div class="btn-row" style="margin-bottom:14px;">
-  <button id="btn-panel-dashboard" class="btn-primary"
-    style="background:linear-gradient(135deg,#1e40af 0%,#1d4ed8 100%);display:none;">
-    <span style="display:inline-flex;align-items:center;gap:8px;">
-      <img src="img/barras.png"
-           style="width:22px;height:22px;object-fit:contain;" alt="Panel" />
-      PANEL 📊
-    </span>
-  </button>
-  <button id="btn-agregar-asignacion" class="btn-primary"
-    style="background:linear-gradient(135deg,#06b6d4,#0284c7);display:none;">
-    AGREGAR ASIGNACIÓN
-  </button>
-  <!-- FASE 6: vuelve como MODAL de descarga a Excel (ya no es un enlace de Drive). -->
-  <button id="btn-mis-procesos" class="btn-primary"
-    style="background:linear-gradient(135deg,#7c3aed,#4f46e5);display:none;">
-    MIS PROCESOS
-  </button>
-  <button id="btn-asignaciones-back" class="danger">REGRESAR</button>
-</div>
-
-    <div id="proc-list" class="sol-list"></div>
+  <!-- Evidencia ampliada -->
+  <div id="proc-lightbox" aria-modal="true" role="dialog" aria-label="Ver imagen">
+    <button id="proc-lightbox-close" aria-label="Cerrar" title="Cerrar"><i class="hi" data-ico="cerrar"></i></button>
+    <img id="proc-lightbox-img" src="" alt="Evidencia ampliada" onclick="event.stopPropagation()">
   </div>
-</section>
 
-<!-- VISTA AGREGAR ASIGNACIÓN -->
-<section id="view-agregar-asignacion" class="view">
-  <div class="card narrow">
-    <h2 style="color:var(--primary);">AGREGAR ASIGNACIÓN</h2>
-
-    <!-- Fecha de Recibido -->
-    <label>Fecha de Recibido</label>
-    <input id="proc-recibido" type="text" placeholder="dd/mm/2026" readonly
-      onclick="abrirProcPicker('recibido')" required
-      style="cursor:pointer;" />
-
-    <!-- Consecutivo -->
-    <label>Consecutivo</label>
-    <input id="proc-consecutivo" type="text" placeholder="Ingresa Consecutivo" required />
-
-    <!-- Asunto -->
-    <label>Asunto</label>
-    <textarea id="proc-descripcion" rows="2"
-      placeholder="Relaciona brevemente el asunto" required></textarea>
-
-    <!-- Solo super usuario: Peticionario y Expediente -->
-    <label>Peticionario</label>
-    <input id="proc-peticionario" type="text" placeholder="Nombre del peticionario" />
-
-    <label>N° EXP. INTERNO</label>
-    <input id="proc-expediente" type="text" placeholder="Ej: SH-0525" />
-
-    <!-- Fecha Respuesta oportuna -->
-    <label>Fecha de Respuesta oportuna</label>
-    <p class="muted" style="margin:0 0 6px;font-size:.8rem;">
-      Selecciona al menos 1 día hábil antes del vencimiento
-    </p>
-    <input id="proc-respuesta" type="text" placeholder="dd/mm/2026" readonly
-      onclick="abrirProcPicker('respuesta')" required
-      style="cursor:pointer;" />
-
-    <!-- Medio -->
-    <label>Medio</label>
-    <select id="proc-medio" required>
-      <option value="" disabled selected>Selecciona el Medio</option>
-      <option value="CORRESPONDENCIA">CORRESPONDENCIA</option>
-      <option value="CORREO">CORREO</option>
-    </select>
-
-    <!-- Categoría (con iconos dinámicos) -->
-    <label>Categoría</label>
-    <div id="proc-cat-selector" class="cat-selector"></div>
-    <select id="proc-categoria" style="display:none;" required></select>
-
-    <!-- Subcategoría -->
-    <label>Subcategoría</label>
-    <div id="proc-subcat-selector" class="cat-selector"></div>
-    <select id="proc-subcategoria" style="display:none;"></select>
-
-    <!-- Asignado -->
-    <label>Asignado <span class="muted">(opcional)</span></label>
-    <!-- FASE 5: las opciones las pone js/alcance.js con quien tiene el rol -->
-    <select id="proc-asignado">
-      <option value="">— Sin asignar —</option>
-    </select>
-    <input id="proc-contacto1" type="hidden" />
-
-    <!-- Asistente: opcional, ya no se deduce del abogado (FASE 5) -->
-    <label>Asistente <span class="muted">(opcional)</span></label>
-    <select id="proc-asistente">
-      <option value="">— Sin asistente —</option>
-    </select>
-    <input id="proc-contacto2" type="hidden" />
-
-    <!-- Ocultos -->
-    <input id="proc-coordinador" type="hidden" />
-    <input id="proc-contacto3"   type="hidden" />
-
-    <!-- Documentos Recibidos -->
-    <label>Documento Recibido 1 <span class="muted">(opcional, PDF o Word, 10MB)</span></label>
-    <input id="proc-recibido1" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
-    <div id="proc-recibido1-status" class="proc-file-status"></div>
-
-    <label>Documento Recibido 2 <span class="muted">(opcional, PDF o Word, 10MB)</span></label>
-    <input id="proc-recibido2" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
-    <div id="proc-recibido2-status" class="proc-file-status"></div>
-
-    <label>Documento Recibido 3 <span class="muted">(opcional, PDF o Word, 10MB)</span></label>
-    <input id="proc-recibido3" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
-    <div id="proc-recibido3-status" class="proc-file-status"></div>
-
-    <div class="btn-row" style="margin-top:16px;">
-      <button id="btn-proc-add-guardar" class="btn-primary">Guardar</button>
-      <button id="btn-proc-add-back" class="danger">Regresar</button>
+  <!-- REBOTAR ASIGNACIÓN -->
+  <div id="modal-rebotar" class="hf-modal hidden">
+    <div class="hf-modal__hoja">
+      <div class="hf-modal__cab"><i class="hi" data-ico="devolver"></i><h2>Rebotar asignación</h2></div>
+      <p class="hf-modal__p">Justifica por qué esta asignación no es de tu competencia. Le llega al coordinador.</p>
+      <label>Justificación jurídica</label>
+      <textarea id="proc-rebote" rows="5" placeholder="Redacta la razón por la cual esta asignación no es de tu competencia."></textarea>
+      <div class="hf-modal__pie">
+        <button type="button" id="btn-rebote-regresar" class="kit-btn">Cancelar</button>
+        <button type="button" id="btn-rebote-guardar" class="kit-btn kit-btn--marca"><i class="hi" data-ico="devolver"></i> Rebotar</button>
+      </div>
     </div>
   </div>
-</section>
 
-<!-- VISTA VER DETALLES DE ASIGNACIÓN -->
-<section id="view-ver-asignacion" class="view">
-  <div class="card" style="max-width:860px;">
-
-    <h2 style="color:var(--primary); margin-bottom:8px;">DETALLE DE TU ASIGNACIÓN</h2>
-
-    <!-- Header: categoría + subcategoría + estado -->
-    <div id="proc-ver-header" class="proc-detalle-header"></div>
-
-    <!-- Cuerpo campos -->
-    <div id="proc-ver-body" style="margin-top:10px;"></div>
-
-    <!-- Evidencia -->
-    <div id="proc-ver-evidencia" class="proc-evidencia-wrap" style="display:none;">
-      <p style="font-weight:800;text-align:center;color:var(--primary);margin-bottom:8px;">Evidencia</p>
-      <img id="proc-ver-evidencia-img" class="proc-evidencia-img" alt="Evidencia" />
-    </div>
-
-    <!-- Archivos recibidos y respuestas -->
-    <div id="proc-ver-files" class="proc-files-row" style="margin-top:14px;"></div>
-
-    <!-- Creada -->
-    <div id="proc-ver-creacion" style="margin-top:10px;font-size:.82rem;color:var(--text-muted);text-align:left;"></div>
-
-    <!-- Botones de acción -->
-    <div class="btn-row" id="proc-ver-actions" style="margin-top:16px; flex-wrap:wrap; gap:10px;">
-      <!-- Se renderizan dinámicamente -->
-    </div>
-
-    <div class="btn-row" style="margin-top:10px;">
-      <button id="btn-ver-asignacion-back" class="danger">REGRESAR</button>
+  <!-- SOLICITAR PROCESO (asignado → coordinador) -->
+  <div id="modal-solicitar-proceso" class="hf-modal hidden">
+    <div class="hf-modal__hoja">
+      <div class="hf-modal__cab"><i class="hi" data-ico="enviar"></i><h2 id="modal-sp-titulo">¿Deseas complementar la solicitud?</h2></div>
+      <label>Mensaje (opcional)</label>
+      <textarea id="modal-sp-solicitud" rows="5" placeholder="Redacta si lo consideras necesario."></textarea>
+      <div class="hf-modal__pie">
+        <button type="button" id="btn-sp-cancelar" class="kit-btn">Cancelar</button>
+        <button type="button" id="btn-sp-guardar" class="kit-btn kit-btn--marca"><i class="hi" data-ico="enviar"></i> Enviar</button>
+      </div>
     </div>
   </div>
-</section>
 
-<!-- VISTA EDITAR ASIGNACIÓN -->
-<section id="view-editar-asignacion" class="view">
-  <div class="card narrow">
-    <h2 style="color:var(--primary);">EDICIÓN DE ASIGNACIÓN</h2>
-    <div id="edit-badge-row" style="text-align:center;margin-bottom:10px;"></div>
+  <!-- DECISIÓN (coordinador → asignado) -->
+  <div id="modal-decision" class="hf-modal hidden">
+    <div class="hf-modal__hoja">
+      <div class="hf-modal__cab"><i class="hi" data-ico="firma"></i><h2 id="modal-dec-titulo">¿Deseas complementar la respuesta?</h2></div>
+      <label>Mensaje (opcional)</label>
+      <textarea id="modal-dec-solicitud" rows="5" placeholder="Redacta si lo consideras necesario."></textarea>
+      <div class="hf-modal__pie">
+        <button type="button" id="btn-dec-cancelar" class="kit-btn">Cancelar</button>
+        <button type="button" id="btn-dec-guardar" class="kit-btn kit-btn--marca"><i class="hi" data-ico="check"></i> Confirmar</button>
+      </div>
+    </div>
+  </div>
 
-    <!-- Solo super usuario -->
-    <div id="edit-super-fields">
-      <label>Fecha de Recibido</label>
-      <input id="edit-recibido" type="text" placeholder="dd/mm/2026" readonly
-        onclick="abrirProcPicker('edit-recibido')" style="cursor:pointer;" />
+  <!-- Selector de fecha (asignaciones). fechas-ios.js lo cambia por la rueda iOS -->
+  <div id="proc-fecha-modal" class="proc-picker-modal" aria-hidden="true">
+    <div class="picker-box">
+      <h3>Selecciona la fecha</h3>
+      <div class="picker-grid">
+        <div><small>Día</small><select id="proc-picker-dia" size="10"></select></div>
+        <div><small>Mes</small><select id="proc-picker-mes" size="12"></select></div>
+        <div><small>Año</small><select id="proc-picker-anio" size="3" disabled><option selected></option></select></div>
+      </div>
+      <div class="picker-actions">
+        <button type="button" class="btn btn-cancel" onclick="cancelarProcPicker()">Cancelar</button>
+        <button type="button" class="btn btn-ok" onclick="confirmarProcPicker()">Ok</button>
+      </div>
+    </div>
+  </div>
 
-      <label>Consecutivo</label>
-      <input id="edit-consecutivo" type="text" placeholder="Ingresa Consecutivo" />
+  <!-- Selector de AÑO (DEBE DESDE) -->
+  <div id="bdp-anio-modal" class="proc-picker-modal" aria-hidden="true">
+    <div class="picker-box">
+      <h3>Selecciona el año</h3>
+      <div class="hf-centro"><select id="bdp-anio-select" size="10"></select></div>
+      <div class="picker-actions">
+        <button type="button" class="btn btn-cancel" onclick="cancelarBDPAnio()">Cancelar</button>
+        <button type="button" class="btn btn-ok" onclick="confirmarBDPAnio()">Ok</button>
+      </div>
+    </div>
+  </div>
 
-      <label>Asunto</label>
-      <textarea id="edit-descripcion" rows="2" placeholder="Relaciona brevemente el asunto"></textarea>
+  <!-- Selector de FECHA (fechas opcionales del expediente) -->
+  <div id="bdp-fecha-modal" class="proc-picker-modal" aria-hidden="true">
+    <div class="picker-box">
+      <h3>Selecciona la fecha</h3>
+      <div class="picker-grid">
+        <div><small>Día</small><select id="bdp-pick-dia" size="10"></select></div>
+        <div><small>Mes</small><select id="bdp-pick-mes" size="12"></select></div>
+        <div><small>Año</small><select id="bdp-pick-anio" size="10"></select></div>
+      </div>
+      <div class="picker-actions">
+        <button type="button" class="btn btn-cancel" onclick="cancelarBDPFecha()">Cancelar</button>
+        <button type="button" class="btn btn-ok" onclick="confirmarBDPFecha()">Ok</button>
+      </div>
+    </div>
+  </div>
 
-      <label>Peticionario</label>
-      <input id="edit-peticionario" type="text" placeholder="Nombre del peticionario" />
+  <!-- CHAT EN TIEMPO REAL DE UNA ASIGNACIÓN -->
+  <div id="modal-chat" aria-modal="true" role="dialog" aria-label="Chat de la asignación">
+    <div class="chat-box">
+      <div class="chat-header">
+        <div class="chat-header-avatar"><i class="hi" data-ico="chat" data-t="20"></i></div>
+        <div class="chat-header-info">
+          <div class="chat-header-title" id="chat-header-title">Chat de la asignación</div>
+          <div class="chat-header-sub" id="chat-header-sub">Cargando…</div>
+        </div>
+        <button id="btn-chat-reset" class="hf-chat-btn hf-chat-btn--malo" aria-label="Vaciar el chat" title="Vaciar el chat" style="display:none;"><i class="hi" data-ico="basura"></i></button>
+        <button class="chat-header-close hf-chat-btn" id="btn-chat-close" aria-label="Cerrar chat"><i class="hi" data-ico="cerrar"></i></button>
+      </div>
+      <div class="chat-messages" id="chat-messages">
+        <div class="chat-empty" id="chat-empty">
+          <i class="hi" data-ico="chat" data-t="40"></i>
+          <p>Aún no hay mensajes.<br>Escribe el primero.</p>
+        </div>
+      </div>
+      <div class="chat-typing" id="chat-typing">
+        <span class="typing-dots"><span></span><span></span><span></span></span>
+        &nbsp;<span id="chat-typing-who"></span> está escribiendo…
+      </div>
+      <div class="chat-footer">
+        <div class="chat-input-wrap">
+          <textarea id="chat-input" rows="1" placeholder="Escribe un mensaje…" maxlength="800"></textarea>
+        </div>
+        <button class="chat-send-btn" id="btn-chat-send" aria-label="Enviar mensaje"><i class="hi" data-ico="enviar" data-t="20"></i></button>
+      </div>
+    </div>
+  </div>
+  <div id="chat-toast">Nuevo mensaje</div>
 
-      <label>N° EXP. INTERNO</label>
-      <input id="edit-expediente" type="text" placeholder="Ej: SH-0525" />
+  <!-- MENSAJE O BITÁCORA (solicitud de expediente; lo gobierna js/solicitud-exp.js) -->
+  <div id="modal-expediente" class="hf-modal hidden">
+    <div class="hf-modal__hoja">
+      <div class="hf-modal__cab"><i class="hi" data-ico="expediente"></i><h2>Mensaje o bitácora</h2></div>
+      <div id="modal-expediente-historial" class="hf-historial" style="display:none;"></div>
+      <p id="modal-expediente-vacio" class="hf-modal__p" style="display:none;">Aún no hay mensajes en este expediente.</p>
+      <label for="modal-expediente-nuevo">Nuevo mensaje</label>
+      <textarea id="modal-expediente-nuevo" rows="3" placeholder="Escribe tu mensaje aquí…"></textarea>
+      <div class="hf-modal__pie">
+        <button type="button" id="btn-expediente-cancelar" class="kit-btn">Cancelar</button>
+        <button type="button" id="btn-expediente-guardar" class="kit-btn kit-btn--marca"><i class="hi" data-ico="enviar"></i> Enviar</button>
+      </div>
+    </div>
+  </div>
 
-      <label>Fecha de Respuesta oportuna</label>
-      <input id="edit-respuesta" type="text" placeholder="dd/mm/2026" readonly
-        onclick="abrirProcPicker('edit-respuesta')" style="cursor:pointer;" />
-
-      <label>Medio</label>
-      <select id="edit-medio">
-        <option value="">— Sin cambio —</option>
-        <option value="CORRESPONDENCIA">CORRESPONDENCIA</option>
-        <option value="CORREO">CORREO</option>
+  <!-- ACTUACIÓN Y SEGUIMIENTO (expediente) -->
+  <div id="modal-bdp-decision" class="hf-modal hidden">
+    <div class="hf-modal__hoja">
+      <div class="hf-modal__cab"><i class="hi" data-ico="balanza"></i><h2>Actuación y seguimiento</h2></div>
+      <p class="hf-modal__p">Cambia la actuación del expediente. Se le avisa al sustanciador.</p>
+      <div id="bdp-dec-context" class="hf-contexto"></div>
+      <label>Nueva actuación</label>
+      <select id="bdp-dec-actuacion">
+        <option value="NINGUNA">NINGUNA</option>
+        <option value="COMUNICACION PERSUASIVA">COMUNICACION PERSUASIVA</option>
+        <option value="LIQUIDACION OFICIAL">LIQUIDACION OFICIAL</option>
+        <option value="MANDAMIENTO DE PAGO">MANDAMIENTO DE PAGO</option>
+        <option value="EMBARGO">EMBARGO</option>
+        <option value="SENTENCIA">SENTENCIA</option>
+        <option value="DESEMBARGO">DESEMBARGO</option>
+        <option value="REVOCATORIA DIRECTA">REVOCATORIA DIRECTA</option>
+        <option value="INSOLVENCIA">INSOLVENCIA</option>
+        <option value="PRESCRIPCION">PRESCRIPCION</option>
       </select>
-
-      <label>Asignado</label>
-      <!-- FASE 5: las opciones las pone js/alcance.js con quien tiene el rol -->
-      <select id="edit-asignado">
-        <option value="">— Sin asignar —</option>
-      </select>
-      <input id="edit-contacto1" type="hidden" />
-    </div>
-
-    <!-- Ambos roles -->
-    <label>Categoría</label>
-    <div id="edit-cat-selector" class="cat-selector"></div>
-    <select id="edit-categoria" style="display:none;"></select>
-
-    <label>Subcategoría</label>
-    <div id="edit-subcat-selector" class="cat-selector"></div>
-    <select id="edit-subcategoria" style="display:none;"></select>
-
-    <label>Asistente <span class="muted">(opcional)</span></label>
-    <select id="edit-asistente">
-      <option value="">— Sin asistente —</option>
-    </select>
-    <input id="edit-contacto2"   type="hidden" />
-    <input id="edit-coordinador" type="hidden" />
-    <input id="edit-contacto3"   type="hidden" />
-
-    <!-- Solo super usuario: recibidos -->
-    <div id="edit-recibidos-super">
-      <label>Documento Recibido 1 <span class="muted">(opcional, PDF o Word, 10MB)</span></label>
-      <input id="edit-recibido1" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
-      <div id="edit-recibido1-status" class="proc-file-status"></div>
-
-      <label>Documento Recibido 2 <span class="muted">(opcional, PDF o Word, 10MB)</span></label>
-      <input id="edit-recibido2" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
-      <div id="edit-recibido2-status" class="proc-file-status"></div>
-
-      <label>Documento Recibido 3 <span class="muted">(opcional, PDF o Word, 10MB)</span></label>
-      <input id="edit-recibido3" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
-      <div id="edit-recibido3-status" class="proc-file-status"></div>
-    </div>
-
-    <!-- Ambos roles: respuestas -->
-    <label>Documento Respuesta 1 <span class="muted">(opcional, PDF o Word, 10MB)</span></label>
-    <input id="edit-respuesta1" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
-    <div id="edit-respuesta1-status" class="proc-file-status"></div>
-
-    <label>Documento Respuesta 2 <span class="muted">(opcional, PDF o Word, 10MB)</span></label>
-    <input id="edit-respuesta2" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
-    <div id="edit-respuesta2-status" class="proc-file-status"></div>
-
-    <label>Documento Respuesta 3 <span class="muted">(opcional, PDF o Word, 10MB)</span></label>
-    <input id="edit-respuesta3" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
-    <div id="edit-respuesta3-status" class="proc-file-status"></div>
-
-    <label>Bitácora</label>
-    <textarea id="edit-bitacora" rows="5"
-      placeholder="Realiza tus bitácoras"></textarea>
-
-    <label>Etapa Jurídica</label>
-    <select id="edit-etapa">
-      <option value="">— Selecciona —</option>
-    </select>
-
-    <label>Evidencia Respuesta <span class="muted">(imagen, 5MB)</span></label>
-<input id="edit-evidencia" type="file" accept="image/*" />
-<div id="edit-evidencia-status" class="proc-file-status"></div>
-<div id="edit-evidencia-preview">
-  <img id="edit-evidencia-preview-img" src="" alt="Preview evidencia" />
-</div>
-
-    <label>Estado</label>
-    <select id="edit-estado">
-      <option value="">— Selecciona —</option>
-    </select>
-
-    <!-- Solo super: fecha cierre -->
-    <div id="edit-cierre-super">
-      <label>Fecha de Cierre <span class="muted">(opcional)</span></label>
-      <input id="edit-cierre" type="text" placeholder="dd/mm/2026" readonly
-        onclick="abrirProcPicker('edit-cierre')" style="cursor:pointer;" />
-    </div>
-
-    <div class="btn-row" style="margin-top:16px;">
-      <button id="btn-edit-asig-guardar" class="btn-primary">Guardar</button>
-      <button id="btn-edit-asig-back" class="danger">Regresar</button>
-    </div>
-  </div>
-</section>
-
-<!-- ============================================================
-     MODALES SEMÁFORO
-     ============================================================ -->
-
-    <!-- Lightbox evidencia proceso -->
-<div id="proc-lightbox" aria-modal="true" role="dialog" aria-label="Ver imagen">
-  <button id="proc-lightbox-close" aria-label="Cerrar zoom" title="Cerrar">✕</button>
-  <img id="proc-lightbox-img" src="" alt="Evidencia ampliada" onclick="event.stopPropagation()" />
-</div>
-
-<!-- Modal REBOTAR -->
-<div id="modal-rebotar" class="hidden"
-  style="position:fixed;inset:0;background:var(--scrim);z-index:10000;
-         display:flex;align-items:center;justify-content:center;padding:16px;">
-  <div class="card narrow" style="margin:0;width:min(560px,100%);">
-    <h2 style="color:var(--primary);">REBOTAR ASIGNACIÓN</h2>
-    <p class="helper" style="margin-top:0;">Justifica por qué esta asignación no es de tu competencia.</p>
-    <label>Justificación Jurídica</label>
-    <textarea id="proc-rebote" rows="5"
-      placeholder="Redacta la razón por la cual esta asignación no es de tu competencia."></textarea>
-    <div class="btn-row" style="margin-top:14px;">
-      <button id="btn-rebote-guardar" class="btn-primary">Guardar</button>
-      <button id="btn-rebote-regresar" class="danger">Regresar</button>
-    </div>
-  </div>
-</div>
-
-    <!-- Modal SOLICITAR PROCESO (asignado → coordinador) -->
-<div id="modal-solicitar-proceso" class="hidden"
-  style="position:fixed;inset:0;background:var(--scrim);z-index:10000;
-         display:flex;align-items:center;justify-content:center;padding:16px;">
-  <div class="card narrow" style="margin:0;width:min(560px,100%);">
-    <h2 id="modal-sp-titulo" style="color:var(--primary);">¿Deseas complementar la solicitud?</h2>
-    <label>Mensaje (opcional)</label>
-    <textarea id="modal-sp-solicitud" rows="5"
-      placeholder="Redacta si lo consideras necesario."></textarea>
-    <div class="btn-row" style="margin-top:14px;">
-      <button id="btn-sp-guardar" class="btn-primary">Guardar</button>
-      <button id="btn-sp-cancelar" class="danger">Cancelar</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal DECISIÓN (super usuario → asignado) -->
-<div id="modal-decision" class="hidden"
-  style="position:fixed;inset:0;background:var(--scrim);z-index:10000;
-         display:flex;align-items:center;justify-content:center;padding:16px;">
-  <div class="card narrow" style="margin:0;width:min(560px,100%);">
-    <h2 id="modal-dec-titulo" style="color:var(--primary);">¿Deseas complementar la respuesta?</h2>
-    <label>Mensaje (opcional)</label>
-    <textarea id="modal-dec-solicitud" rows="5"
-      placeholder="Redacta si lo consideras necesario."></textarea>
-    <div class="btn-row" style="margin-top:14px;">
-      <button id="btn-dec-guardar" class="btn-primary">Guardar</button>
-      <button id="btn-dec-cancelar" class="danger">Cancelar</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal Picker Fecha (para procesos) -->
-<div id="proc-fecha-modal" class="proc-picker-modal" aria-hidden="true">
-  <div class="picker-box">
-    <h3 style="margin:0 0 8px;font-family:'Sora',sans-serif;color:var(--primary);">
-      Selecciona la fecha
-    </h3>
-    <div class="picker-grid">
-      <div>
-        <small>Día</small>
-        <select id="proc-picker-dia" size="10"></select>
-      </div>
-      <div>
-        <small>Mes</small>
-        <select id="proc-picker-mes" size="12"></select>
-      </div>
-      <div>
-        <small>Año</small>
-        <select id="proc-picker-anio" size="3" disabled>
-          <option selected>2026</option>
-        </select>
-      </div>
-    </div>
-    <div class="picker-actions">
-      <button type="button" class="btn btn-cancel"
-        onclick="cancelarProcPicker()">Cancelar</button>
-      <button type="button" class="btn btn-ok"
-        onclick="confirmarProcPicker()">Ok</button>
-    </div>
-  </div>
-</div>
-
-    <!-- Modal Picker AÑO (para DEBE DESDE) -->
-<div id="bdp-anio-modal" class="proc-picker-modal" aria-hidden="true">
-  <div class="picker-box">
-    <h3 style="margin:0 0 8px;font-family:'Sora',sans-serif;color:var(--primary);">
-      Selecciona el año
-    </h3>
-    <div style="display:flex; justify-content:center; margin:12px 0 16px;">
-      <select id="bdp-anio-select" size="10" style="height:220px; min-width:120px;"></select>
-    </div>
-    <div class="picker-actions">
-      <button type="button" class="btn btn-cancel" onclick="cancelarBDPAnio()">Cancelar</button>
-      <button type="button" class="btn btn-ok"     onclick="confirmarBDPAnio()">Ok</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal Picker FECHA (para fechas opcionales 2026) -->
-<div id="bdp-fecha-modal" class="proc-picker-modal" aria-hidden="true">
-  <div class="picker-box">
-    <h3 style="margin:0 0 8px;font-family:'Sora',sans-serif;color:var(--primary);">
-      Selecciona la fecha
-    </h3>
-    <div class="picker-grid">
-      <div>
-        <small>Día</small>
-        <select id="bdp-pick-dia" size="10"></select>
-      </div>
-      <div>
-        <small>Mes</small>
-        <select id="bdp-pick-mes" size="12"></select>
-      </div>
-      <div>
-        <small>Año</small>
-        <select id="bdp-pick-anio" size="10"></select>
-      </div>
-    </div>
-    <div class="picker-actions">
-      <button type="button" class="btn btn-cancel" onclick="cancelarBDPFecha()">Cancelar</button>
-      <button type="button" class="btn btn-ok"     onclick="confirmarBDPFecha()">Ok</button>
-    </div>
-  </div>
-</div>
-
-    <!-- ============================================================
-     MODAL CHAT TIEMPO REAL
-     ============================================================ -->
-<div id="modal-chat" aria-modal="true" role="dialog" aria-label="Chat de asignación">
-  <div class="chat-box">
-
-    <!-- Header -->
-    <div class="chat-header">
-      <div class="chat-header-avatar">💬</div>
-      <div class="chat-header-info">
-        <div class="chat-header-title" id="chat-header-title">Chat de Asignación</div>
-        <div class="chat-header-sub"  id="chat-header-sub">Cargando...</div>
-      </div>
-      <button id="btn-chat-reset" aria-label="Resetear chat" title="Resetear chat"
-  style="display:none; background:rgba(239,68,68,.30); border:0; color:#fff;
-         width:34px; height:34px; border-radius:50%; font-size:1rem;
-         cursor:pointer; align-items:center; justify-content:center;
-         flex-shrink:0; transition:.15s; margin-right:4px;">
-  🗑️
-</button>
-<button class="chat-header-close" id="btn-chat-close" aria-label="Cerrar chat">✕</button>
-    </div>
-
-    <!-- Mensajes -->
-    <div class="chat-messages" id="chat-messages">
-      <div class="chat-empty" id="chat-empty">
-        <img src="img/chincheta.png" alt="">
-        <p>Aún no hay mensajes.<br>¡Sé el primero en escribir!</p>
-      </div>
-    </div>
-
-    <!-- Indicador escribiendo -->
-    <div class="chat-typing" id="chat-typing">
-      <span class="typing-dots">
-        <span></span><span></span><span></span>
-      </span>
-      &nbsp;<span id="chat-typing-who"></span> está escribiendo…
-    </div>
-
-    <!-- Footer input -->
-    <div class="chat-footer">
-      <div class="chat-input-wrap">
-        <textarea id="chat-input" rows="1"
-          placeholder="Escribe un mensaje…"
-          maxlength="800"></textarea>
-      </div>
-      <button class="chat-send-btn" id="btn-chat-send" aria-label="Enviar mensaje">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-             stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="22" y1="2" x2="11" y2="13"/>
-          <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-        </svg>
-      </button>
-    </div>
-
-  </div>
-</div>
-
-<!-- Toast mensaje nuevo -->
-<div id="chat-toast">💬 Nuevo mensaje</div>
-
-<!-- Modal SOLICITUD EXPEDIENTE — MENSAJE O BITÁCORA (17/09: lo gobierna js/solicitud-exp.js) -->
-<div id="modal-expediente" class="hidden"
-  style="position:fixed;inset:0;background:var(--scrim);z-index:10000;
-         display:flex;align-items:center;justify-content:center;padding:16px;">
-  <div class="card narrow" style="margin:0;width:min(560px,100%);display:flex;flex-direction:column;gap:10px;">
-    <h2 style="color:var(--primary);">MENSAJE O BITÁCORA</h2>
-
-    <!-- Historial: solo lectura -->
-    <div id="modal-expediente-historial"
-      style="
-        background:rgba(6,64,43,.04);
-        border:1.5px solid rgba(6,64,43,.14);
-        border-radius:var(--radius-md);
-        padding:12px 14px;
-        font-size:.88rem;
-        font-weight:500;
-        color:var(--text-main);
-        white-space:pre-wrap;
-        word-break:break-word;
-        min-height:60px;
-        max-height:220px;
-        overflow-y:auto;
-        line-height:1.6;
-        display:none;
-      ">
-    </div>
-
-    <!-- Sin historial aún -->
-    <p id="modal-expediente-vacio"
-      style="margin:0;font-size:.82rem;font-weight:600;color:var(--text-muted);
-             text-align:center;display:none;">
-      Aún no hay mensajes en este expediente.
-    </p>
-
-    <!-- Campo nuevo mensaje -->
-    <label for="modal-expediente-nuevo" style="margin:4px 0 2px;">Nuevo mensaje</label>
-    <textarea
-      id="modal-expediente-nuevo"
-      rows="3"
-      placeholder="Escribe tu mensaje aquí…"
-      style="white-space:pre-wrap;"
-    ></textarea>
-
-    <div class="btn-row" style="margin-top:6px;">
-      <button id="btn-expediente-guardar" class="btn-primary">Enviar</button>
-      <button id="btn-expediente-cancelar" class="danger">Cancelar</button>
-    </div>
-  </div>
-</div>
-
-    <!-- VISTA PANEL DASHBOARD -->
-<section id="view-panel" class="view">
-  <div class="panel-card">
-
-    <!-- Header -->
-    <div class="panel-header">
-      <div class="panel-title-wrap">
-        <img src="img/barras.png" alt="Panel" />
-        <div>
-          <h2 class="panel-title">PANEL 📊</h2>
-          <div class="panel-subtitle" id="panel-subtitle">Cargando datos...</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Toolbar -->
-    <div class="panel-toolbar">
-      <button class="panel-tab active" id="panel-tab-resumen" onclick="panelShowTab_('resumen')">
-        <img src="img/barras.png" alt="" />
-        RESUMEN
-      </button>
-      <button class="panel-tab" id="panel-tab-equipo" onclick="panelShowTab_('equipo')">
-        <img src="img/usuarios.webp" alt="" />
-        EQUIPO
-      </button>
-      <button class="panel-tab" id="panel-tab-tiempo" onclick="panelShowTab_('tiempo')">
-        <img src="img/reloj.png" alt="" />
-        TIEMPOS
-      </button>
-      <button class="panel-tab" id="panel-tab-cats" onclick="panelShowTab_('cats')">
-        <img src="img/target.webp" alt="" />
-        CATEGORÍAS
-      </button>
-      <button class="danger panel-tab" id="panel-back-btn" onclick="panelGoBack_()">
-        ← REGRESAR
-      </button>
-    </div>
-
-    <!-- ── TAB: RESUMEN ── -->
-    <div id="panel-view-resumen" class="panel-animate">
-
-      <!-- KPIs principales -->
-      <div class="panel-kpis" id="panel-kpis-main"></div>
-
-      <!-- Semáforo visual -->
-      <div class="panel-section">
-        <div class="panel-section-title">
-          <img src="img/target.webp" alt="" />
-          SEMÁFORO DE ASIGNACIONES
-        </div>
-        <div class="semaforo-resumen" id="panel-semaforo"></div>
-      </div>
-
-      <!-- Estados -->
-      <div class="panel-section">
-        <div class="panel-section-title">
-          <img src="img/barras.png" alt="" />
-          DISTRIBUCIÓN POR ESTADO
-        </div>
-        <div class="panel-chart-wrap" style="height:240px;">
-          <canvas id="panel-chart-estados"></canvas>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- ── TAB: EQUIPO ── -->
-    <div id="panel-view-equipo" class="panel-animate" style="display:none;">
-
-      <div class="panel-section">
-        <div class="panel-section-title">
-          <img src="img/usuarios.webp" alt="" />
-          RANKING POR ASIGNADO
-        </div>
-        <div class="ranking-list" id="panel-ranking"></div>
-      </div>
-
-      <div class="panel-section" style="margin-top:18px;">
-        <div class="panel-section-title">
-          <img src="img/barras.png" alt="" />
-          CARGA DE TRABAJO
-        </div>
-        <div class="panel-chart-wrap" style="height:280px;">
-          <canvas id="panel-chart-equipo"></canvas>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- ── TAB: TIEMPOS ── -->
-    <div id="panel-view-tiempo" class="panel-animate" style="display:none;">
-
-      <!-- KPIs de tiempo -->
-      <div class="panel-kpis" id="panel-kpis-tiempo"></div>
-
-      <div class="panel-section">
-        <div class="panel-section-title">
-          <img src="img/reloj.png" alt="" />
-          PRÓXIMOS VENCIMIENTOS
-        </div>
-        <div class="timeline-list" id="panel-timeline"></div>
-      </div>
-
-    </div>
-
- <!-- ── TAB: CATEGORÍAS ── -->
-    <div id="panel-view-cats" class="panel-animate" style="display:none;">
-
-      <div class="panel-grid-2">
-        <div class="panel-section">
-          <div class="panel-section-title">
-            <img src="img/target.webp" alt="" />
-            POR CATEGORÍA
-          </div>
-          <div class="cat-donut-wrap" id="panel-cats"></div>
-        </div>
-
-        <div class="panel-section">
-          <div class="panel-section-title">
-            <img src="img/target.webp" alt="" />
-            <span id="panel-subcats-list-title">POR SUBCATEGORÍA</span>
-          </div>
-          <div class="cat-donut-wrap" id="panel-subcats"></div>
-        </div>
-      </div>
-
-      <div class="panel-grid-2" style="margin-top:14px;">
-        <div class="panel-section">
-          <div class="panel-section-title">
-            <img src="img/barras.png" alt="" />
-            GRÁFICO POR CATEGORÍA
-          </div>
-          <div class="panel-chart-wrap" style="height:280px;">
-            <canvas id="panel-chart-cats"></canvas>
-          </div>
-        </div>
-
-        <div class="panel-section">
-          <div class="panel-section-title">
-            <img src="img/barras.png" alt="" />
-            <span id="panel-subcats-chart-title">GRÁFICO POR SUBCATEGORÍA</span>
-          </div>
-          <div class="panel-chart-wrap" style="height:280px;">
-            <canvas id="panel-chart-subcats"></canvas>
-          </div>
-        </div>
-      </div>
-
-    </div>
-
-  </div>
-</section>
-
-    <!-- VISTA ATENCIONES REGISTRADAS -->
-<section id="view-atenciones" class="view">
-  <div class="card">
-    <h2 style="color:var(--primary);">ATENCIONES REGISTRADAS</h2>
-
-    <!-- Pestañas Chat / Presencial -->
-    <div class="panel-toolbar" style="margin-bottom:14px;">
-      <button class="panel-tab active" id="tab-atenc-chat"
-        onclick="atencionesShowTab_('chat')">
-        CHAT
-      </button>
-      <button class="panel-tab" id="tab-atenc-pres"
-        onclick="atencionesShowTab_('pres')" style="display:none;">
-        PRESENCIAL
-      </button>
-    </div>
-
-    <div class="count-row">
-      <span class="count-pill">TOTAL: <span id="atenc-count">0</span></span>
-      <input id="atenc-filter" class="filter-input" type="text"
-        placeholder="Filtrar por cualquier dato…" />
-    </div>
-
-    <div class="btn-row" style="margin-top:10px;">
-      <button id="atenc-back" class="danger">Regresar</button>
-    </div>
-
-    <div id="atenc-wrap" class="sol-list"></div>
-  </div>
-</section>
-
-    <!-- ============================================================
-     VISTA BASE DE DATOS IMPUESTO PREDIAL
-     ============================================================ -->
-<section id="view-bd-predial" class="view">
-  <!-- FASE 7: igual que en Asignaciones, fuera el max-width inline. -->
-  <div class="card vista-ancha">
-
-    <h2 class="proc-view-title">BASE DE DATOS IMPUESTO PREDIAL</h2>
-
-    <div class="count-row" style="margin-bottom:12px;">
-      <span class="count-pill">TOTAL: <span id="bdp-count">0</span></span>
-      <input id="bdp-filter" class="filter-input" type="text" placeholder="Filtrar por cualquier dato…" />
-    </div>
-
-    <!-- FASE 7 · selectores compactos. Los pinta js (bdpMontarFiltros_)
-         leyendo las pastillas de abajo, que quedan ocultas pero siguen
-         siendo las que mandan: así js/alcance.js y todo el filtrado de
-         siempre funcionan sin cambiar una línea. -->
-    <div id="bdp-filtros" class="vf-row"></div>
-
-    <div id="bdp-pills-fuente" style="display:none;">
-    <!-- Pastillas filtro CLASIFICACION -->
-    <div class="bdp-pills-label">CLASIFICACIÓN</div>
-    <div id="bdp-pills-clasif" class="proc-status-filter">
-      <button type="button" class="proc-status-pill active" data-clasif="ALL">TODAS</button>
-      <button type="button" class="proc-status-pill" data-clasif="ALTA"
-        style="background:rgba(220,38,38,.10);border-color:#dc2626;color:#dc2626;">ALTA</button>
-      <button type="button" class="proc-status-pill" data-clasif="MEDIA"
-        style="background:rgba(249,115,22,.10);border-color:#f97316;color:#f97316;">MEDIA</button>
-      <button type="button" class="proc-status-pill" data-clasif="BAJA"
-        style="background:rgba(22,163,74,.10);border-color:#16a34a;color:#16a34a;">BAJA</button>
-    </div>
-
-    <!-- Pastillas filtro ACTUACION -->
-    <div class="bdp-pills-label">ACTUACIÓN</div>
-<div id="bdp-pills-actuacion" class="proc-status-filter">
-      <button type="button" class="proc-status-pill active" data-actuacion="ALL">TODAS</button>
-      <button type="button" class="proc-status-pill" data-actuacion="NINGUNA">NINGUNA</button>
-      <button type="button" class="proc-status-pill" data-actuacion="COMUNICACION PERSUASIVA">COMUNICACION PERSUASIVA</button>
-      <button type="button" class="proc-status-pill" data-actuacion="LIQUIDACION OFICIAL">LIQUIDACION OFICIAL</button>
-      <button type="button" class="proc-status-pill" data-actuacion="MANDAMIENTO DE PAGO">MANDAMIENTO DE PAGO</button>
-      <button type="button" class="proc-status-pill" data-actuacion="EMBARGO">EMBARGO</button>
-      <button type="button" class="proc-status-pill" data-actuacion="SENTENCIA">SENTENCIA</button>
-      <button type="button" class="proc-status-pill" data-actuacion="DESEMBARGO">DESEMBARGO</button>
-      <button type="button" class="proc-status-pill" data-actuacion="REVOCATORIA DIRECTA">REVOCATORIA DIRECTA</button>
-      <button type="button" class="proc-status-pill" data-actuacion="INSOLVENCIA">INSOLVENCIA</button>
-      <button type="button" class="proc-status-pill" data-actuacion="PRESCRIPCION">PRESCRIPCIÓN</button>
-    </div>
-
-   <!-- Pastillas filtro SUSTANCIADOR -->
-    <div class="bdp-pills-label" id="bdp-label-sustanciador">SUSTANCIADOR</div>
-    <!-- FASE 5: las opciones las pone js/alcance.js con quien tiene el rol -->
-    <div id="bdp-pills-sustanciador" class="proc-status-filter">
-      <button type="button" class="proc-status-pill active" data-sustanciador="ALL">TODOS</button>
-      <button type="button" class="proc-status-pill" data-sustanciador="NINGUNO">NINGUNO</button>
-    </div>
-
-    <!-- Pastillas filtro ESTADO PROCESO -->
-    <div class="bdp-pills-label">ESTADO PROCESO</div>
-    <div id="bdp-pills-estado" class="proc-status-filter">
-      <button type="button" class="proc-status-pill active" data-estado="ALL">TODOS</button>
-      <button type="button" class="proc-status-pill" data-estado="NINGUNO">NINGUNO</button>
-      <button type="button" class="proc-status-pill" data-estado="ACUERDO DE PAGO">ACUERDO DE PAGO</button>
-      <button type="button" class="proc-status-pill" data-estado="COBRO PERSUASIVO/LIQUIDACION">COBRO PERSUASIVO/LIQUIDACIÓN</button>
-      <button type="button" class="proc-status-pill" data-estado="COBRO COACTIVO">COBRO COACTIVO</button>
-      <button type="button" class="proc-status-pill" data-estado="AL DIA">AL DIA</button>
-    </div>
-
-    <!-- 17/09 · Pastillas filtro SOLICITUD EXPEDIENTE (columna AP).
-         app.js les pone el número de expedientes en cada estado. -->
-    <div class="bdp-pills-label">SOLICITUD EXP.</div>
-    <div id="bdp-pills-solexp" class="proc-status-filter">
-      <button type="button" class="proc-status-pill active" data-solexp="ALL">Todas</button>
-      <button type="button" class="proc-status-pill" data-solexp="PENDIENTE">Pendientes de respuesta</button>
-      <button type="button" class="proc-status-pill" data-solexp="RESPONDIDA">Respondidas</button>
-      <button type="button" class="proc-status-pill" data-solexp="NINGUNA">Sin solicitud</button>
-    </div>
-    </div><!-- /bdp-pills-fuente -->
-
-    <!-- Pastilla "Solo las mías" (solo aparece si el usuario es sustanciador) -->
-    <div id="bdp-pills-mias-wrap" style="margin-top:6px; display:none;">
-      <button type="button" id="bdp-pill-mias" class="proc-status-pill"
-        style="background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;border-color:transparent;">
-        👤 SOLO LAS MÍAS
-      </button>
-    </div>
-
-    <!-- Botones de acción -->
-    <div class="btn-row" style="margin-top:14px; margin-bottom:14px;">
-      <button id="btn-bdp-panel" class="btn-primary"
-        style="background:linear-gradient(135deg,#1e40af 0%,#1d4ed8 100%); display:none;">
-        <span style="display:inline-flex;align-items:center;gap:8px;">
-          <img src="img/barras.png"
-               style="width:22px;height:22px;object-fit:contain;" alt="Panel" />
-          PANEL 📊
-        </span>
-      </button>
-      <button id="btn-bdp-agregar" class="btn-primary btn-icon-label"
-        style="background:linear-gradient(135deg,#06b6d4,#0284c7); display:none;">
-        <img src="img/agregar.webp" alt="Agregar" />
-        AGREGAR EXPEDIENTE
-      </button>
-      <!-- FASE 6: "DATOS EXCEL" vuelve como MODAL de descarga (con filtros y
-           check de columnas), ya no como enlace fijo de Drive. -->
-      <button id="btn-bdp-mis-exp" class="btn-primary btn-icon-label"
-        style="background:linear-gradient(135deg,#16a34a,#15803d); display:none;">
-        <img src="img/excel.webp" alt="Datos Excel" />
-        DATOS EXCEL
-      </button>
-      <button id="btn-bdp-expedientes" class="btn-primary btn-icon-label"
-        style="background:linear-gradient(135deg,#7c3aed,#4f46e5);">
-        <img src="img/expediente.webp" alt="Mis Expedientes" />
-        MIS EXPEDIENTES
-      </button>
-      <button id="btn-bdp-back" class="danger">REGRESAR</button>
-    </div>
-
-    <div id="bdp-list" class="sol-list"></div>
-  </div>
-</section>
-
-    <!-- ============================================================
-     VISTA AGREGAR / EDITAR EXPEDIENTE PREDIAL
-     ============================================================ -->
-<section id="view-bdp-form" class="view">
-  <div class="card narrow">
-    <h2 id="bdp-form-title" style="color:var(--primary);">AGREGAR EXPEDIENTE</h2>
-    <div id="bdp-form-badge" style="text-align:center;margin-bottom:10px;"></div>
-
-    <!-- ── Bloque SUPER USUARIO ── -->
-    <div id="bdp-super-fields">
-
-      <label>Nombres del propietario <span style="color:#dc2626;">*</span></label>
-      <input id="bdp-nombres" type="text" placeholder="Se guarda en mayúscula" />
-
-      <label>NIT o Cédula <span style="color:#dc2626;">*</span></label>
-      <input id="bdp-nit" type="text" inputmode="numeric" placeholder="Sin puntos ni espacios" />
-
-      <label>Correo electrónico</label>
-      <input id="bdp-correo" type="email" placeholder="opcional" />
-
-      <label>Dirección del predio <span style="color:#dc2626;">*</span></label>
-      <input id="bdp-direccion" type="text" placeholder="Calle / Carrera / Barrio…" />
-
-      <label>Matrícula <span class="muted">(opcional)</span></label>
-      <div class="input-icon-wrap">
-        <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-weight:800;color:var(--primary);pointer-events:none;">357-</span>
-        <input id="bdp-matricula" type="text" inputmode="numeric" placeholder="solo el número" style="padding-left:50px;" />
-      </div>
-
-      <label>Ficha Catastral <span class="muted">(12-15 dígitos, opcional)</span></label>
-      <input id="bdp-ficha" type="text" inputmode="numeric" placeholder="solo dígitos" />
-
-      <label>¿Escaneado? <span style="color:#dc2626;">*</span></label>
-      <select id="bdp-escaneado">
-        <option value="NO" selected>NO</option>
-        <option value="SI">SI</option>
-      </select>
-
-      <label>Debe Desde <span style="color:#dc2626;">*</span></label>
-      <input id="bdp-debe-desde" type="text" placeholder="Selecciona año…" readonly
-        onclick="abrirBDPAnio_()" style="cursor:pointer;" />
-      <input id="bdp-debe-desde-raw" type="hidden" />
-
-      <label>Deuda Hasta</label>
-      <input id="bdp-deuda-hasta" type="text" readonly
-        style="background:rgba(6,64,43,.04); cursor:not-allowed;" />
-
-      <label>Valor Deuda <span style="color:#dc2626;">*</span></label>
-      <input id="bdp-valor-deuda" type="text" inputmode="numeric" placeholder="$ 0" />
-      <div id="bdp-clasif-preview" class="muted" style="margin-top:4px; font-size:.78rem;"></div>
-
-      <label>No. Exp. Físico <span style="color:#dc2626;">*</span></label>
-      <div style="display:grid; grid-template-columns: 80px 1fr; gap:8px;">
-        <select id="bdp-exp-letra">
-          <option value="">Letra…</option>
-        </select>
-        <input id="bdp-exp-numero" type="text" inputmode="numeric" maxlength="4" placeholder="4 dígitos" />
-      </div>
-      <p class="muted" style="font-size:.72rem;margin:4px 0 0;">Ej: A0001. No puede haber duplicados.</p>
-
-      <label>Sustanciador <span style="color:#dc2626;">*</span></label>
-      <!-- FASE 5: las opciones las pone js/alcance.js con quien tiene el rol -->
-      <select id="bdp-sustanciador">
-        <option value="NINGUNO" selected>NINGUNO</option>
-      </select>
-
-      <label>Asistente <span class="muted">(opcional)</span></label>
-      <select id="bdp-asistente">
-        <option value="">— Sin asistente —</option>
-      </select>
-      <input id="bdp-contacto-sust"  type="hidden" />
-      <input id="bdp-contacto-asist" type="hidden" />
-      <input id="bdp-asignador"      type="hidden" />
-      <input id="bdp-contacto-asignador" type="hidden" />
-
-    </div>
-
-    <!-- ── Bloque AMBOS roles ── -->
-    <label>Bitácora <span style="color:#dc2626;">*</span></label>
-    <textarea id="bdp-bitacora" rows="4" placeholder="Registra actuaciones y observaciones"></textarea>
-
-    <label>Actuación <span style="color:#dc2626;">*</span></label>
-    <select id="bdp-actuacion">
-      <option value="NINGUNA" selected>NINGUNA</option>
-      <option value="COMUNICACION PERSUASIVA">COMUNICACION PERSUASIVA</option>
-      <option value="LIQUIDACION OFICIAL">LIQUIDACION OFICIAL</option>
-      <option value="MANDAMIENTO DE PAGO">MANDAMIENTO DE PAGO</option>
-      <option value="EMBARGO">EMBARGO</option>
-      <option value="SENTENCIA">SENTENCIA</option>
-      <option value="DESEMBARGO">DESEMBARGO</option>
-      <option value="REVOCATORIA DIRECTA">REVOCATORIA DIRECTA</option>
-      <option value="INSOLVENCIA">INSOLVENCIA</option>
-      <option value="PRESCRIPCION">PRESCRIPCION</option>
-    </select>
-
-    <label>Estado del Proceso <span style="color:#dc2626;">*</span></label>
-    <select id="bdp-estado-proceso">
-      <option value="NINGUNO" selected>NINGUNO</option>
-      <option value="ACUERDO DE PAGO">ACUERDO DE PAGO</option>
-      <option value="COBRO PERSUASIVO/LIQUIDACION">COBRO PERSUASIVO/LIQUIDACION</option>
-      <option value="COBRO COACTIVO">COBRO COACTIVO</option>
-      <option value="AL DIA">AL DÍA</option>
-    </select>
-
-    <!-- ── Más campos opcionales SUPER USUARIO ── -->
-    <div id="bdp-extra-fields">
-
-      <h3 style="margin-top:18px; color:var(--primary); text-align:left;">📋 Persuasivo / Notificaciones</h3>
-
-      <label>Oficio Persuasivo <span class="muted">(opcional)</span></label>
-      <input id="bdp-oficio-persuas" type="text" />
-
-      <label>Fecha Oficio Persuasivo <span class="muted">(opcional)</span></label>
-      <input id="bdp-fecha-oficio-persuas" type="text" placeholder="dd/mm/2026" readonly
-        onclick="abrirBDPFecha_('fecha-oficio-persuas')" style="cursor:pointer;" />
-
-      <label>Fecha Entrega <span class="muted">(opcional)</span></label>
-      <input id="bdp-fecha-entrega" type="text" placeholder="dd/mm/2026" readonly
-        onclick="abrirBDPFecha_('fecha-entrega')" style="cursor:pointer;" />
-
-      <label>Resolución Liquidación <span class="muted">(opcional)</span></label>
-      <input id="bdp-resol-liquidac" type="text" />
-
-      <label>Fecha Resolución <span class="muted">(opcional)</span></label>
-      <input id="bdp-fecha-resolucion" type="text" placeholder="dd/mm/2026" readonly
-        onclick="abrirBDPFecha_('fecha-resolucion')" style="cursor:pointer;" />
-
-      <label>Oficio Citación <span class="muted">(opcional)</span></label>
-      <input id="bdp-oficio-citacion" type="text" />
-
-      <label>Fecha Oficio <span class="muted">(opcional)</span></label>
-      <input id="bdp-fecha-oficio" type="text" placeholder="dd/mm/2026" readonly
-        onclick="abrirBDPFecha_('fecha-oficio')" style="cursor:pointer;" />
-
-      <label>Notif. Citación</label>
-      <select id="bdp-notif-citacion"><option value="NO" selected>NO</option><option value="SI">SI</option></select>
-
-      <label>Notif. Electrónica</label>
-      <select id="bdp-notif-electr"><option value="NO" selected>NO</option><option value="SI">SI</option></select>
-
-      <label>Notif. Personal</label>
-      <select id="bdp-notif-personal"><option value="NO" selected>NO</option><option value="SI">SI</option></select>
-
-      <label>Notif. Aviso</label>
-      <select id="bdp-notif-aviso"><option value="NO" selected>NO</option><option value="SI">SI</option></select>
-
-      <label>Publicación Web</label>
-      <select id="bdp-publicacion-web"><option value="NO" selected>NO</option><option value="SI">SI</option></select>
-
-      <label>Ejecutoria <span class="muted">(opcional)</span></label>
-      <input id="bdp-ejecutoria" type="text" />
-
-      <label>Mandamiento de Pago</label>
-      <select id="bdp-mandam-pago"><option value="NO" selected>NO</option><option value="SI">SI</option></select>
-
-      <label>F-MP <span class="muted">(opcional)</span></label>
-      <input id="bdp-f-mp" type="text" />
-
-      <h3 style="margin-top:18px; color:var(--primary); text-align:left;">📅 Seguimiento</h3>
-
-      <label>Fecha de Seguimiento <span class="muted">(opcional)</span></label>
-      <input id="bdp-form-seg-fecha" type="date" />
-
-      <label class="bdp-seg-check">
-        <input type="checkbox" id="bdp-form-seg-check" disabled /> Recordar
-      </label>
-      <div id="bdp-form-seg-aviso" class="bdp-seg-aviso" style="display:none;"></div>
-    </div>
-
-    <div style="margin-top:16px;">
-      <button id="btn-bdp-form-archivo" type="button" class="btn-primary btn-icon-label"
-        style="background:linear-gradient(135deg,#b91c1c,#7f1d1d);">
-        <img src="img/pdf.webp" alt="" />
-        EXPEDIENTE (ARCHIVO)
-      </button>
-    </div>
-
-    <div class="btn-row" style="margin-top:16px;">
-      <button id="btn-bdp-form-guardar" class="btn-primary">Guardar</button>
-      <button id="btn-bdp-form-back" class="danger">Regresar</button>
-    </div>
-  </div>
-</section>
-
-<!-- ============================================================
-     VISTA VER DETALLES EXPEDIENTE PREDIAL
-     ============================================================ -->
-<section id="view-bdp-detalle" class="view">
-  <div class="card" style="max-width:900px;">
-
-    <h2 style="color:var(--primary); margin-bottom:8px;">DETALLE DEL EXPEDIENTE</h2>
-
-    <!-- Header con clasificación, actuación, estado -->
-    <div id="bdp-det-header" class="proc-detalle-header"></div>
-
-    <!-- Cuerpo -->
-    <div id="bdp-det-body" style="margin-top:12px;"></div>
-
-    <!-- Acciones -->
-    <div class="btn-row" id="bdp-det-actions" style="margin-top:16px; flex-wrap:wrap; gap:10px;"></div>
-
-    <div class="btn-row" style="margin-top:10px;">
-      <button id="btn-bdp-det-back" class="danger">REGRESAR</button>
-    </div>
-  </div>
-</section>
-
-<!-- Modal DECISIÓN (cambiar Actuación) -->
-<div id="modal-bdp-decision" class="hidden"
-  style="position:fixed;inset:0;background:var(--scrim);z-index:10000;
-         display:flex;align-items:center;justify-content:center;padding:16px;">
-  <div class="card narrow" style="margin:0;width:min(560px,100%);">
-    <div class="bdp-exp-header" style="justify-content:center;">
-      <img src="img/notificacion.webp"
-           alt="" style="width:26px;height:26px;object-fit:contain;" />
-      <h2 style="color:var(--primary);margin:0;">ACTUACIÓN Y SEGUIMIENTO</h2>
-    </div>
-    <p class="helper" style="margin-top:6px;">Cambia la actuación del expediente. Se notificará al sustanciador.</p>
-    <div id="bdp-dec-context" style="text-align:center;font-size:.85rem;font-weight:700;color:var(--text-sub);margin-bottom:10px;"></div>
-
-    <label>Nueva Actuación</label>
-    <select id="bdp-dec-actuacion">
-      <option value="NINGUNA">NINGUNA</option>
-      <option value="COMUNICACION PERSUASIVA">COMUNICACION PERSUASIVA</option>
-      <option value="LIQUIDACION OFICIAL">LIQUIDACION OFICIAL</option>
-      <option value="MANDAMIENTO DE PAGO">MANDAMIENTO DE PAGO</option>
-      <option value="EMBARGO">EMBARGO</option>
-      <option value="SENTENCIA">SENTENCIA</option>
-      <option value="DESEMBARGO">DESEMBARGO</option>
-      <option value="REVOCATORIA DIRECTA">REVOCATORIA DIRECTA</option>
-      <option value="INSOLVENCIA">INSOLVENCIA</option>
-      <option value="PRESCRIPCION">PRESCRIPCION</option>
-    </select>
-
-    <label>Fecha de Seguimiento <span class="muted">(opcional)</span></label>
-    <input id="bdp-seg-fecha" type="date" />
-
-    <label class="bdp-seg-check">
-      <input type="checkbox" id="bdp-seg-check" disabled /> Recordar
-    </label>
-    <div id="bdp-seg-aviso" class="bdp-seg-aviso" style="display:none;"></div>
-
-    <div class="btn-row" style="margin-top:14px;">
-      <button id="btn-bdp-dec-guardar" class="btn-primary">Confirmar</button>
-      <button id="btn-bdp-dec-cancelar" class="danger">Cancelar</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal REBOTAR (objeción al asignador) -->
-<div id="modal-bdp-rebotar" class="hidden"
-  style="position:fixed;inset:0;background:var(--scrim);z-index:10000;
-         display:flex;align-items:center;justify-content:center;padding:16px;">
-  <div class="card narrow" style="margin:0;width:min(560px,100%);">
-    <h2 style="color:var(--primary);">REBOTAR EXPEDIENTE</h2>
-    <p class="helper" style="margin-top:0;">Envía objeción al asignador. No realiza ningún cambio en el expediente.</p>
-    <div id="bdp-reb-context" style="text-align:center;font-size:.85rem;font-weight:700;color:var(--text-sub);margin-bottom:10px;"></div>
-
-    <label>Justificación</label>
-    <textarea id="bdp-reb-justif" rows="5" placeholder="Explica la razón de la objeción"></textarea>
-
-    <div class="btn-row" style="margin-top:14px;">
-      <button id="btn-bdp-reb-guardar" class="btn-primary">Enviar objeción</button>
-      <button id="btn-bdp-reb-cancelar" class="danger">Cancelar</button>
-    </div>
-  </div>
-</div>
-
-    <!-- ============================================================
-     MODAL: MIS EXPEDIENTES (explorador de Drive, columna K)
-     ============================================================ -->
-<div id="modal-bdp-expedientes" class="hidden"
-  style="position:fixed;inset:0;background:var(--scrim);z-index:10000;
-         display:flex;align-items:center;justify-content:center;padding:16px;">
-  <div class="card" style="margin:0;width:min(640px,100%);max-height:88vh;
-       display:flex;flex-direction:column;gap:12px;">
-
-    <div class="bdp-exp-header">
-      <img src="img/expediente.webp"
-           alt="" style="width:26px;height:26px;object-fit:contain;" />
-      <h2 style="color:var(--primary);margin:0;">MIS EXPEDIENTES</h2>
-    </div>
-
-    <!-- Ruta / carpeta actual -->
-    <div id="bdp-exp-path" class="bdp-exp-path"></div>
-
-    <!-- Filtro -->
-    <div class="bdp-exp-filter">
-      <input id="bdp-exp-filtro" type="text" autocomplete="off"
-             placeholder="🔍 Filtrar por nombre…" />
-      <button id="bdp-exp-filtro-clear" type="button"
-              class="bdp-exp-filtro-clear" title="Limpiar">✕</button>
-    </div>
-
-    <!-- Listado dinámico -->
-    <div id="bdp-exp-list" class="bdp-exp-list"></div>
-
-    <!-- Botones -->
-    <div class="btn-row" style="margin-top:4px;">
-      <button id="btn-bdp-exp-atras" class="btn-primary"
-        style="background:linear-gradient(135deg,#64748b,#475569);display:none;">
-        ⟵ ATRÁS
-      </button>
-      <button id="btn-bdp-exp-salir" class="danger">SALIR</button>
-    </div>
-  </div>
-</div>
-
-    <!-- ============================================================
-     MODAL: EXPEDIENTE (archivo AL — visualizar / explorar)
-     ============================================================ -->
-<div id="modal-bdp-archivo" class="hidden"
-  style="position:fixed;inset:0;background:var(--scrim);z-index:10000;
-         display:flex;align-items:center;justify-content:center;padding:16px;">
-  <div class="card" style="margin:0;width:min(760px,100%);max-height:90vh;
-       display:flex;flex-direction:column;gap:12px;">
-
-    <div class="bdp-exp-header">
-      <img src="img/pdf.webp"
-           alt="" style="width:26px;height:26px;object-fit:contain;" />
-      <h2 style="color:var(--primary);margin:0;">EXPEDIENTE</h2>
-    </div>
-    <div id="bdp-arch-context" style="text-align:center;font-size:.85rem;font-weight:700;color:var(--text-sub);"></div>
-
-    <!-- Estado A: con archivo (visualización) -->
-    <div id="bdp-arch-view" style="display:none;flex-direction:column;gap:12px;flex:1;min-height:0;">
-      <div class="bdp-arch-frame">
-        <iframe id="bdp-arch-iframe" src="" allow="autoplay"></iframe>
-      </div>
-      <div class="btn-row">
-        <button id="btn-bdp-arch-reemplazar" class="btn-primary"
-          style="background:linear-gradient(135deg,#7c3aed,#4f46e5);">Reemplazar</button>
-        <button id="btn-bdp-arch-eliminar" class="danger">Eliminar</button>
-        <button id="btn-bdp-arch-salir1" class="btn-primary"
-          style="background:linear-gradient(135deg,#64748b,#475569);">Salir</button>
-      </div>
-    </div>
-
-    <!-- Estado B: sin archivo (explorador) -->
-    <div id="bdp-arch-explorer" style="display:none;flex-direction:column;gap:10px;flex:1;min-height:0;">
-      <div id="bdp-arch-path" class="bdp-exp-path"></div>
-      <div class="bdp-exp-filter">
-        <input id="bdp-arch-filtro" type="text" autocomplete="off" placeholder="🔍 Filtrar por nombre…" />
-        <button id="bdp-arch-filtro-clear" type="button" class="bdp-exp-filtro-clear" title="Limpiar">✕</button>
-      </div>
-      <div id="bdp-arch-list" class="bdp-exp-list"></div>
-      <div class="btn-row">
-        <button id="btn-bdp-arch-atras" class="btn-primary"
-          style="background:linear-gradient(135deg,#64748b,#475569);display:none;">⟵ ATRÁS</button>
-        <button id="btn-bdp-arch-salir2" class="danger">SALIR</button>
+      <label>Fecha de seguimiento <span class="muted">(opcional)</span></label>
+      <input id="bdp-seg-fecha" type="date">
+      <label class="bdp-seg-check"><input type="checkbox" id="bdp-seg-check" disabled> Recordar</label>
+      <div id="bdp-seg-aviso" class="bdp-seg-aviso" style="display:none;"></div>
+      <div class="hf-modal__pie">
+        <button type="button" id="btn-bdp-dec-cancelar" class="kit-btn">Cancelar</button>
+        <button type="button" id="btn-bdp-dec-guardar" class="kit-btn kit-btn--marca"><i class="hi" data-ico="check"></i> Confirmar</button>
       </div>
     </div>
   </div>
-</div>
 
-    <!-- ============================================================
-     VISTA PANEL BD PREDIAL
-     ============================================================ -->
-<section id="view-bdp-panel" class="view">
-  <div class="panel-card">
-
-    <!-- Header -->
-    <div class="panel-header">
-      <div class="panel-title-wrap">
-        <img src="img/base-de-datos.webp" alt="Panel BD Predial" />
-        <div>
-          <h2 class="panel-title">PANEL — BD PREDIAL 📊</h2>
-          <div class="panel-subtitle" id="bdpp-subtitle">Cargando datos...</div>
-        </div>
+  <!-- REBOTAR EXPEDIENTE (objeción al asignador) -->
+  <div id="modal-bdp-rebotar" class="hf-modal hidden">
+    <div class="hf-modal__hoja">
+      <div class="hf-modal__cab"><i class="hi" data-ico="devolver"></i><h2>Rebotar expediente</h2></div>
+      <p class="hf-modal__p">Envía una objeción a quien te lo asignó. No cambia nada en el expediente.</p>
+      <div id="bdp-reb-context" class="hf-contexto"></div>
+      <label>Justificación</label>
+      <textarea id="bdp-reb-justif" rows="5" placeholder="Explica la razón de la objeción"></textarea>
+      <div class="hf-modal__pie">
+        <button type="button" id="btn-bdp-reb-cancelar" class="kit-btn">Cancelar</button>
+        <button type="button" id="btn-bdp-reb-guardar" class="kit-btn kit-btn--marca"><i class="hi" data-ico="enviar"></i> Enviar objeción</button>
       </div>
     </div>
-
-    <!-- Toolbar -->
-    <div class="panel-toolbar">
-      <button class="panel-tab active" id="bdpp-tab-resumen" onclick="bdppShowTab_('resumen')">
-        <img src="img/barras.png" alt="" />
-        RESUMEN
-      </button>
-      <button class="panel-tab" id="bdpp-tab-cartera" onclick="bdppShowTab_('cartera')">
-        <img src="img/target.webp" alt="" />
-        CARTERA
-      </button>
-      <button class="panel-tab" id="bdpp-tab-actuaciones" onclick="bdppShowTab_('actuaciones')">
-        <img src="img/firma.webp" alt="" />
-        ACTUACIONES
-      </button>
-      <button class="panel-tab" id="bdpp-tab-equipo" onclick="bdppShowTab_('equipo')">
-        <img src="img/usuarios.webp" alt="" />
-        EQUIPO
-      </button>
-      <button class="danger panel-tab" onclick="bdppGoBack_()">← REGRESAR</button>
-    </div>
-
-    <!-- ══════════ TAB: RESUMEN ══════════ -->
-    <div id="bdpp-view-resumen" class="panel-animate">
-      <div class="panel-kpis" id="bdpp-kpis-resumen"></div>
-
-      <div class="panel-grid-2">
-        <div class="panel-section">
-          <div class="panel-section-title">
-            <img src="img/target.webp" alt="" />
-            DISTRIBUCIÓN POR CLASIFICACIÓN
-          </div>
-          <div class="panel-chart-wrap" style="height:280px;">
-            <canvas id="bdpp-chart-clasif"></canvas>
-          </div>
-        </div>
-
-        <div class="panel-section">
-          <div class="panel-section-title">
-            <img src="img/barras.png" alt="" />
-            ESTADO DEL PROCESO
-          </div>
-          <div class="panel-chart-wrap" style="height:280px;">
-            <canvas id="bdpp-chart-estado"></canvas>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ══════════ TAB: CARTERA ══════════ -->
-    <div id="bdpp-view-cartera" class="panel-animate" style="display:none;">
-      <div class="panel-kpis" id="bdpp-kpis-cartera"></div>
-
-      <div class="panel-section">
-        <div class="panel-section-title">
-          <img src="img/target.webp" alt="" />
-          TOP 10 DEUDORES
-        </div>
-        <div class="ranking-list" id="bdpp-top-deudores"></div>
-      </div>
-
-      <div class="panel-section">
-        <div class="panel-section-title">
-          <img src="img/barras.png" alt="" />
-          MONTO ACUMULADO POR CLASIFICACIÓN
-        </div>
-        <div class="panel-chart-wrap" style="height:280px;">
-          <canvas id="bdpp-chart-monto-clasif"></canvas>
-        </div>
-      </div>
-    </div>
-
-    <!-- ══════════ TAB: ACTUACIONES ══════════ -->
-    <div id="bdpp-view-actuaciones" class="panel-animate" style="display:none;">
-      <div class="panel-kpis" id="bdpp-kpis-actuaciones"></div>
-
-      <div class="panel-section">
-        <div class="panel-section-title">
-          <img src="img/firma.webp" alt="" />
-          DISTRIBUCIÓN POR ACTUACIÓN
-        </div>
-        <div class="panel-chart-wrap" style="height:340px;">
-          <canvas id="bdpp-chart-actuacion"></canvas>
-        </div>
-      </div>
-
-      <div class="panel-section">
-        <div class="panel-section-title">
-          <img src="img/target.webp" alt="" />
-          MONTO ADEUDADO POR ACTUACIÓN
-        </div>
-        <div class="panel-chart-wrap" style="height:300px;">
-          <canvas id="bdpp-chart-monto-actuacion"></canvas>
-        </div>
-      </div>
-    </div>
-
-    <!-- ══════════ TAB: EQUIPO ══════════ -->
-    <div id="bdpp-view-equipo" class="panel-animate" style="display:none;">
-      <div class="panel-kpis" id="bdpp-kpis-equipo"></div>
-
-      <div class="panel-section">
-        <div class="panel-section-title">
-          <img src="img/usuarios.webp" alt="" />
-          RANKING POR SUSTANCIADOR
-        </div>
-        <div class="ranking-list" id="bdpp-ranking-sust"></div>
-      </div>
-
-      <div class="panel-section">
-        <div class="panel-section-title">
-          <img src="img/barras.png" alt="" />
-          CARGA POR SUSTANCIADOR
-        </div>
-        <div class="panel-chart-wrap" style="height:340px;">
-          <canvas id="bdpp-chart-sust"></canvas>
-        </div>
-      </div>
-
-      <div class="panel-section">
-        <div class="panel-section-title">
-          <img src="img/target.webp" alt="" />
-          MONTO GESTIONADO POR SUSTANCIADOR
-        </div>
-        <div class="panel-chart-wrap" style="height:280px;">
-          <canvas id="bdpp-chart-monto-sust"></canvas>
-        </div>
-      </div>
-    </div>
-
   </div>
-</section>
 
-  <!-- Cierre del Container -->
-  </div> 
- 
-<script src="js/assets.js"></script>  <!-- FASE 2: resolvedor único de imágenes y sonidos (ANTES de app.js) -->
-<script src="js/app.js"></script>  <!-- ← JS propio al final -->
-<script src="js/identidad.js"></script>  <!-- FASE 0: identidad, roles y sesión (después de app.js) -->
-<script src="js/configuracion.js"></script>  <!-- FASE 1: Configuración (después de identidad.js) -->
-<script src="js/base-visual.js"></script>  <!-- FASE 3: base visual y capas nativas (el último) -->
-<script src="js/capa-12-antidoble.js"></script>  <!-- FASE 4: capa 12 anti doble clic -->
-<script src="js/en-vivo.js"></script>  <!-- FASE 4: vistas EN VIVO con Firebase -->
-<script src="js/alcance.js"></script>  <!-- FASE 5: alcance por filas -->
-<script src="js/descargas.js"></script>  <!-- FASE 6: los 3 modales de descarga a Excel -->
-<script src="js/visor.js"></script>  <!-- FASE 8: visor de archivos en modal -->
-<script src="js/esqueletos.js"></script>  <!-- FASE 10: esqueletos en lugar del loader (EL ÚLTIMO) -->
-<script src="js/capa-11-insights.js"></script>  <!-- FASE 11: panel de consultas (Insights) -->
-<script src="js/fechas-ios.js"></script>  <!-- FASE 13: ruedas de fecha estilo iOS -->
-<script src="js/asignador.js"></script>  <!-- FASE 13: botón ASIGNADOR en BD Predial -->
-<script src="js/asistente.js"></script>  <!-- LOTE 13/08: regla del ASISTENTE en los formularios -->
-<script src="js/bitacora.js"></script>  <!-- LOTE 06/09: filtro y panel MIS BITÁCORAS -->
-<script src="js/adjuntos.js"></script>  <!-- LOTE 06/09: adjuntar PDF o Word -->
-<script src="js/bdp-rapido.js"></script>  <!-- LOTE 08/09: listado compacto, fila conocida y precarga de la pagina -->
-<script src="js/no-aperturados.js"></script>  <!-- LOTE 08/09: pastilla NO APERTURADOS en BD Predial -->
-<script src="js/form-ancho.js"></script>  <!-- LOTE 08/09: formularios repartidos a lo ancho -->
-<script src="js/solicitud-exp.js"></script>  <!-- 17/09: SOLICITUD EXPEDIENTE en Asignaciones y BD Predial (antes de bitacora-export.js y mi-trabajo.js) -->
-<script src="js/bitacora-export.js"></script>  <!-- LOTE 10/09: descargar bitacoras de BD Predial en Excel y PDF -->
-<script src="js/mi-trabajo.js"></script>  <!-- 14/09: agrupa MIS/VER/DESCARGAR de bitacoras y actuaciones en un solo boton. Va DESPUES de bitacora.js y bitacora-export.js: les cede la pastilla. -->
-<script src="js/flandes.js"></script>  <!-- SEC-HACIENDA-FLANDES: banner, inicio, portada, cohete y firma del ecosistema Flandes (EL ÚLTIMO) -->
+  <!-- MIS EXPEDIENTES (explorador de la carpeta de Drive) -->
+  <div id="modal-bdp-expedientes" class="hf-modal hidden">
+    <div class="hf-modal__hoja hf-modal__hoja--ancha">
+      <div class="hf-modal__cab"><i class="hi" data-ico="expediente"></i><h2>Mis expedientes</h2></div>
+      <div id="bdp-exp-path" class="bdp-exp-path"></div>
+      <div class="bdp-exp-filter hf-buscar hf-buscar--caja">
+        <i class="hi" data-ico="buscar"></i>
+        <input id="bdp-exp-filtro" type="text" autocomplete="off" placeholder="Buscar por nombre…">
+        <button id="bdp-exp-filtro-clear" type="button" class="bdp-exp-filtro-clear" title="Limpiar"><i class="hi" data-ico="cerrar"></i></button>
+      </div>
+      <div id="bdp-exp-list" class="bdp-exp-list"></div>
+      <div class="hf-modal__pie">
+        <button type="button" id="btn-bdp-exp-atras" class="kit-btn" style="display:none;"><i class="hi" data-ico="atras"></i> Atrás</button>
+        <button type="button" id="btn-bdp-exp-salir" class="kit-btn">Cerrar</button>
+      </div>
+    </div>
+  </div>
 
+  <!-- EXPEDIENTE (archivo: ver o elegir de Drive) -->
+  <div id="modal-bdp-archivo" class="hf-modal hidden">
+    <div class="hf-modal__hoja hf-modal__hoja--ancha">
+      <div class="hf-modal__cab"><i class="hi" data-ico="pdf"></i><h2>Expediente</h2></div>
+      <div id="bdp-arch-context" class="hf-contexto"></div>
+      <div id="bdp-arch-view" class="hf-arch" style="display:none;">
+        <div class="bdp-arch-frame"><iframe id="bdp-arch-iframe" src="" allow="autoplay"></iframe></div>
+        <div class="hf-modal__pie">
+          <button type="button" id="btn-bdp-arch-eliminar" class="kit-btn kit-btn--malo"><i class="hi" data-ico="basura"></i> Quitar</button>
+          <button type="button" id="btn-bdp-arch-reemplazar" class="kit-btn"><i class="hi" data-ico="girar"></i> Reemplazar</button>
+          <button type="button" id="btn-bdp-arch-salir1" class="kit-btn kit-btn--marca">Cerrar</button>
+        </div>
+      </div>
+      <div id="bdp-arch-explorer" class="hf-arch" style="display:none;">
+        <div id="bdp-arch-path" class="bdp-exp-path"></div>
+        <div class="bdp-exp-filter hf-buscar hf-buscar--caja">
+          <i class="hi" data-ico="buscar"></i>
+          <input id="bdp-arch-filtro" type="text" autocomplete="off" placeholder="Buscar por nombre…">
+          <button id="bdp-arch-filtro-clear" type="button" class="bdp-exp-filtro-clear" title="Limpiar"><i class="hi" data-ico="cerrar"></i></button>
+        </div>
+        <div id="bdp-arch-list" class="bdp-exp-list"></div>
+        <div class="hf-modal__pie">
+          <button type="button" id="btn-bdp-arch-atras" class="kit-btn" style="display:none;"><i class="hi" data-ico="atras"></i> Atrás</button>
+          <button type="button" id="btn-bdp-arch-salir2" class="kit-btn">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CAMBIAR PIN (lo gobierna js/hacienda.js) -->
+  <div id="modal-pin" class="hf-modal hidden" aria-modal="true" role="dialog" aria-labelledby="pin-t">
+    <div class="hf-modal__hoja">
+      <div class="hf-modal__cab"><i class="hi" data-ico="pin"></i><h2 id="pin-t">Cambiar mi PIN</h2></div>
+      <p class="hf-modal__p" id="pin-quien"></p>
+      <div class="hf-pin-campos">
+        <label class="kit-sesion__campo"><span>PIN actual</span><input id="pin-actual" type="password" inputmode="numeric" maxlength="4" autocomplete="current-password" placeholder="••••"></label>
+        <label class="kit-sesion__campo"><span>PIN nuevo</span><input id="pin-nuevo" type="password" inputmode="numeric" maxlength="4" autocomplete="new-password" placeholder="••••"></label>
+        <label class="kit-sesion__campo"><span>Repite el PIN nuevo</span><input id="pin-repite" type="password" inputmode="numeric" maxlength="4" autocomplete="new-password" placeholder="••••"></label>
+      </div>
+      <p class="formulario__nota">4 dígitos. No uses números repetidos (1111) ni seguidos (1234). Te llegará un aviso por WhatsApp, sin el PIN.</p>
+      <p class="kit-sesion__error" id="pin-error" role="alert"></p>
+      <div class="hf-modal__pie">
+        <button type="button" id="pin-cancelar" class="kit-btn">Cancelar</button>
+        <button type="button" id="pin-guardar" class="kit-btn kit-btn--marca"><i class="hi" data-ico="check"></i> Cambiar PIN</button>
+      </div>
+    </div>
+  </div>
+
+<script src="js/assets.js"></script>      <!-- resolvedor único de imágenes y sonidos (ANTES de app.js) -->
+<script src="js/app.js"></script>
+<script src="js/identidad.js"></script>   <!-- identidad, roles, sesión y PIN -->
+<script src="js/configuracion.js"></script>
+<script src="js/base-visual.js"></script>
+<script src="js/capa-12-antidoble.js"></script>
+<script src="js/en-vivo.js"></script>
+<script src="js/alcance.js"></script>
+<script src="js/descargas.js"></script>
+<script src="js/visor.js"></script>
+<script src="js/esqueletos.js"></script>
+<script src="js/capa-11-insights.js"></script>
+<script src="js/fechas-ios.js"></script>
+<script src="js/asignador.js"></script>
+<script src="js/asistente.js"></script>
+<script src="js/bitacora.js"></script>
+<script src="js/adjuntos.js"></script>
+<script src="js/bdp-rapido.js"></script>
+<script src="js/no-aperturados.js"></script>
+<script src="js/form-ancho.js"></script>
+<script src="js/solicitud-exp.js"></script>
+<script src="js/bitacora-export.js"></script>
+<script src="js/mi-trabajo.js"></script>
+<script src="js/guia.js"></script>        <!-- FASE 2: guía rápida y tipos de usuario -->
+<script src="js/hacienda.js"></script>    <!-- FASE 2: banner, tema, inicio, PIN, iconos (EL ÚLTIMO) -->
 </body>
 </html>

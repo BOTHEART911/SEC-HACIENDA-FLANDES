@@ -77,7 +77,11 @@
   /* ============================================================
      CABECERA DE INICIO (avatar, nombre, roles, cambiar de usuario)
      ============================================================ */
+  function ico_(n, t) { try { return window.KIT ? window.KIT.icono(n, t || 18) : ''; } catch (_) { return ''; } }
+
   function iniciales_(nombre) {
+    /* FASE 2 — las mismas iniciales que el banner y el saludo (kit) */
+    try { if (window.KIT && KIT.piezas.personas) return KIT.piezas.personas.iniciales(nombre); } catch (_) {}
     var p = String(nombre || '').trim().split(/\s+/).filter(Boolean);
     if (!p.length) return '?';
     return (p[0][0] + (p.length > 1 ? p[1][0] : '')).toUpperCase();
@@ -101,22 +105,31 @@
       '</div>' +
       '<input type="file" id="idn-foto-input" accept="image/*" class="hidden" />';
 
-    nombreEl.parentNode.insertBefore(wrap, nombreEl);
+    /* FASE 2 SEC-HACIENDA-FLANDES — la cara del saludo (hf-cara) es la que
+       se ve y se toca; este avatar queda oculto como puente hacia el
+       selector de archivo, que es lo que sube la foto. */
+    wrap.hidden = true;
+    vista.appendChild(wrap);
 
     var chips = document.createElement('div');
     chips.id = 'idn-roles';
     chips.className = 'idn-roles';
-    nombreEl.parentNode.insertBefore(chips, nombreEl.nextSibling);
+    chips.hidden = true;
+    vista.appendChild(chips);
 
-    // Botón "Cambiar de usuario" junto a "Cerrar Sesión"
+    // "Cambiar de usuario": en la Fase 2 ya viene en el inicio
     var salir = document.getElementById('btn-logout');
-    if (salir && !document.getElementById('btn-cambiar-usuario')) {
-      var b = document.createElement('button');
+    var b = document.getElementById('btn-cambiar-usuario');
+    if (!b && salir) {
+      b = document.createElement('button');
       b.id = 'btn-cambiar-usuario';
       b.type = 'button';
-      b.className = 'chip';
+      b.className = 'kit-btn';
       b.textContent = 'Cambiar de usuario';
       salir.parentNode.insertBefore(b, salir);
+    }
+    if (b && !b.__idn) {
+      b.__idn = true;
       b.addEventListener('click', function () {
         try { playSoundOnce(SOUNDS.menu); } catch (_) {}
         cerrarSesion_(false);
@@ -261,11 +274,11 @@
           '<div id="idn-paso-usuario">' +
             '<p class="idn-titulo">Cuentas de este dispositivo</p>' +
             '<div id="idn-cuentas" class="idn-usuarios"></div>' +
-            '<button type="button" class="chip idn-otro" id="idn-otro-doc">+ Entrar con otro documento</button>' +
+            '<button type="button" class="kit-btn kit-btn--plano idn-otro" id="idn-otro-doc">' + ico_('mas', 16) + ' Entrar con otro documento</button>' +
           '</div>' +
           '<div id="idn-paso-pin" class="hidden">' +
             '<div class="idn-elegido" id="idn-elegido"></div>' +
-            '<button type="button" class="chip" id="idn-volver">Elegir otro usuario</button>' +
+            '<p class="idn-pide">Escribe tu PIN de 4 dígitos</p>' +
             '<div class="pin-pad">' +
               '<div class="pin-dot" data-pos="0"></div><div class="pin-dot" data-pos="1"></div>' +
               '<div class="pin-dot" data-pos="2"></div><div class="pin-dot" data-pos="3"></div>' +
@@ -280,9 +293,13 @@
               '<button type="button" class="idn-key" data-key="7">7</button>' +
               '<button type="button" class="idn-key" data-key="8">8</button>' +
               '<button type="button" class="idn-key" data-key="9">9</button>' +
-              '<button type="button" class="idn-key action" data-key="clear">Borrar</button>' +
+              '<button type="button" class="idn-key action" data-key="clear" aria-label="Borrar todo">Borrar</button>' +
               '<button type="button" class="idn-key" data-key="0">0</button>' +
-              '<button type="button" class="idn-key action" data-key="back">⌫</button>' +
+              '<button type="button" class="idn-key action" data-key="back" aria-label="Borrar un número">' + ico_('atras', 20) + '</button>' +
+            '</div>' +
+            '<div class="idn-pin-pie">' +
+              '<button type="button" class="kit-btn kit-btn--plano" id="idn-volver">' + ico_('cambiar-usuario', 16) + ' Otra cuenta</button>' +
+              '<button type="button" class="kit-btn kit-btn--plano" id="idn-cambiar-pin">' + ico_('pin', 16) + ' Cambiar mi PIN</button>' +
             '</div>' +
           '</div>' +
         '</div>';
@@ -290,12 +307,26 @@
       document.getElementById('idn-volver').addEventListener('click', function () {
         uidElegido = ''; pinBuf = ''; pintarPaso_();
       });
+      document.getElementById('idn-cambiar-pin').addEventListener('click', function () {
+        var u = cuentas_().filter(function (x) { return x.uid === uidElegido; })[0];
+        if (window.HAC_PIN) window.HAC_PIN.abrir({ uid: uidElegido, nombre: u ? u.nombre : '' });
+      });
       document.getElementById('idn-otro-doc').addEventListener('click', function () {
         try { playSoundOnce(SOUNDS.menu); } catch (_) {}
         irATab_('doc');
       });
       tab.querySelectorAll('.idn-key').forEach(function (k) {
         k.addEventListener('click', function () { teclaPin_(k.dataset.key); });
+      });
+      /* FASE 2 — en el computador también se escribe con el teclado */
+      document.addEventListener('keydown', function (e) {
+        var pp = document.getElementById('idn-paso-pin');
+        var login = document.getElementById('view-login');
+        if (!pp || pp.classList.contains('hidden') || !login || !login.classList.contains('active')) return;
+        if (document.querySelector('.hf-modal:not(.hidden), .swal2-container')) return;
+        if (/^\d$/.test(e.key)) { e.preventDefault(); teclaPin_(e.key); }
+        else if (e.key === 'Backspace') { e.preventDefault(); teclaPin_('back'); }
+        else if (e.key === 'Escape') { e.preventDefault(); teclaPin_('clear'); }
       });
     }
     return tab;
@@ -380,7 +411,7 @@
       del.className = 'idn-cuenta-del';
       del.title = 'Quitar esta cuenta de este dispositivo';
       del.setAttribute('aria-label', 'Quitar cuenta');
-      del.textContent = '🗑';
+      del.innerHTML = ico_('basura', 18);
       del.addEventListener('click', function (ev) {
         ev.stopPropagation();
         try { playSoundOnce(SOUNDS.back); } catch (_) {}
@@ -509,6 +540,10 @@
         return;
       }
       var antes = perfil.roles.join(',');
+      /* FASE 2 — la revalidación trae también el alcance y la configuración
+         pública (un solo viaje): se aplican aquí. */
+      if (p.publico) window.HAC_PUBLICO = p.publico;
+      try { if (p.alcance && p.alcance.encontrado && window.ALCANCE && window.ALCANCE.aplicar) window.ALCANCE.aplicar(p.alcance); } catch (_) {}
       perfil = normaliza_(p);
       if (currentUser) {
         currentUser.roles = perfil.roles;
@@ -541,8 +576,14 @@
 
     var ses = leer_(K_SESION);
     if (ses && ses.perfil && ses.perfil.uid) {
+      /* FASE 2 — la revalidación trae el alcance: que alcance.js no lo pida
+         aparte mientras tanto (un solo viaje al abrir la app). */
+      window.__IDN_REVALIDANDO = true;
       window.procesarLoginExitoso_(ses.perfil, ses.perfil.documento || '');
-      revalidar_();
+      revalidar_().then(function () {
+        window.__IDN_REVALIDANDO = false;
+        if (!window.ALC && window.ALCANCE && window.ALCANCE.recargar) window.ALCANCE.recargar();
+      });
     } else {
       pintarLogin_();
     }
@@ -572,6 +613,7 @@
     esArchivo: function () { return tieneRol_('ARCHIVO'); },
     esAtencion: function () { return tieneRol_('ATENCION'); },
     cerrarSesion: function () { cerrarSesion_(false); },
+    elegido: function () { return uidElegido; },
     cuentas: function () { return cuentas_(); },
     olvidarCuenta: function (uid) { return olvidarCuenta_(uid); },
     _pintarLogin: pintarLogin_

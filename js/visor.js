@@ -106,9 +106,9 @@
     capa.innerHTML =
       '<div class="visor-caja">' +
         '<div class="visor-cab">' +
-          '<span class="visor-icono" aria-hidden="true">📄</span>' +
+          '<span class="visor-icono" aria-hidden="true">' + ICO_('documento', 20) + '</span>' +
           '<h3 id="' + ID_TITULO + '" class="visor-titulo">Archivo</h3>' +
-          '<button type="button" id="' + ID_CERRAR + '" class="visor-x" aria-label="Cerrar">✕</button>' +
+          '<button type="button" id="' + ID_CERRAR + '" class="visor-x" aria-label="Cerrar">' + ICO_('cerrar', 18) + '</button>' +
         '</div>' +
         '<div id="' + ID_MARCO + '" class="visor-marco">' +
           '<iframe id="' + ID_IFRAME + '" src="" title="Vista del archivo" ' +
@@ -118,8 +118,8 @@
         '<div class="visor-acciones">' +
           /* FASE 9: se agrega el archivo que se está mirando al expediente.
              Solo aparece cuando quien abre el visor pasa opciones.agregar. */
-          '<button type="button" class="visor-acc visor-acc-ok hidden" id="btn-visor-agregar">＋ Agregar</button>' +
-          '<button type="button" class="visor-acc" id="btn-visor-descargar">⬇ Descargar</button>' +
+          '<button type="button" class="visor-acc visor-acc-ok hidden" id="btn-visor-agregar">' + ICOS('mas') + 'Agregar</button>' +
+          '<button type="button" class="visor-acc" id="btn-visor-descargar">' + ICOS('descargar') + 'Descargar</button>' +
         '</div>' +
       '</div>';
     document.body.appendChild(capa);
@@ -248,8 +248,8 @@
 
     imprimiendo = true;
     var btn = $('btn-visor-imprimir');
-    var textoBtn = btn ? btn.textContent : '';
-    if (btn) { btn.disabled = true; btn.textContent = '🖨 Preparando…'; }
+    var textoBtn = btn ? btn.innerHTML : '';
+    if (btn) { btn.disabled = true; btn.innerHTML = ICOS('reloj') + 'Preparando…'; }
     nota_('Preparando la impresión…');
 
     window.apiPost('visorarchivo', { uid: u, id: id }).then(function (res) {
@@ -293,7 +293,7 @@
         ((e && e.message) ? e.message : String(e)) + '). Se abre el visor de Drive.');
     }).then(function () {
       imprimiendo = false;
-      if (btn) { btn.disabled = false; btn.textContent = textoBtn || '🖨 Imprimir'; }
+      if (btn) { btn.disabled = false; btn.innerHTML = textoBtn || (ICOS('imprimir') + 'Imprimir'); }
     });
   }
 

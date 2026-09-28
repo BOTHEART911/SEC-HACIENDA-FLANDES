@@ -1451,7 +1451,7 @@
     b.id = def.pastilla;
     b.className = 'proc-status-pill bxp-pill';
     b.setAttribute('data-salida', '1');
-    b.innerHTML = '📥 DESCARGAR BITÁCORAS';
+    b.innerHTML = ICOS('descargar') + 'Descargar bitácoras';
     b.addEventListener('click', function () {
       try { if (window.playSoundOnce && window.SOUNDS) window.playSoundOnce(window.SOUNDS.menu); } catch (_) {}
       abrir(null, vista);
@@ -1506,7 +1506,7 @@
     b.id = 'btn-bxp-exp';
     b.className = 'proc-action-btn bxp-btn-exp';
     b.setAttribute('data-salida', '1');
-    b.innerHTML = '🗒️ BITÁCORA';
+    b.innerHTML = ICOS('libro') + 'Bitácora';
     b.addEventListener('click', function () {
       try { if (window.playSoundOnce && window.SOUNDS) window.playSoundOnce(window.SOUNDS.menu); } catch (_) {}
       abrir(row, def === FUENTES['view-asignaciones'] ? 'view-asignaciones' : 'view-bd-predial');

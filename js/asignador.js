@@ -116,7 +116,7 @@
       ' data-asg-asist="' + esc(row.asistente || '') + '"' +
       ' data-asg-exp="' + esc(row.no_exp_fisico || '') + '"' +
       ' data-asg-nom="' + esc(row.nombres || '') + '">' +
-      '<img src="' + ICONO + '" alt="Asignador" onerror="this.replaceWith(document.createTextNode(\'' + EMOJI + '\'))">' +
+      ICO_('cambiar-usuario', 20) +
       '</button>';
   }
 
@@ -211,17 +211,17 @@
       '    <header class="asg-h">' +
       '      <div class="asg-h-tx"><b>ASIGNADOR</b>' +
       '        <small>' + esc(datos.nombre) + (datos.exp ? ' · Exp. ' + esc(datos.exp) : '') + '</small></div>' +
-      '      <button class="asg-x" type="button" aria-label="Cerrar">✕</button>' +
+      '      <button class="asg-x" type="button" aria-label="Cerrar">' + ICO_('cerrar', 18) + '</button>' +
       '    </header>' +
       '    <div class="asg-body">' +
       '      <div class="asg-sec">' +
-      '        <div class="asg-sec-t">⚖️ Sustanciadores' +
+      '        <div class="asg-sec-t">' + ICOS('balanza') + 'Sustanciadores' +
       (soloAsist ? '<span class="asg-lock">solo lectura</span>' : '') + '</div>' +
       '        <div class="asg-actual">Hoy: <b>' + esc(datos.sustActual || 'NINGUNO') + '</b></div>' +
       '        <div class="asg-chips">' + chips(sustanciadores, datos.sustActual, 'sust', soloAsist) + '</div>' +
       '      </div>' +
       '      <div class="asg-sec">' +
-      '        <div class="asg-sec-t">🤝 Asistentes</div>' +
+      '        <div class="asg-sec-t">' + ICOS('equipo') + 'Asistentes</div>' +
       '        <div class="asg-actual">Hoy: <b>' + esc(datos.asistActual || 'SIN ASISTENTE') + '</b></div>' +
       '        <div class="asg-chips">' + chips(asistentes, datos.asistActual, 'asist', false) +
       /* LOTE 13/08 — quitar el asistente es cosa de ADMIN/DEV */
@@ -306,7 +306,9 @@
         timer: sinTel.length ? undefined : 1800,
         showConfirmButton: !!sinTel.length
       });
-      if (typeof window.loadBDPredial_ === 'function') window.loadBDPredial_();
+      /* FASE 2 — un solo viaje: la fila ya asignada viene en la respuesta. */
+      if (typeof window.bdpAplicarFila_ === 'function') window.bdpAplicarFila_(res && res.fila);
+      else if (typeof window.loadBDPredial_ === 'function') window.loadBDPredial_();
     }).catch(function (err) {
       if (ok) { ok.disabled = false; ok.textContent = 'Guardar'; }
       Swal.fire({ icon: 'error', title: 'No se pudo asignar', text: String((err && err.message) || err) });

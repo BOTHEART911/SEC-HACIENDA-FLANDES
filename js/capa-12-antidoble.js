@@ -64,7 +64,11 @@
     '#btn-tema', '[data-salida]',
     /* SEC-HACIENDA-FLANDES: el banner (atrás, tema, menú), la portada, el
        tema del login y las capas del kit son salidas: nunca se bloquean. */
-    '.kit-banner', '.kit-bien', '.kit-capa', '.kit-conex', '.hf-tema'
+    '.kit-banner', '.kit-bien', '.kit-capa', '.kit-conex', '.hf-tema',
+    /* FASE 2: los Cancelar/Cerrar de los modales nuevos y el cambio de
+       cuenta del ingreso */
+    '#pin-cancelar', '#btn-rebote-regresar', '#btn-bdp-exp-salir',
+    '#btn-bdp-arch-salir1', '#btn-bdp-arch-salir2', '#idn-volver', '.hf-atras'
   ];
   var SEL_SALIDA = SALIDAS.join(',') + ',.swal2-container';
 

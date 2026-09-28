@@ -75,7 +75,7 @@
       fila.style.marginTop = '10px';
       fila.innerHTML =
         '<button id="btn-config" class="btn-primary btn-icon-label cfg-btn-inicio" style="display:none;">' +
-          '<span class="cfg-btn-ico">⚙</span> CONFIGURACIÓN' +
+          ICOS('engranaje') + 'Configuración' +
         '</button>';
 
       var semaforo = el_('btn-semaforo');
@@ -84,6 +84,10 @@
       else inicio.querySelector('.card').appendChild(fila);
 
       b = el_('btn-config');
+    }
+    /* FASE 2 — la tarjeta ya viene en el inicio: se engancha una sola vez */
+    if (b && !b.__cfg) {
+      b.__cfg = true;
       b.addEventListener('click', function () {
         sonido_('click');
         abrir_();
@@ -109,37 +113,37 @@
     sec.id = 'view-config';
     sec.className = 'view';
     sec.innerHTML =
-      '<div class="card cfg-card">' +
-        '<h2 style="color:var(--primary)">CONFIGURACIÓN</h2>' +
-        '<p class="helper" id="cfg-sub"></p>' +
+      '<div class="vista kit-ancho cfg-card">' +
+        '<p class="hf-intro" id="cfg-sub"></p>' +
 
-        '<div class="cfg-tabs">' +
-          '<button class="cfg-tab activa" data-tab="usuarios">Usuarios</button>' +
-          '<button class="cfg-tab" data-tab="plantillas">Plantillas</button>' +
-          '<button class="cfg-tab cfg-tab-dev" data-tab="avanzado" style="display:none;">Avanzado</button>' +
+        /* FASE 2 SEC-HACIENDA-FLANDES — Usuarios es de ADMIN y DEV.
+           Plantillas de mensajes y los IDs (carpetas, plantillas de
+           documentos, llaves) son SOLO del desarrollador. */
+        '<div class="cfg-tabs panel-toolbar hf-pestanas">' +
+          '<button class="cfg-tab panel-tab activa active" data-tab="usuarios">' + ICOS('equipo') + 'Usuarios y roles</button>' +
+          '<button class="cfg-tab panel-tab cfg-tab-dev" data-tab="plantillas" style="display:none;">' + ICOS('chat') + 'Plantillas de mensajes</button>' +
+          '<button class="cfg-tab panel-tab cfg-tab-dev" data-tab="avanzado" style="display:none;">' + ICOS('llave') + 'IDs y ajustes</button>' +
         '</div>' +
 
         '<div id="cfg-panel-usuarios" class="cfg-panel">' +
           '<div class="cfg-barra">' +
-            '<input id="cfg-buscar" type="text" placeholder="Buscar por nombre o perfil" autocomplete="off" />' +
-            '<button id="cfg-nuevo" class="btn-primary cfg-mini">+ Nuevo usuario</button>' +
+            '<label class="hf-buscar">' + ICO_('buscar', 18) + '<input id="cfg-buscar" type="text" placeholder="Buscar por nombre o perfil" autocomplete="off" /></label>' +
+            '<button id="cfg-nuevo" class="kit-btn kit-btn--marca cfg-mini">' + ICOS('mas') + 'Nuevo usuario</button>' +
           '</div>' +
           '<div id="cfg-usuarios" class="cfg-lista"></div>' +
         '</div>' +
 
         '<div id="cfg-panel-plantillas" class="cfg-panel hidden">' +
-          '<p class="helper">Estos son los mensajes que la app manda por WhatsApp. Toca una variable para insertarla donde tengas el cursor.</p>' +
+          '<p class="hf-intro">Los mensajes que la app manda por WhatsApp. Toca una variable para insertarla donde tengas el cursor. Solo el desarrollador los ve y los cambia.</p>' +
           '<div id="cfg-plantillas" class="cfg-acordeon"></div>' +
         '</div>' +
 
         '<div id="cfg-panel-avanzado" class="cfg-panel hidden">' +
-          '<p class="helper cfg-alerta">Estructura de la app. Un dato mal puesto aquí deja de funcionar el envío de mensajes o la subida de archivos.</p>' +
+          '<p class="hf-intro cfg-alerta">' + ICOS('aviso') + 'IDs de carpetas de Drive, llaves de BuilderBot, Firebase, voz y topes. Un dato mal puesto aquí deja de funcionar el envío de mensajes o la subida de archivos.</p>' +
           '<div id="cfg-avanzado" class="cfg-campos"></div>' +
         '</div>' +
 
-        '<div class="spaced">' +
-          '<button id="cfg-regresar" class="danger btn-big">Regresar</button>' +
-        '</div>' +
+        '<button type="button" id="cfg-regresar" class="hf-atras" hidden>Regresar</button>' +
       '</div>';
 
     inicio.parentNode.appendChild(sec);
@@ -179,6 +183,7 @@
     });
     document.querySelectorAll('.cfg-tab').forEach(function (t) {
       t.classList.toggle('activa', t.dataset.tab === cual);
+      t.classList.toggle('active', t.dataset.tab === cual);
     });
   }
 
@@ -193,19 +198,22 @@
     if (!estado.cargado || estado.uid !== uid_()) await cargar_();
   }
 
-  async function cargar_() {
+  /* FASE 2 — un solo viaje: cada guardado devuelve la configuración ya
+     actualizada (res.todo) y se pinta esa; solo si no vino se pide. */
+  async function cargar_(yaVino) {
     try {
-      var todo = await apiGet('cfgtodo', { uid: uid_() });
+      var todo = (yaVino && yaVino.plantillas) ? yaVino : await apiGet('cfgtodo', { uid: uid_() });
       estado.plantillas = (todo && todo.plantillas) || [];
       estado.avanzado = (todo && todo.avanzado) || [];
       estado.esDev = !!(todo && todo.esDev);
-      estado.usuarios = await apiGet('cfgusuarios', { uid: uid_() });
+      /* FASE 2 — un solo viaje: 'cfgtodo' ya trae la lista de usuarios. */
+      estado.usuarios = (todo && Array.isArray(todo.usuarios)) ? todo.usuarios : await apiGet('cfgusuarios', { uid: uid_() });
       estado.cargado = true;
       estado.uid = uid_();
       estado.sucias = {};
 
-      var t = document.querySelector('.cfg-tab-dev');
-      if (t) t.style.display = estado.esDev ? '' : 'none';
+      document.querySelectorAll('.cfg-tab-dev').forEach(function (t) { t.style.display = estado.esDev ? '' : 'none'; });
+      if (!estado.esDev && estado.pestana !== 'usuarios') pestana_('usuarios');
 
       var sub = el_('cfg-sub');
       if (sub) {
@@ -259,9 +267,9 @@
           '<div class="cfg-datos">' +
             '<div class="cfg-nombre">' + esc_(u.nombre) + (u.activo ? '' : ' <em>(inactivo)</em>') + '</div>' +
             '<div class="cfg-chips">' + chips + '</div>' +
-            (avisos.length ? '<div class="cfg-aviso">⚠ ' + esc_(avisos.join(' · ')) + '</div>' : '') +
+            (avisos.length ? '<div class="cfg-aviso">' + ICOS('aviso', 14) + esc_(avisos.join(' · ')) + '</div>' : '') +
           '</div>' +
-          '<button class="cfg-editar" data-uid="' + esc_(u.uid) + '">Editar</button>' +
+          '<button class="cfg-editar kit-btn" data-uid="' + esc_(u.uid) + '">' + ICOS('lapiz') + 'Editar</button>' +
         '</div>';
     }).join('');
 
@@ -328,16 +336,16 @@
         (nuevo
           ? '<p class="helper">Al guardar, la app genera el PIN y se lo manda por WhatsApp con el mensaje de bienvenida.</p>'
           : '<div class="cfg-acciones-usuario">' +
-              '<button id="cfgu-pin" class="chip">Generar PIN nuevo y enviarlo</button>' +
+              '<button id="cfgu-pin" class="kit-btn">' + ICOS('pin') + 'Generar PIN nuevo y enviarlo</button>' +
               (u.uid === yo.uid ? '' :
-                '<button id="cfgu-estado" class="chip ' + (u.activo ? 'danger' : '') + '">' +
+                '<button id="cfgu-estado" class="kit-btn' + (u.activo ? ' cfg-peligro' : '') + '">' + ICOS(u.activo ? 'prohibido' : 'check') +
                   (u.activo ? 'Desactivar usuario' : 'Activar usuario') +
                 '</button>') +
             '</div>') +
 
         '<div class="cfg-modal-pie">' +
-          '<button id="cfgu-guardar" class="btn-primary">Guardar</button>' +
-          '<button id="cfgu-cerrar" class="danger">Cerrar</button>' +
+          '<button id="cfgu-cerrar" class="kit-btn" data-salida>Cerrar</button>' +
+          '<button id="cfgu-guardar" class="kit-btn kit-btn--marca">' + ICOS('check') + 'Guardar</button>' +
         '</div>' +
       '</div>';
 
@@ -385,9 +393,10 @@
         carpetaExpedientes: el_('cfgu-exp').value,
         roles: rolesElegidos_()
       };
+      var r = null;
       try {
         if (nuevo) {
-          var r = await apiPost('usuariocrear', datos);
+          r = await apiPost('usuariocrear', datos);
           cerrar_();
           await Swal.fire({
             icon: 'success', title: 'Usuario creado',
@@ -396,11 +405,11 @@
           });
         } else {
           datos.objetivo = u.uid;
-          await apiPost('usuarioguardar', datos);
+          r = await apiPost('usuarioguardar', datos);
           cerrar_();
           await Swal.fire({ icon: 'success', title: 'Guardado', timer: 1400, showConfirmButton: false });
         }
-        await cargar_();
+        await cargar_(r && r.todo);
       } catch (e) {
         aviso_('error', 'No se pudo guardar', e.message || String(e));
       }
@@ -420,7 +429,7 @@
             icon: 'success', title: 'PIN nuevo',
             html: '<b>' + esc_(r.pin) + '</b><br/>' + (r.avisado ? 'Enviado por WhatsApp.' : 'Sin celular válido: entrégaselo tú.')
           });
-          await cargar_();
+          await cargar_(r && r.todo);
         } catch (e) { aviso_('error', 'No se pudo', e.message || String(e)); }
       });
 
@@ -434,9 +443,9 @@
         });
         if (!c.isConfirmed) return;
         try {
-          await apiPost('usuarioestado', { uid: uid_(), objetivo: u.uid, activo: !u.activo });
+          var re = await apiPost('usuarioestado', { uid: uid_(), objetivo: u.uid, activo: !u.activo });
           cerrar_();
-          await cargar_();
+          await cargar_(re && re.todo);
         } catch (e) { aviso_('error', 'No se pudo', e.message || String(e)); }
       });
     }
@@ -460,15 +469,15 @@
           '<button type="button" class="cfg-acc-h">' +
             '<span>' + esc_(p.titulo) + '</span>' +
             (p.esDefecto ? '' : '<em class="cfg-tag">editada</em>') +
-            '<i>▾</i>' +
+            '<i>' + ICO_('abajo', 16) + '</i>' +
           '</button>' +
           '<div class="cfg-acc-b">' +
-            '<p class="helper">' + esc_(p.donde) + '</p>' +
+            '<p class="hf-intro">' + esc_(p.donde) + '</p>' +
             '<div class="cfg-vars">' + vars + '</div>' +
             '<textarea class="cfg-txt" id="cfg-txt-' + i + '" rows="10">' + esc_(p.texto) + '</textarea>' +
             '<div class="cfg-acc-pie">' +
-              '<button type="button" class="btn-primary cfg-mini cfg-guardar" data-clave="' + esc_(p.clave) + '">Guardar</button>' +
-              '<button type="button" class="chip cfg-restaurar" data-clave="' + esc_(p.clave) + '">Restaurar original</button>' +
+              '<button type="button" class="kit-btn kit-btn--marca cfg-guardar" data-clave="' + esc_(p.clave) + '">' + ICOS('check') + 'Guardar</button>' +
+              '<button type="button" class="kit-btn cfg-restaurar" data-clave="' + esc_(p.clave) + '">' + ICOS('devolver') + 'Restaurar original</button>' +
             '</div>' +
           '</div>' +
         '</div>';
@@ -509,10 +518,10 @@
         var texto = caja.querySelector('.cfg-txt').value;
         var cambios = {}; cambios[b.dataset.clave] = texto;
         try {
-          await apiPost('cfgguardar', { uid: uid_(), cambios: cambios });
+          var rg = await apiPost('cfgguardar', { uid: uid_(), cambios: cambios });
           estado.sucias[b.dataset.clave] = false;
           await Swal.fire({ icon: 'success', title: 'Plantilla guardada', timer: 1300, showConfirmButton: false });
-          await cargar_();
+          await cargar_(rg && rg.todo);
           pestana_('plantillas');
         } catch (e) { aviso_('error', 'No se pudo guardar', e.message || String(e)); }
       });
@@ -526,9 +535,9 @@
         });
         if (!c.isConfirmed) return;
         try {
-          await apiPost('cfgrestaurar', { uid: uid_(), clave: b.dataset.clave });
+          var rr = await apiPost('cfgrestaurar', { uid: uid_(), clave: b.dataset.clave });
           estado.sucias[b.dataset.clave] = false;
-          await cargar_();
+          await cargar_(rr && rr.todo);
           pestana_('plantillas');
         } catch (e) { aviso_('error', 'No se pudo restaurar', e.message || String(e)); }
       });
@@ -547,18 +556,41 @@
       return;
     }
 
-    cont.innerHTML = estado.avanzado.map(function (a, i) {
-      var tipo = a.tipo === 'secreto' ? 'password' : (a.tipo === 'numero' ? 'tel' : 'text');
-      return '' +
-        '<label class="cfg-lbl">' + esc_(a.titulo) +
-          '<span class="cfg-campo">' +
-            '<input id="cfg-av-' + i + '" type="' + tipo + '" value="' + esc_(a.valor) + '" data-clave="' + esc_(a.clave) + '" />' +
-            (a.tipo === 'secreto' ? '<button type="button" class="cfg-ojo" data-i="' + i + '">👁</button>' : '') +
-          '</span>' +
-          '<small>' + esc_(a.clave) + '</small>' +
-        '</label>';
+    /* FASE 2 — agrupado por lo que es (carpetas, WhatsApp, Firebase…) y con
+       la explicación de dónde se usa cada llave a la vista. */
+    var GRUPOS = [
+      { t: 'Carpetas y archivos de Drive', ic: 'carpeta', pre: ['drive.', 'media.'] },
+      { t: 'WhatsApp (BuilderBot)', ic: 'whatsapp', pre: ['bb.'] },
+      { t: 'Firebase: chat y EN VIVO', ic: 'nube', pre: ['chat.', 'envivo.'] },
+      { t: 'Voz de las consultas', ic: 'altavoz', pre: ['voz.'] },
+      { t: 'Ingreso, enlaces y topes', ic: 'candado', pre: ['pin.', 'app.', 'visor.'] }
+    ];
+    function grupoDe(clave) {
+      for (var g = 0; g < GRUPOS.length; g++) {
+        for (var q = 0; q < GRUPOS[g].pre.length; q++) if (clave.indexOf(GRUPOS[g].pre[q]) === 0) return g;
+      }
+      return GRUPOS.length - 1;
+    }
+    var porGrupo = GRUPOS.map(function () { return []; });
+    estado.avanzado.forEach(function (a, i) { porGrupo[grupoDe(a.clave)].push({ a: a, i: i }); });
+
+    cont.innerHTML = porGrupo.map(function (lista, g) {
+      if (!lista.length) return '';
+      return '<section class="cfg-grupo"><h4 class="grupo__t">' + ICO_(GRUPOS[g].ic, 18) + ' ' + esc_(GRUPOS[g].t) + '</h4>' +
+        lista.map(function (x) {
+          var a = x.a, i = x.i;
+          var tipo = a.tipo === 'secreto' ? 'password' : (a.tipo === 'numero' ? 'tel' : 'text');
+          return '' +
+            '<label class="cfg-lbl">' + esc_(a.titulo) +
+              '<span class="cfg-campo">' +
+                '<input id="cfg-av-' + i + '" type="' + tipo + '" value="' + esc_(a.valor) + '" data-clave="' + esc_(a.clave) + '" autocomplete="off" />' +
+                (a.tipo === 'secreto' ? '<button type="button" class="cfg-ojo" data-i="' + i + '" aria-label="Mostrar u ocultar">' + ICO_('ojo', 18) + '</button>' : '') +
+              '</span>' +
+              '<small>' + esc_(a.donde || '') + ' · <code>' + esc_(a.clave) + '</code></small>' +
+            '</label>';
+        }).join('') + '</section>';
     }).join('') +
-    '<div class="cfg-acc-pie"><button type="button" id="cfg-av-guardar" class="btn-primary">Guardar Avanzado</button></div>';
+    '<div class="cfg-acc-pie"><button type="button" id="cfg-av-guardar" class="kit-btn kit-btn--marca">' + ICOS('check') + 'Guardar cambios</button></div>';
 
     cont.querySelectorAll('.cfg-ojo').forEach(function (o) {
       o.addEventListener('click', function () {
@@ -576,10 +608,10 @@
         cambios[inp.dataset.clave] = inp.value;
       });
       try {
-        await apiPost('cfgguardar', { uid: uid_(), cambios: cambios });
+        var ra = await apiPost('cfgguardar', { uid: uid_(), cambios: cambios });
         estado.sucias = {};
-        await Swal.fire({ icon: 'success', title: 'Avanzado guardado', timer: 1300, showConfirmButton: false });
-        await cargar_();
+        await Swal.fire({ icon: 'success', title: 'Guardado', timer: 1300, showConfirmButton: false });
+        await cargar_(ra && ra.todo);
         pestana_('avanzado');
       } catch (e) { aviso_('error', 'No se pudo guardar', e.message || String(e)); }
     });

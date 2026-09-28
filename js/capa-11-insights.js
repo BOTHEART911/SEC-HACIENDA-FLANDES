@@ -2216,7 +2216,7 @@
     hoja.querySelector('.iq-fondo').addEventListener('click', cerrar);
 
     cfg.botones.forEach(function (bt) {
-      var el = nodo('<button class="iq-chip" type="button" data-id="' + bt.id + '"><span aria-hidden="true">' + bt.ic + '</span> ' + limpio(bt.et) + '</button>');
+      var el = nodo('<button class="iq-chip" type="button" data-id="' + bt.id + '"><span aria-hidden="true" class="iq-chip-ico">' + (window.icoDeEmoji ? icoDeEmoji(bt.ic) : bt.ic) + '</span> ' + limpio(bt.et) + '</button>');
       el.addEventListener('click', function () {
         var ch = pie.querySelectorAll('.iq-chip');
         for (var k = 0; k < ch.length; k++) ch[k].classList.toggle('on', ch[k] === el);

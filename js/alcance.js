@@ -175,9 +175,27 @@
       });
   }
 
+  /* FASE 2 SEC-HACIENDA-FLANDES — el último alcance se recuerda en el
+     dispositivo: al volver a abrir la app, los accesos del inicio salen al
+     instante con lo que se sabía, y la revalidación de la sesión (que ya
+     trae el alcance nuevo en el mismo viaje) lo pone al día por detrás. */
+  var K_ALC = 'hac.alcance.v1';
+  function recordar(alc) {
+    try { localStorage.setItem(K_ALC, JSON.stringify({ uid: alc.uid || uid(), alc: alc })); } catch (_) {}
+  }
+  function recordado(u) {
+    try {
+      var g = JSON.parse(localStorage.getItem(K_ALC) || 'null');
+      if (g && g.alc && g.alc.encontrado && g.uid === u) return g.alc;
+    } catch (_) {}
+    return null;
+  }
+  function olvidar() { try { localStorage.removeItem(K_ALC); } catch (_) {} }
+
   function aplicar(alc) {
     if (!alc) return;
     window.ALC = alc;
+    recordar(alc);
 
     /* El nombre, los roles y el teléfono buenos son los de la hoja.
        currentUser es un `let` de app.js y no se puede tocar desde
@@ -243,9 +261,17 @@
   if (typeof original === 'function') {
     window.procesarLoginExitoso_ = function (res, doc) {
       var r = original.apply(this, arguments);
-      /* el alcance se pide después de que app.js (e identidad.js) ya
-         armaron currentUser: de ahí sale el uid */
-      setTimeout(function () { cargar(); }, 0);
+      /* FASE 2 — UN SOLO VIAJE: el login (documento o PIN) y la
+         revalidación de la sesión traen ya el alcance. Solo si no vino
+         (servidor viejo) se pide aparte, como antes. */
+      if (res && res.publico) window.HAC_PUBLICO = res.publico;
+      if (res && res.alcance && res.alcance.encontrado) {
+        aplicar(res.alcance);
+      } else {
+        var viejo = recordado(res && res.uid);
+        if (viejo) aplicar(viejo);          /* la revalidación lo pone al día */
+        else if (!window.__IDN_REVALIDANDO) setTimeout(function () { cargar(); }, 0);
+      }
       return r;
     };
   }
@@ -255,6 +281,7 @@
   try {
     document.getElementById('btn-logout')?.addEventListener('click', function () {
       window.ALC = null;
+      olvidar();
       try {
         if (typeof window.aplicarPermisosVistas_ === 'function') window.aplicarPermisosVistas_();
       } catch (_) {}
@@ -264,6 +291,7 @@
   /* API para las fases siguientes (los 3 modales de descarga) */
   window.ALCANCE = {
     recargar: cargar,
+    aplicar: aplicar,
     recargarSiHaceFalta: recargarSiHaceFalta,
     actual: function () { return window.ALC; },
     catalogo: function (n) {
@@ -275,5 +303,5 @@
      (identidad.js entra directo), igual se pide el alcance. */
   setTimeout(function () {
     if (!window.ALC && uid()) cargar();
-  }, 2500);
+  }, 6000);
 })();

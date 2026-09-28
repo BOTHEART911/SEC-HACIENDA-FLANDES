@@ -47,13 +47,7 @@ function stopLoading(){
 }
 
   /* ================== PREDIAL SUBMENU TOGGLE ================== */
-document.getElementById('btn-cat-predial')?.addEventListener('click', () => {
-  playSoundOnce(SOUNDS.menu);
-  const sub = document.getElementById('predial-submenu');
-  if (!sub) return;
-  const open = sub.style.display !== 'none';
-  sub.style.display = open ? 'none' : '';
-});
+/* FASE 2 — PREDIAL es un bloque del inicio, ya no un submenú plegable. */
 
 /* ================== API ================== */
 async function apiGet(action, params = {}){
@@ -96,136 +90,14 @@ function verArchivo_(url, nombre, agregar){
   return true;
 }
 
-/* ================== PWA AVANZADO ================== */
-let deferredPrompt = null;
-let __installStartShown = false;
-let __installSuccessShown = false;
-
-function isStandalone(){
-  const dmStandalone = window.matchMedia('(display-mode: standalone)').matches;
-  const dmInstalled  = window.matchMedia('(display-mode: installed)').matches;
-  const iosStandalone = (window.navigator.standalone === true);
-  return dmStandalone || dmInstalled || iosStandalone;
-}
-function isIOS(){
-  return /(iphone|ipad|ipod)/i.test(navigator.userAgent || '');
-}
-function isMarkedInstalled(){
-  try{ return localStorage.getItem('pwaInstalledFlag') === '1'; }catch(_){ return false; }
-}
-function markInstalled(){
-  try{ localStorage.setItem('pwaInstalledFlag', '1'); }catch(_){}
-}
-function clearInstalledMark(){
-  try{ localStorage.removeItem('pwaInstalledFlag'); }catch(_){}
-}
-async function detectInstalled(){
-  if (isStandalone()) return true;
-  if (typeof navigator.getInstalledRelatedApps === 'function'){
-    try{
-      const apps = await navigator.getInstalledRelatedApps();
-      const found = apps.some(a =>
-        a.platform === 'webapp' &&
-        typeof a.url === 'string' &&
-        /manifest\.webmanifest$/.test(a.url)
-      );
-      if (found){
-        markInstalled();
-        return true;
-      } else {
-        clearInstalledMark();
-      }
-    }catch(_){}
-  }
-  return isMarkedInstalled();
-}
-function updateInstallButtonsVisibility(){
-  const btn1 = document.getElementById('btn-instalar');
-  const canPrompt = !!deferredPrompt;
-  const installed = isMarkedInstalled() || isStandalone();
-  const shouldShow = !installed && (canPrompt || isIOS());
-  if(btn1) btn1.style.display = shouldShow ? '' : 'none';
-}
-
-window.addEventListener('beforeinstallprompt', (e)=>{
-  e.preventDefault();
-  deferredPrompt = e;
-  updateInstallButtonsVisibility();
-});
-
-window.addEventListener('appinstalled', ()=>{
-  markInstalled();
-  deferredPrompt = null;
-  updateInstallButtonsVisibility();
-});
-
-document.getElementById('btn-instalar').addEventListener('click', async ()=>{
-  if(isIOS()){
-    Swal.fire({
-      icon:'info',
-      title: '¡Para Instalar en tu Iphone!',
-      html: `
-        <div style="text-align:center; margin-top:8px;">
-          <img
-            src="img/instalacion-ios.gif"
-            alt="Instalación de IOS"
-            style="width:180px; max-width:70vw; height:auto; display:block; margin:0 auto 12px;"
-          >
-          <div style="margin-top:10px;">
-            <b>1.</b> Toca Compartir.<br><b>2.</b> Elige "Agregar a pantalla de inicio".<br><b>3.</b> Confirma "Agregar".
-          </div>
-        </div>
-      `,
-    });
-    return;
-  }
-  if(!deferredPrompt){
-    Swal.fire({icon:'info',title:'Instalación no disponible todavía'});
-    return;
-  }
-
-  const dp = deferredPrompt;
-  dp.prompt();
-  const choice = await dp.userChoice;
-  deferredPrompt = null;
-
-  if (choice.outcome === 'accepted'){
-    markInstalled();
-    __installStartShown = true;
-    Swal.fire({
-      icon: 'success',
-      title: '¡App instalándose!',
-      html: `
-        <div style="text-align:center; margin-top:8px;">
-          <img
-            src="img/instalacion.gif"
-            alt="Instalando app"
-            style="width:180px; max-width:70vw; height:auto; display:block; margin:0 auto 12px;"
-          >
-          <div>Debes esperar unos segundos mientras el sistema instala la App.</div>
-          <div style="margin-top:10px;">
-            <b>Al desaparecer este aviso, puedes salir de esta vista. La App aparecerá en la pantalla principal de este dispositivo.</b>
-          </div>
-        </div>
-      `,
-      timer: 12000,
-      showConfirmButton: false
-    });
-  } else {
-    Swal.fire({icon:'info',title:'Instalación cancelada'});
-  }
-
-  updateInstallButtonsVisibility();
-});
-
+/* ================== PWA ==================
+   FASE 2 SEC-HACIENDA-FLANDES — la instalación la llevan las piezas del
+   kit Flandes (kit/instalar.js: los 8 casos de instalación, también el
+   iPhone por Compartir; kit/bienvenida.js: la portada). Aquí solo queda
+   el arranque: la app abre SIEMPRE en el ingreso; la portada de instalar
+   se pone encima cuando corresponde. */
 async function initPWAVista(){
-  const installed = await detectInstalled();
-  if (installed){
-    showView('view-login');
-  } else {
-    showView('view-instalar');
-    updateInstallButtonsVisibility();
-  }
+  showView('view-login');
 }
 if ('serviceWorker' in navigator){
   window.addEventListener('load', ()=>{
@@ -288,17 +160,16 @@ document.getElementById('btn-enviar-respuesta-limpia')?.addEventListener('click'
     });
     if(!ok.isConfirmed) return;
 
-    await apiPost('marcarRespuesta', {
+    const resMR = await apiPost('marcarRespuesta', conLista_({
       id_predial: currentCardSelected.id_predial,
       respuesta: respuesta,
       usuario: currentUser.nombre || ''
-    });
+    }));
 
     closeRespuestaLimpiaModal_();
     Swal.fire({ icon:'success', title:'Enviado', timer:1400, showConfirmButton:false });
 
-    // refrescar la vista/lista actual
-    await loadAndRenderList_(currentListMode);
+    await loadAndRenderList_(currentListMode, resMR && resMR.lista);
   }catch(e){
     Swal.fire({ icon:'error', title:'Error', text: String(e.message || e) });
   }
@@ -327,6 +198,12 @@ document.getElementById('btn-enviar-respuesta-limpia')?.addEventListener('click'
   }catch(_){
     try{ if(sel) sel.value = ''; }catch(__){}
   }
+}
+
+/* FASE 2 — lo que se le agrega a una escritura de SOLICITUDES para que la
+   respuesta traiga la lista ya actualizada (un solo viaje). */
+function conLista_(body){
+  return Object.assign({ uid: uidActual_(), devolverLista: currentListMode || 'PENDIENTE' }, body || {});
 }
 
 /* ================== VALIDACIONES ================== */
@@ -361,10 +238,11 @@ document.getElementById('toggle-doc')?.addEventListener('click', ()=>{
   const el = document.getElementById('login-doc');
   const oculto = el.type === 'password';
   el.type = oculto ? 'text' : 'password';
-  const src = oculto
-    ? 'img/ocultar.png'
-    : 'img/mostrar.png';
-  document.getElementById('toggle-doc-img').src = src;
+  const b = document.getElementById('toggle-doc');
+  if (b) {
+    b.innerHTML = window.ICO_ ? window.ICO_(oculto ? 'ojo-tapado' : 'ojo', 18) : '';
+    b.setAttribute('aria-label', oculto ? 'Ocultar documento' : 'Mostrar documento');
+  }
 });
 
 /* ================== ESTADO ================== */
@@ -706,15 +584,14 @@ function aplicarPermisosVistas_(){
   /* FASE 7 — la cabecera PREDIAL solo se enciende si hay algo debajo:
      antes quien no tenía ninguno de los 6 sub-botones abría un submenú
      vacío y parecía que la app estaba rota. */
+  /* FASE 2 — cada bloque del inicio (Predial, Gestión…) se esconde solo si
+     no le queda ninguna tarjeta encendida. Antes era el submenú plegable. */
   try{
-    const sub = document.getElementById('predial-submenu');
-    const cat = document.getElementById('btn-cat-predial');
-    if(sub && cat){
-      const hay = Array.from(sub.querySelectorAll('button'))
-        .some(b => b.style.display !== 'none');
-      cat.style.display = hay ? '' : 'none';
-      if(!hay) sub.style.display = 'none';
-    }
+    document.querySelectorAll('#view-inicio .bloque').forEach(function(bl){
+      const hay = Array.from(bl.querySelectorAll('.acceso'))
+        .some(b => b.style.display !== 'none' && !b.hidden);
+      bl.hidden = !hay;
+    });
   }catch(_){}
 }
 
@@ -737,7 +614,7 @@ function procesarLoginExitoso_(res, doc){
     aplicarPermisosVistas_();
 
     document.getElementById('inicio-nombre').textContent = (currentUser.nombre || '').toUpperCase();
-    document.getElementById('inicio-sub').textContent = currentUser.isSuper ? 'SUPER USUARIO' : 'USUARIO';
+    document.getElementById('inicio-sub').textContent = currentUser.isSuper ? 'ADMINISTRADOR' : 'USUARIO';
 
    playSoundOnce(SOUNDS.login);
     showView('view-inicio');
@@ -765,6 +642,8 @@ function setupLoginPinUI_(){
     });
   });
 
+  /* FASE 2 — el teclado de PIN lo pinta identidad.js (primero la cuenta,
+     después el PIN). Estas teclas viejas ya no existen en la página. */
   document.querySelectorAll('.pin-key').forEach(k=>{
     k.addEventListener('click', ()=>{
       const key = k.dataset.key;
@@ -805,7 +684,7 @@ document.getElementById('btn-logout')?.addEventListener('click', ()=>{
   playSoundOnce(SOUNDS.logout);
   currentUser = null;
   currentCardSelected = null;
-  document.getElementById('login-doc').value = '';
+  const ld = document.getElementById('login-doc'); if (ld) ld.value = '';
   /* FASE 7 — se apagan TODOS los botones del menú de una lista sola. La
      lista escrita a mano se había quedado corta: no apagaba Drive Anexos
      ni los 3 botones de descarga de la Fase 6. */
@@ -998,15 +877,17 @@ function normalizeZona_(barrio) {
   function showAlDiaAlert_(){
   return Swal.fire({
     icon: 'success',
-    title: 'ESTÁS AL DÍA 💪🏻',
-    html: 'Revisa posteriormente para validar nuevas solicitudes 👩🏻‍💻',
+    title: 'Estás al día',
+    html: 'No hay solicitudes pendientes. Cuando llegue una nueva, la verás aquí.',
     timer: 3200,
     showConfirmButton: false
   });
 }
 
-async function loadAndRenderList_(estado){
-  const data = await apiGet('listSolicitudes', { estado });
+async function loadAndRenderList_(estado, listaYa){
+  /* FASE 2 — un solo viaje: si la escritura trajo la lista nueva, se pinta
+     esa; si no, se pide. */
+  const data = Array.isArray(listaYa) ? listaYa : await apiGet('listSolicitudes', { estado });
   __listCache = Array.isArray(data) ? data : [];
   /* FASE 7 — antes pintaba la caché entera: cada refresco (y con el motor
      EN VIVO llegan solos) borraba lo que el usuario tenía filtrado. */
@@ -1076,7 +957,7 @@ function renderList_(items){
     const btnResp = document.createElement('button');
     btnResp.className = 'btn-respond';
     btnResp.type = 'button';
-    btnResp.textContent = 'RESPONDER - ADJUNTAR';
+    btnResp.innerHTML = ICO_('recibo', 16) + ' Responder y adjuntar';
     btnResp.addEventListener('click', async ()=>{
       currentCardSelected = it;
       await openRespuestaViewWithCheck_();
@@ -1101,8 +982,8 @@ function renderList_(items){
         cancelButtonText:'Cancelar'
       });
       if(!ok.isConfirmed) return;
-      await apiPost('marcarAlDia', { id_predial: it.id_predial, usuario: currentUser ? (currentUser.nombre || '') : '' });
-      await loadAndRenderList_(currentListMode);
+      const r1 = await apiPost('marcarAlDia', conLista_({ id_predial: it.id_predial, usuario: currentUser ? (currentUser.nombre || '') : '' }));
+      await loadAndRenderList_(currentListMode, r1 && r1.lista);
       Swal.fire({ icon:'success', title:'Listo', timer:1400, showConfirmButton:false });
     });
 
@@ -1122,8 +1003,8 @@ function renderList_(items){
         cancelButtonText:'Cancelar'
       });
       if(!ok.isConfirmed) return;
-      await apiPost('marcarNoEncontrado', { id_predial: it.id_predial, usuario: currentUser ? (currentUser.nombre || '') : '' });
-      await loadAndRenderList_(currentListMode);
+      const r2 = await apiPost('marcarNoEncontrado', conLista_({ id_predial: it.id_predial, usuario: currentUser ? (currentUser.nombre || '') : '' }));
+      await loadAndRenderList_(currentListMode, r2 && r2.lista);
       Swal.fire({ icon:'success', title:'Listo', timer:1400, showConfirmButton:false });
     });
 
@@ -1152,7 +1033,7 @@ respLimpiaBtn.addEventListener('click', async ()=>{
         title: 'DAR DE BAJA',
         html: `
           <div style="text-align:left; font-size:.92rem; line-height:1.55;">
-            <p style="margin:0 0 10px;"><b>⚠️ Esta acción es irreversible.</b></p>
+            <p style="margin:0 0 10px;"><b>Esta acción no se puede deshacer.</b></p>
             <p style="margin:0 0 10px;">El registro será <b>eliminado permanentemente</b> de la hoja SOLICITUDES.</p>
             <p style="margin:0; color:#b91c1c; font-weight:800;">
               Realiza esta acción ÚNICAMENTE si la solicitud ya fue referida o atendida en el Grupo de WhatsApp de solicitudes.
@@ -1167,11 +1048,11 @@ respLimpiaBtn.addEventListener('click', async ()=>{
       if(!ok.isConfirmed) return;
 
       try{
-        await apiPost('darDeBajaSolicitud', {
+        const r3 = await apiPost('darDeBajaSolicitud', conLista_({
           id_predial: it.id_predial,
           usuario: currentUser ? (currentUser.nombre || '') : ''
-        });
-        await loadAndRenderList_(currentListMode);
+        }));
+        await loadAndRenderList_(currentListMode, r3 && r3.lista);
 
         // Si ya no quedan pendientes, salir y mostrar "AL DÍA"
         if(__listCache.length === 0){
@@ -1374,18 +1255,18 @@ document.getElementById('resp-guardar')?.addEventListener('click', async ()=>{
     pdfs.push({ filename: files[i].name, base64: await fileToBase64_(files[i]) });
   }
 
-    await apiPost('guardarRespuesta', {
+  const r4 = await apiPost('guardarRespuesta', conLista_({
     id_predial: currentCardSelected.id_predial,
     respuesta: respuesta,
     vigencia: vigencia,
     pdfs: pdfs,
     usuario: currentUser ? (currentUser.nombre || '') : ''
-  });
+  }));
 
   await Swal.fire({ icon:'success', title:'Enviado', timer:1500, showConfirmButton:false });
 
   showView('view-lista');
-  await loadAndRenderList_(currentListMode);
+  await loadAndRenderList_(currentListMode, r4 && r4.lista);
 });
 
 /* ================== AGREGAR SOLICITUD (presencial) ================== */
@@ -1542,7 +1423,7 @@ document.getElementById('btn-drive-guardar')?.addEventListener('click', async ()
   try{
     /* FASE 7 — el folderId ya NO viaja: el servidor lo saca de la hoja y
        comprueba que esa fila sea tuya (o que seas ADMIN/DEV). */
-    await apiPost('updateDriveCorreo', {
+    const rDr = await apiPost('updateDriveCorreo', {
       uid: uidActual_(),
       rowIndex: DRIVE_EDIT_TARGET.rowIndex,
       newEmail,
@@ -1551,7 +1432,9 @@ document.getElementById('btn-drive-guardar')?.addEventListener('click', async ()
 
     Swal.fire({ icon:'success', title:'Guardado', timer:1600, showConfirmButton:false });
 
-    await loadDriveData_();
+    /* FASE 2 — la lista nueva viene en la misma respuesta */
+    if (rDr && Array.isArray(rDr.lista)) { DRIVE_DATA = rDr.lista; applyDriveFilter_(); }
+    else await loadDriveData_();
     DRIVE_EDIT_TARGET = null;
     showView('view-drive-anexos');
   }catch(e){
@@ -1756,8 +1639,9 @@ const ICONO_INBOX      = 'img/inbox.webp';
 const ICONO_OUTBOX     = 'img/outbox.webp';
 const ICONO_MEMORIA    = 'img/memoria.webp';
 
-const BB_PROC_ENDPOINT = 'https://app.builderbot.cloud/api/v2/ff37a123-12b0-4fdc-9866-f3e2daf389fb/messages';
-const BB_PROC_KEY      = 'bb-7f9ef630-5cfc-4ba4-9258-5e7cecbb4f65';
+/* FASE 2 SEC-HACIENDA-FLANDES — la llave de BuilderBot ya NO vive en el
+   navegador (estaba a la vista de cualquiera en un repo público). Todos
+   los WhatsApp los manda el servidor con las plantillas de Configuración. */
 
 /* ── ARCHIVO: quien lleva la bitácora del expediente ──
    FASE 5 — antes era el nombre y el teléfono de SOL MAR escritos a
@@ -2188,7 +2072,7 @@ function cancelarProcPicker() {
 function confirmarProcPicker() {
   const dia = document.getElementById('proc-picker-dia')?.value || '01';
   const mes = document.getElementById('proc-picker-mes')?.value || '01';
-  const val = `${dia}/${mes}/2026`;
+  const val = `${dia}/${mes}/${new Date().getFullYear()}`;
 
   if (__procFechaTarget) {
     let inputId = '';
@@ -2335,21 +2219,13 @@ function getCatIcon_(cat) {
 
 /* ── WhatsApp Builderbot ────────────────────────────────── */
 function sendProcWA_(numero, mensaje) {
-  try {
-    if (!numero) return;
-    let num = String(numero).replace(/\D/g, '');
-    if (num.length === 10) num = '57' + num;
-    if (!num) return;
-    fetch(BB_PROC_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-builderbot': BB_PROC_KEY },
-      body: JSON.stringify({ messages: { content: mensaje }, number: num, checkIfExists: false })
-    }).catch(() => {});
-  } catch (_) {}
+  /* FASE 2 — ya no se manda nada desde el navegador. Si algún módulo viejo
+     la llama, se avisa en consola para encontrarlo. */
+  try { console.warn('[sendProcWA_] obsoleto: los avisos los manda el servidor'); } catch (_) {}
 }
 
 /* ── Vista ASIGNACIONES ─────────────────────────────────── */
-async function abrirVistaAsignaciones_() {
+async function abrirVistaAsignaciones_(listaYa) {
   if (!currentUser) return;
   showView('view-asignaciones');
   document.getElementById('proc-filter').value = '';
@@ -2369,11 +2245,19 @@ async function abrirVistaAsignaciones_() {
   const btnAgregar = document.getElementById('btn-agregar-asignacion');
   if (btnAgregar) btnAgregar.style.display = canSeeAgregarAsignacion_() ? '' : 'none';
 
-  await loadAndRenderProcesos_();
-  startAsignacionesAutoRefresh_(); // ← AGREGA ESTA LÍNEA
+  await loadAndRenderProcesos_(listaYa);
+  startAsignacionesAutoRefresh_();
 }
 
-async function loadAndRenderProcesos_() {
+/* FASE 2 SEC-HACIENDA-FLANDES — un solo viaje: si la acción que se acaba
+   de guardar ya trajo la lista actualizada, se pinta esa y no se vuelve a
+   pedir al servidor. */
+async function loadAndRenderProcesos_(listaYa) {
+  if (Array.isArray(listaYa)) {
+    __procListCache = listaYa;
+    applyProcFilters_();
+    return;
+  }
   /* FASE 5 — el navegador ya no dice a nombre de quién pide ni si es
      super: manda su uid y el servidor devuelve exactamente las filas
      donde esa persona es ASIGNADO o ASISTENTE (o todas, si es ADMIN,
@@ -2516,9 +2400,9 @@ function renderProcList_(items) {
           showCancelButton: true, confirmButtonText: 'Eliminar', cancelButtonText: 'Cancelar'
         });
         if (!ok.isConfirmed) return;
-        await apiPost('eliminarProceso', { id_proceso: row.id_proceso });
+        const rEl = await apiPost('eliminarProceso', { uid: uidActual_(), id_proceso: row.id_proceso });
         playSoundOnce(SOUNDS.success);
-        await loadAndRenderProcesos_();
+        await loadAndRenderProcesos_(rEl && rEl.lista);
       });
       icons.appendChild(btnElim);
     }
@@ -2731,6 +2615,7 @@ document.getElementById('btn-proc-add-guardar')?.addEventListener('click', async
 
   try {
     const res = await apiPost('agregarProceso', {
+      uid: uidActual_(),
       recibido, consecutivo: formatConsecutivo_(consecutivo),
       descripcion: descripcion.toUpperCase(), respuesta, medio,
       peticionario: peticionario,
@@ -2742,43 +2627,25 @@ document.getElementById('btn-proc-add-guardar')?.addEventListener('click', async
       recibido3: files['recibido3'] || null
     });
 
-    // Enviar WhatsApp si hay asignado
-    if (asignado && contacto1) {
-      const msg1 =
-        `Estimado(a) *${asignado}*\n\n` +
-        `Se te ha asignado el oficio *${consecutivo.toUpperCase()}* recibido a través de *${medio}*.\n` +
-        `*Asunto:* ${descripcion}.\n\n` +
-        `Por favor, entra a la App para iniciarlo asignando etapa jurídica y bitácora.\n\n` +
-        `Cordialmente,\n\n*${coordinador}*`;
-      sendProcWA_(contacto1, msg1);
-
-      if (asistente && contacto2) {
-        setTimeout(() => {
-          const msg2 =
-            `Estimado(a) *${asistente}*\n\n` +
-            `Se te ha asignado un apoyo para responder el oficio *${consecutivo.toUpperCase()}* recibido a través de *${medio}*.\n` +
-            `*Asunto:* ${descripcion}.\n\n` +
-            `Por favor, entra a la App para iniciarlo.\n\n` +
-            `Cordialmente,\n\n*${coordinador}*`;
-          sendProcWA_(contacto2, msg2);
-        }, 3000);
-      }
-
-      playSoundOnce(SOUNDS.success);
+    /* FASE 2 — los WhatsApp al asignado y al asistente los manda el
+       servidor (plantillas proc.asignacion y proc.apoyonuevo). */
+    playSoundOnce(SOUNDS.success);
+    if (asignado) {
       await Swal.fire({
-        icon: 'success', title: 'ASIGNACIÓN EXITOSA',
-        html: `<b>Asignado:</b> ${escapeHtml_(asignado)}${asistente ? `<br><b>Apoyo:</b> ${escapeHtml_(asistente)}` : ''}`,
+        icon: 'success', title: 'Asignación guardada',
+        html: `<b>Asignado:</b> ${escapeHtml_(asignado)}${asistente ? `<br><b>Apoyo:</b> ${escapeHtml_(asistente)}` : ''}` +
+              `<br><small>${res && res.avisados ? 'Se les avisó por WhatsApp.' : 'Sin teléfono para avisar por WhatsApp.'}</small>`,
         timer: 3000, showConfirmButton: false
       });
     } else {
-      playSoundOnce(SOUNDS.success);
       await Swal.fire({
-        icon: 'success', title: 'REGISTRO GUARDADO',
-        html: 'No olvides la asignación oportuna.',
+        icon: 'success', title: 'Registro guardado',
+        html: 'No olvides asignarlo a tiempo.',
         timer: 2500, showConfirmButton: false
       });
     }
-    await abrirVistaAsignaciones_();
+    await abrirVistaAsignaciones_(res && res.lista);
+    return;
   } catch (e) {
     Swal.fire({ icon: 'error', title: 'Error', text: String(e.message || e) });
   }
@@ -2944,14 +2811,7 @@ function abrirVerAsignacion_(row) {
         showCancelButton: true, confirmButtonText: 'Confirmar', cancelButtonText: 'Cancelar'
       });
       if (!ok.isConfirmed) return;
-      // Enviar WhatsApp al coordinador (contacto3)
-      const c3 = row.contacto3 || '';
-      const msg =
-        `Estimado *${row.coordinador || ''}*\n` +
-        `Solicito la finalización de mi asignación *${row.descripcion || ''}*\n\n` +
-        `Todos los soportes están correctamente cargados.\n\n` +
-        `Cordialmente,\n\n*${row.asignado || ''}*`;
-      sendProcWA_(c3, msg);
+      await apiPost('procAviso', { uid: uidActual_(), id_proceso: row.id_proceso, rowIndex: row.rowIndex, tipo: 'finalizacion' });
       playSoundOnce(SOUNDS.success);
       await Swal.fire({ icon:'success', title:'Solicitud enviada', timer:1800, showConfirmButton:false });
       abrirVerAsignacion_(row);
@@ -2983,20 +2843,14 @@ document.getElementById('btn-rebote-guardar')?.addEventListener('click', async (
   }
   if (!currentProcesoSelected) return;
   try {
-    await apiPost('rebotarProceso', { id_proceso: currentProcesoSelected.id_proceso, rebote });
-    // Enviar WhatsApp al coordinador
-    const c3  = currentProcesoSelected.contacto3 || '';
-    const msg =
-      `Estimado *${currentProcesoSelected.coordinador || ''}*\n\n` +
-      `He rebotado la asignación *${currentProcesoSelected.descripcion || ''}*\n` +
-      `*Justificación:*\n${rebote}\n\n` +
-      `Cordialmente,\n\n*${currentProcesoSelected.asignado || ''}*`;
-    sendProcWA_(c3, msg);
+    const resReb = await apiPost('rebotarProceso', { uid: uidActual_(), id_proceso: currentProcesoSelected.id_proceso, rebote });
+    /* FASE 2 — el aviso al coordinador lo manda el servidor (proc.rebote).
+       Antes salía DOS veces: una del navegador y otra del servidor. */
     document.getElementById('modal-rebotar').classList.add('hidden');
     playSoundOnce(SOUNDS.success);
     await Swal.fire({ icon:'success', title:'Asignación Rebotada', timer:1800, showConfirmButton:false });
-    // Recargar asignaciones; si no hay, ir a inicio
-    await loadAndRenderProcesos_();
+    // La lista ya vino en la respuesta (un solo viaje); si no hay, al inicio
+    await loadAndRenderProcesos_(resReb && resReb.lista);
     if (__procListCache.length) showView('view-asignaciones');
     else showView('view-inicio');
   } catch (e) {
@@ -3312,10 +3166,11 @@ document.getElementById('btn-edit-asig-guardar')?.addEventListener('click', asyn
   if (!ok.isConfirmed) return;
 
   try {
-    await apiPost('editarProceso', payload);
+    if (!payload.uid) payload.uid = uidActual_();
+    const rEd = await apiPost('editarProceso', payload);
     playSoundOnce(SOUNDS.success);
-    await Swal.fire({ icon:'success', title:'EDICIÓN EXITOSA', html:'Sigue cada día tu asignación', timer:2000, showConfirmButton:false });
-    await abrirVistaAsignaciones_();
+    await Swal.fire({ icon:'success', title:'Cambios guardados', html:'Sigue cada día tu asignación', timer:2000, showConfirmButton:false });
+    await abrirVistaAsignaciones_(rEd && rEd.lista);
   } catch (e) {
     Swal.fire({ icon:'error', title:'Error', text: String(e.message || e) });
   }
@@ -3611,9 +3466,9 @@ if (currentUser?.isSuper && String(row.estado || '').toUpperCase() !== 'FINALIZA
       btnElim.addEventListener('click', async () => {
         const ok = await Swal.fire({ icon:'warning', title:'¿Eliminar asignación?', html:`<b>${escapeHtml_(row.descripcion || row.id_proceso)}</b><br>Esta acción es irreversible.`, showCancelButton:true, confirmButtonText:'Eliminar', cancelButtonText:'Cancelar' });
         if (!ok.isConfirmed) return;
-        await apiPost('eliminarProceso', { id_proceso: row.id_proceso });
+        const rEl = await apiPost('eliminarProceso', { uid: uidActual_(), id_proceso: row.id_proceso });
         playSoundOnce(SOUNDS.success);
-        await loadAndRenderProcesos_();
+        await loadAndRenderProcesos_(rEl && rEl.lista);
       });
       icons.appendChild(btnElim);
     }
@@ -3910,12 +3765,12 @@ function abrirSolicitarProceso_(row) {
   }).then(result => {
     if (result.isConfirmed) {
       __spTipoSeleccionado = 'Revisión / Firma';
-      document.getElementById('modal-sp-titulo').textContent = '¿Deseas complementar la solicitud?';
+      document.getElementById('modal-sp-titulo').textContent = 'Solicitar revisión o firma';
       document.getElementById('modal-sp-solicitud').value = '';
       document.getElementById('modal-solicitar-proceso').classList.remove('hidden');
     } else if (result.isDenied) {
       __spTipoSeleccionado = 'Finalización';
-      document.getElementById('modal-sp-titulo').textContent = '¿Deseas complementar la solicitud?';
+      document.getElementById('modal-sp-titulo').textContent = 'Solicitar la finalización';
       document.getElementById('modal-sp-solicitud').value = '';
       document.getElementById('modal-solicitar-proceso').classList.remove('hidden');
     }
@@ -3935,14 +3790,15 @@ document.getElementById('btn-sp-guardar')?.addEventListener('click', async () =>
   const solicitud = String(document.getElementById('modal-sp-solicitud').value || '').trim();
   const tipo     = __spTipoSeleccionado;
 
-  const c3 = row.contacto3 || getContacto3ByCoordinador_(row.coordinador);
-  const msg =
-    `Estimado *${row.coordinador || ''}*\n\n` +
-    `Solicito la *${tipo}* de mi asignación *${row.descripcion || ''}*\n\n` +
-    (solicitud ? solicitud + '\n\n' : '\n') +
-    `Cordialmente,\n\n*${row.asignado || ''}*`;
-
-  sendProcWA_(c3, msg);
+  try {
+    await apiPost('procAviso', {
+      uid: uidActual_(), id_proceso: row.id_proceso, rowIndex: row.rowIndex,
+      tipo: 'solicitud', clase: tipo, texto: solicitud
+    });
+  } catch (e) {
+    Swal.fire({ icon:'error', title:'No se pudo enviar', text: String(e.message || e) });
+    return;
+  }
   document.getElementById('modal-solicitar-proceso').classList.add('hidden');
   __spTipoSeleccionado = null;
   __spRowActual = null;
@@ -3969,12 +3825,12 @@ function abrirDecision_(row) {
   }).then(result => {
     if (result.isConfirmed) {
       __decTipoSeleccionado = 'FINALIZADO';
-      document.getElementById('modal-dec-titulo').textContent = '¿Deseas complementar la respuesta?';
+      document.getElementById('modal-dec-titulo').textContent = 'Finalizar la asignación';
       document.getElementById('modal-dec-solicitud').value = '';
       document.getElementById('modal-decision').classList.remove('hidden');
     } else if (result.isDenied) {
       __decTipoSeleccionado = 'PENDIENTE EVIDENCIA';
-      document.getElementById('modal-dec-titulo').textContent = '¿Deseas complementar la respuesta?';
+      document.getElementById('modal-dec-titulo').textContent = 'Pedir la evidencia';
       document.getElementById('modal-dec-solicitud').value = '';
       document.getElementById('modal-decision').classList.remove('hidden');
     }
@@ -3995,32 +3851,13 @@ document.getElementById('btn-dec-guardar')?.addEventListener('click', async () =
   const tipo     = __decTipoSeleccionado;
 
   try {
-    // 1. Actualizar estado en backend
-    await apiPost('editarProceso', {
-      id_proceso: row.id_proceso,
-      rowIndex:   row.rowIndex,
-      estado:     tipo
+    /* FASE 2 — estado + aviso al asignado + lista nueva, en UN viaje
+       (procdecision). El texto sale de las plantillas proc.finalizado y
+       proc.pendevidencia de Configuración. */
+    const resDec = await apiPost('procDecision', {
+      uid: uidActual_(), id_proceso: row.id_proceso, rowIndex: row.rowIndex,
+      estado: tipo, texto: solicitud
     });
-
-    // 2. Enviar WhatsApp al asignado (contacto1)
-    const c1 = row.contacto1 || '';
-    let msg = '';
-    if (tipo === 'FINALIZADO') {
-      msg =
-        `Estimado *${row.asignado || ''}*\n` +
-        `Se ha dado por finalizada la asignación *${row.descripcion || ''}*\n` +
-        (solicitud ? solicitud + '\n\n' : '\n') +
-        `Muchas gracias por tu valioso trabajo.\n\n` +
-        `Cordialmente,\n\n*${row.coordinador || ''}*`;
-    } else {
-      msg =
-        `Estimado *${row.asignado || ''}*\n` +
-        `Por favor subir la evidencia de envío al igual que el oficio firmado de la asignación *${row.descripcion || ''}*\n` +
-        (solicitud ? solicitud + '\n\n' : '\n') +
-        `Quedo atento(a) a la confirmación.\n\n` +
-        `Cordialmente,\n\n*${row.coordinador || ''}*`;
-    }
-    sendProcWA_(c1, msg);
 
     document.getElementById('modal-decision').classList.add('hidden');
     __decTipoSeleccionado = null;
@@ -4029,7 +3866,7 @@ document.getElementById('btn-dec-guardar')?.addEventListener('click', async () =
     playSoundOnce(SOUNDS.success);
     const titulo = tipo === 'FINALIZADO' ? 'ASIGNACIÓN FINALIZADA' : 'PENDIENTE DE EVIDENCIA';
     await Swal.fire({ icon:'success', title: titulo, timer:2000, showConfirmButton:false });
-    await abrirVistaAsignaciones_();
+    await abrirVistaAsignaciones_(resDec && resDec.lista);
   } catch (e) {
     Swal.fire({ icon:'error', title:'Error', text: String(e.message || e) });
   }
@@ -4054,7 +3891,9 @@ document.getElementById('btn-dec-guardar')?.addEventListener('click', async () =
 })();
 
 /* ── 2. Config Firebase ─────────────────────────────────── */
-const FIREBASE_CONFIG = {
+/* FASE 2 — la configuración del chat viaja en el login (Configuración →
+   Avanzado → chat.firebase). La de abajo es solo el respaldo de fábrica. */
+const FIREBASE_CONFIG_FABRICA = {
   apiKey:            "AIzaSyBgvBSKz-R1XDW5xUdxKyfcrmoQyJ2l5gs",
   authDomain:        "semaforo-hacienda.firebaseapp.com",
   databaseURL:       "https://semaforo-hacienda-default-rtdb.firebaseio.com",
@@ -4085,14 +3924,16 @@ function initFirebase_() {
     if (__fbDB) { resolve(__fbDB); return; }
 
     const waitForSDK = () => {
-      if (typeof firebase === 'undefined' || !firebase.app) {
+      /* FASE 2 — también hay que esperar al módulo de la base: los dos
+         scripts llegan por separado y a veces 'app' llega primero. */
+      if (typeof firebase === 'undefined' || !firebase.app || typeof firebase.database !== 'function') {
         setTimeout(waitForSDK, 80);
         return;
       }
       try {
         __fbApp = firebase.apps.length
           ? firebase.app()
-          : firebase.initializeApp(FIREBASE_CONFIG);
+          : firebase.initializeApp((window.HAC_PUBLICO && window.HAC_PUBLICO.chatFirebase && window.HAC_PUBLICO.chatFirebase.databaseURL) ? window.HAC_PUBLICO.chatFirebase : FIREBASE_CONFIG_FABRICA);
         __fbDB = firebase.database(__fbApp);
         resolve(__fbDB);
       } catch (e) {
@@ -4184,7 +4025,7 @@ function chatScrollBottom_(force) {
 function showChatToast_(autor) {
   const t = document.getElementById('chat-toast');
   if (!t) return;
-  t.textContent = '💬 ' + (autor || 'Nuevo mensaje');
+  t.textContent = (autor ? 'Mensaje de ' + autor : 'Nuevo mensaje');
   t.classList.add('show');
   clearTimeout(__chatToastTimer);
   __chatToastTimer = setTimeout(() => t.classList.remove('show'), 3500);
@@ -4767,8 +4608,12 @@ async function abrirPanel_() {
   panelShowTab_('resumen');
 
   try {
-    // Reutilizar caché si ya está cargada
-    const data = await apiGet('listProcesos', { uid: uidActual_() });
+    /* FASE 2 — el panel se abre desde Mi semáforo, que ya tiene las
+       asignaciones en memoria (y el EN VIVO las mantiene al día): no se
+       vuelven a pedir. Solo si por algo no están, se piden. */
+    const data = (Array.isArray(__procListCache) && __procListCache.length)
+      ? __procListCache
+      : await apiGet('listProcesos', { uid: uidActual_() });
     const rows  = Array.isArray(data) ? data : [];
     window.__panelData = rows;
 
@@ -5606,7 +5451,7 @@ function estadRenderTiempo_() {
   if (kpiWrap) {
     kpiWrap.innerHTML = '';
     [
-      { icon: ESTAD_ICON.barras,     value: totalAll,    label: 'Total 2026',  sub: 'solicitudes atendidas', cls: '' },
+      { icon: ESTAD_ICON.barras,     value: totalAll,    label: 'Total ' + ESTAD_ANIO_,  sub: 'solicitudes atendidas', cls: '' },
       { icon: ESTAD_ICON.calendario, value: totalChat,   label: 'CHAT',        sub: 'atendidas por chat',    cls: 'kpi-naranja' },
       { icon: ESTAD_ICON.calendario, value: totalPres,   label: 'PRESENCIAL',  sub: 'atendidas presencial',  cls: 'kpi-verde' },
       { icon: ESTAD_ICON.tendencia,  value: promMensual, label: 'Prom./Mes',   sub: 'atenciones promedio',   cls: '' },
@@ -5631,17 +5476,17 @@ function estadRenderTiempo_() {
   if (pillWrap) {
     pillWrap.innerHTML = `
       <div class="estad-tend-pill">
-        <span class="estad-tend-pill-icon">🟠</span>
+        <span class="estad-tend-pill-icon">${ICO_('chat',18)}</span>
         <span class="estad-tend-pill-value">${totalChat}</span>
         <span class="estad-tend-pill-label">CHAT</span>
       </div>
       <div class="estad-tend-pill">
-        <span class="estad-tend-pill-icon">🟢</span>
+        <span class="estad-tend-pill-icon">${ICO_('atencion',18)}</span>
         <span class="estad-tend-pill-value">${totalPres}</span>
         <span class="estad-tend-pill-label">PRESENCIAL</span>
       </div>
       <div class="estad-tend-pill">
-        <span class="estad-tend-pill-icon">📊</span>
+        <span class="estad-tend-pill-icon">${ICO_('grafica',18)}</span>
         <span class="estad-tend-pill-value">${totalAll}</span>
         <span class="estad-tend-pill-label">TOTAL</span>
       </div>
@@ -5890,7 +5735,7 @@ function estadRenderZonasPagina_(pageIdx) {
   /* Botón anterior */
   const btnPrev = document.createElement('button');
   btnPrev.className = 'estad-pager-btn';
-  btnPrev.textContent = '← Ant.';
+  btnPrev.innerHTML = ICO_('atras', 16) + ' Anterior';
   btnPrev.disabled = (pageIdx === 0);
   btnPrev.addEventListener('click', () => {
     if (__estadZonasPagActual > 0) estadRenderZonasPagina_(__estadZonasPagActual - 1);
@@ -5909,7 +5754,7 @@ function estadRenderZonasPagina_(pageIdx) {
   /* Botón siguiente */
   const btnNext = document.createElement('button');
   btnNext.className = 'estad-pager-btn';
-  btnNext.textContent = 'Sig. →';
+  btnNext.innerHTML = 'Siguiente ' + ICO_('adelante', 16);
   btnNext.disabled = (pageIdx === pages.length - 1);
   btnNext.addEventListener('click', () => {
     if (__estadZonasPagActual < __estadZonasPages.length - 1)
@@ -5929,7 +5774,7 @@ function estadRenderTendencia_() {
   rows.forEach(r => {
     const est   = normalizeText_(r.estado || '');
     const fecha = parseFechaObj_(r.fecha || '');
-if (!fecha || fecha.yyyy !== 2026) return;
+if (!fecha || fecha.yyyy !== ESTAD_ANIO_) return;
 const key = String(fecha.mm).padStart(2, '0');
     if (!byMonth[key]) byMonth[key] = { chat: 0, pres: 0 };
     if (est === 'ATENDIDA CHAT')       byMonth[key].chat++;
@@ -5962,7 +5807,7 @@ const key = String(fecha.mm).padStart(2, '0');
   if (kpiWrap) {
     kpiWrap.innerHTML = '';
     [
-      { icon: ESTAD_ICON.barras,    value: totalAll,  label: 'Total 2026',   sub: 'solicitudes acumuladas', cls: '' },
+      { icon: ESTAD_ICON.barras,    value: totalAll,  label: 'Total ' + ESTAD_ANIO_,   sub: 'solicitudes acumuladas', cls: '' },
       { icon: ESTAD_ICON.tendencia, value: maxMes,    label: 'Pico Mensual', sub: 'máximo en un mes',       cls: 'kpi-blue' },
       { icon: ESTAD_ICON.tendencia, value: minMes,    label: 'Mínimo Mes',   sub: 'mínimo registrado',      cls: '' },
       { icon: ESTAD_ICON.barras,    value: promMes,   label: 'Promedio',     sub: 'atenciones por mes',     cls: '' },
@@ -6092,7 +5937,7 @@ const key = String(fecha.mm).padStart(2, '0');
   if (!monthsSorted.length) {
     tbody.innerHTML = `
       <tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:16px;">
-        Sin datos para 2026.
+        Sin datos para ${ESTAD_ANIO_}.
       </td></tr>`;
     return;
   }
@@ -6186,10 +6031,12 @@ function destroyEstadChart_() {
 
 /* 4. Cargar datos del backend */
 async function loadEstadisticasData_() {
-  const [chat, pres] = await Promise.all([
-    apiGet('listSolicitudes', { estado: 'ATENDIDA CHAT' }),
-    apiGet('listSolicitudes', { estado: 'ATENDIDA PRESENCIAL' })
-  ]);
+  /* FASE 2 — UN solo viaje: 'listAtenciones' ya trae chat y presencial
+     juntos (antes eran dos llamadas que recorrían la hoja entera cada una). */
+  const res = await apiGet('listAtenciones', { uid: uidActual_() });
+  const campos = (res && res.campos) || [];
+  const chat = atencHidratar_(campos, (res && res.chat) || []);
+  const pres = atencHidratar_(campos, (res && res.pres) || []);
   __estadCache = [
     ...(Array.isArray(chat) ? chat.map(r => ({ ...r, estado: 'ATENDIDA CHAT' }))        : []),
     ...(Array.isArray(pres) ? pres.map(r => ({ ...r, estado: 'ATENDIDA PRESENCIAL' })) : [])
@@ -6217,6 +6064,8 @@ function parseFechaObj_(str) {
 }
 
 /* 6. buildDataTiempo2026_ */
+/* FASE 2 — el año de las estadísticas es el año en curso (antes, 2026 fijo). */
+const ESTAD_ANIO_ = new Date().getFullYear();
 function buildDataTiempo2026_(rows) {
   const byMonth = {};
   let totalChat = 0, totalPres = 0;
@@ -6224,7 +6073,7 @@ function buildDataTiempo2026_(rows) {
   rows.forEach(r => {
     const est = normalizeText_(r.estado || '');
     const f   = parseFechaObj_(r.fecha || '');
-    if (!f || f.yyyy !== 2026) return;
+    if (!f || f.yyyy !== ESTAD_ANIO_) return;
     const key = String(f.mm).padStart(2,'0');
     if (!byMonth[key]) byMonth[key] = { chat:0, pres:0 };
     if (est === 'ATENDIDA CHAT')       { byMonth[key].chat++; totalChat++; }
@@ -6426,7 +6275,7 @@ async function abrirBDPredial_() {
   /* Mostrar mensaje de carga inmediato para que el usuario sepa que está procesando */
   const wrap = document.getElementById('bdp-list');
   if (wrap) {
-    wrap.innerHTML = '<p class="muted center" style="grid-column:1/-1; margin-top:40px; font-size:.95rem;">⏳ Cargando expedientes desde el servidor...<br><span style="font-size:.78rem;">Esto puede tardar unos segundos.</span></p>';
+    wrap.innerHTML = '<p class="muted center" style="grid-column:1/-1; margin-top:40px; font-size:.95rem;">Cargando expedientes…</p>';
   }
   const countEl = document.getElementById('bdp-count');
   if (countEl) countEl.textContent = '...';
@@ -6442,15 +6291,7 @@ async function loadBDPredial_() {
 
     /* Pre-calcular el blob de búsqueda UNA sola vez por fila.
        Esto evita recalcular normalizeText_(join(' ')) en cada keystroke. */
-    rows.forEach(r => {
-      r.__searchBlob = normalizeText_([
-        r.id_predial, r.matricula, r.ficha_catastral, r.nombres,
-        r.direccion_predio, r.correo_electronico, r.nit_cedula,
-        r.debe_desde, r.deuda_hasta, r.valor_deuda, r.clasificacion,
-        r.no_exp_fisico, r.actuacion, r.sustanciador, r.asistente,
-        r.bitacora, r.estado_proceso, r.asignador
-      ].join(' '));
-    });
+    rows.forEach(r => { r.__searchBlob = bdpBlob_(r); });
 
     __bdpListCache = rows;
     applyBDPredialFilters_();
@@ -6458,6 +6299,43 @@ async function loadBDPredial_() {
     Swal.fire({ icon: 'error', title: 'Error', text: String(e.message || e) });
   }
 }
+
+/* FASE 2 SEC-HACIENDA-FLANDES — UN SOLO VIAJE en BD Predial.
+   Antes, cada guardado (editar, actuación, archivo, asignar, eliminar)
+   volvía a bajar el listado COMPLETO (9.500 expedientes, ~2 MB, 6-7 s).
+   Ahora la escritura devuelve la fila tal como quedó y aquí se reemplaza
+   en la memoria: la lista se repinta al instante y con los filtros que el
+   usuario tenía puestos. Si por algo no vino la fila, se recarga como antes. */
+function bdpBlob_(r) {
+  return normalizeText_([
+    r.id_predial, r.matricula, r.ficha_catastral, r.nombres,
+    r.direccion_predio, r.correo_electronico, r.nit_cedula,
+    r.debe_desde, r.deuda_hasta, r.valor_deuda, r.clasificacion,
+    r.no_exp_fisico, r.actuacion, r.sustanciador, r.asistente,
+    r.bitacora, r.estado_proceso, r.asignador
+  ].join(' '));
+}
+function bdpAplicarFila_(fila, idBorrado) {
+  if (idBorrado) {
+    const id = String(idBorrado);
+    __bdpListCache = __bdpListCache.filter(r => String(r.id_predial) !== id);
+    applyBDPredialFilters_();
+    return true;
+  }
+  if (!fila || !fila.id_predial || !__bdpListCache.length) {
+    loadBDPredial_();
+    return false;
+  }
+  fila.__completa = true;
+  const i = __bdpListCache.findIndex(r => String(r.id_predial) === String(fila.id_predial));
+  let row;
+  if (i >= 0) { row = Object.assign(__bdpListCache[i], fila); }
+  else { row = fila; __bdpListCache.unshift(row); }
+  row.__searchBlob = bdpBlob_(row);
+  applyBDPredialFilters_();
+  return true;
+}
+window.bdpAplicarFila_ = bdpAplicarFila_;
 
 /* ── Aplicar todos los filtros (OPTIMIZADO) ───────────── */
 function applyBDPredialFilters_() {
@@ -6735,10 +6613,8 @@ function bdpCardHTML_(row, idx, puedeEliminar, puedeDecision) {
   }
   if (puedeDecision) {
     acciones +=
-      '<button type="button" class="bdp-icon-btn" data-bdp-act="decision" title="Decisión (cambiar Actuación)" ' +
-      'style="background:linear-gradient(135deg,#0a7a46,#06402B);">' +
-      '<img src="img/firma.webp" alt="Decisión" ' +
-      'style="filter:brightness(0) invert(1);"></button>';
+      '<button type="button" class="bdp-icon-btn bdp-icon-btn--marca" data-bdp-act="decision" title="Actuación y seguimiento">' +
+      '<img src="img/firma.webp" alt="Actuación"></button>';
  }
   /* 17/09 — SOLICITUD EXPEDIENTE: rojo con latido si falta la respuesta de
      ARCHIVO. Se pinta como string (sin tocar el DOM por tarjeta). */
@@ -6758,7 +6634,7 @@ function bdpCardHTML_(row, idx, puedeEliminar, puedeDecision) {
       '<div class="bdp-head">' +
         '<div class="bdp-head-left">' +
           '<p class="bdp-nombres">' + (cop(row.nombres, 'nombres') || escapeHtml_(row.nombres || '')) + '</p>' +
-          '<p class="bdp-direccion">📍 ' + (cop(row.direccion_predio, 'direccion') || 'Sin dirección') + '</p>' +
+          '<p class="bdp-direccion">' + ICO_('ubicacion', 14) + ' ' + (cop(row.direccion_predio, 'direccion') || 'Sin dirección') + '</p>' +
         '</div>' +
         '<div class="bdp-head-right">' +
           '<div class="bdp-valor-deuda">' + bdpFormatPesos_(row.valor_deuda) + '</div>' +
@@ -7057,9 +6933,9 @@ document.getElementById('bdp-list')?.addEventListener('click', async (e) => {
     });
     if (!ok.isConfirmed) return;
     try {
-      await apiPost('eliminarpredial', { id_predial: row.id_predial });
+      await apiPost('eliminarpredial', { uid: uidActual_(), id_predial: row.id_predial });
       playSoundOnce(SOUNDS.success);
-      await loadBDPredial_();
+      bdpAplicarFila_(null, row.id_predial);
       Swal.fire({ icon:'success', title:'Eliminado', timer:1400, showConfirmButton:false });
     } catch (err) {
       Swal.fire({ icon:'error', title:'Error', text:String(err.message || err) });
@@ -7098,7 +6974,7 @@ async function bdpExpCargar_(folderId) {
   if (!modal || !listEl) return;
 
   modal.classList.remove('hidden');
-  listEl.innerHTML = '<p class="muted center" style="padding:24px;">⏳ Cargando…</p>';
+  listEl.innerHTML = '<p class="muted center" style="padding:24px;">Cargando…</p>';
   if (pathEl) pathEl.textContent = '';
 
   try {
@@ -7115,7 +6991,7 @@ async function bdpExpCargar_(folderId) {
 
     __bdpExpRootId    = res.rootId || __bdpExpRootId;
     __bdpExpCurrentId = res.folderId || folderId || __bdpExpRootId;
-    if (pathEl) pathEl.textContent = '📁 ' + (res.folderName || 'Expedientes');
+    if (pathEl) pathEl.innerHTML = ICO_('carpeta-abierta', 16) + ' ' + escapeHtml_(res.folderName || 'Expedientes');
     if (backBtn) backBtn.style.display = (__bdpExpStack.length > 0) ? '' : 'none';
 
  __bdpExpItems = Array.isArray(res.items) ? res.items : [];
@@ -7151,7 +7027,7 @@ function bdpExpRender_(filtro) {
   if (__bdpExpAllFiles === null) {
     bdpExpCargarTodos_();   // dispara la carga única (si no está en curso)
     const localMatch = __bdpExpItems.filter(it => normalizeText_(it.name).includes(q));
-    listEl.innerHTML = '<p class="muted center" style="padding:16px;">🔎 Buscando en todas las subcarpetas…</p>';
+    listEl.innerHTML = '<p class="muted center" style="padding:16px;">Buscando en todas las subcarpetas…</p>';
     if (localMatch.length) bdpExpPintarItems_(localMatch, folderId, false);
     return;
   }
@@ -7191,7 +7067,7 @@ function bdpExpPintarItems_(items, folderId, showPath) {
     const rowEl = document.createElement('div');
     rowEl.className = 'bdp-exp-item' + (isFolder ? ' is-folder' : '');
     const rutaHtml = (showPath && it.path)
-      ? `<span style="display:block;font-size:11px;color:#64748b;font-weight:400;white-space:normal;">📁 ${escapeHtml_(it.path)}</span>`
+      ? `<span class="hf-ruta">${ICO_('carpeta', 12)} ${escapeHtml_(it.path)}</span>`
       : '';
     rowEl.innerHTML = `
       <img class="bdp-exp-icon" src="${isFolder ? BDP_EXP_ICON_FOLDER : BDP_EXP_ICON_FILE}" alt="" />
@@ -7336,7 +7212,7 @@ async function bdpArchCargar_(folderId) {
   const pathEl  = document.getElementById('bdp-arch-path');
   const backBtn = document.getElementById('btn-bdp-arch-atras');
   if (!listEl) return;
-  listEl.innerHTML = '<p class="muted center" style="padding:24px;">⏳ Cargando…</p>';
+  listEl.innerHTML = '<p class="muted center" style="padding:24px;">Cargando…</p>';
   if (pathEl) pathEl.textContent = '';
   try {
     const res = await apiGet('listmisexpedientes', {
@@ -7349,7 +7225,7 @@ async function bdpArchCargar_(folderId) {
     }
     __bdpArchRootId    = res.rootId || __bdpArchRootId;
     __bdpArchCurrentId = res.folderId || folderId || __bdpArchRootId;
-    if (pathEl) pathEl.textContent = '📁 ' + (res.folderName || 'Expedientes');
+    if (pathEl) pathEl.innerHTML = ICO_('carpeta-abierta', 16) + ' ' + escapeHtml_(res.folderName || 'Expedientes');
     if (backBtn) backBtn.style.display = (__bdpArchStack.length > 0) ? '' : 'none';
     __bdpArchItems = Array.isArray(res.items) ? res.items : [];
     bdpArchRender_('');
@@ -7426,14 +7302,14 @@ async function bdpArchAgregar_(it) {
       showCancelButton: true, confirmButtonText: 'Agregar', cancelButtonText: 'Cancelar'
     });
     if (!ok.isConfirmed) return;
-    await apiPost('setexpedientearchivo', { id_predial: __bdpArchRow.id_predial, url: it.url });
+    const rSet = await apiPost('setexpedientearchivo', { uid: uidActual_(), id_predial: __bdpArchRow.id_predial, rowIndex: __bdpArchRow.rowIndex, url: it.url });
     __bdpArchRow.archivo_expediente = it.url;    // refresca en memoria
     playSoundOnce(SOUNDS.success);
     await Swal.fire({ icon: 'success', title: 'Archivo agregado', timer: 1200, showConfirmButton: false });
     bdpCerrarVisor_();
     bdpArchMostrarArchivo_(it.url);
     bdpEscaneadoAviso_();
-    loadBDPredial_();                            // refresca la lista en segundo plano
+    bdpAplicarFila_(rSet && rSet.fila);          // la fila vino en la misma respuesta
   } catch (e) {
     Swal.fire({ icon: 'error', title: 'Error', text: String(e.message || e) });
   }
@@ -7461,13 +7337,13 @@ document.getElementById('btn-bdp-arch-eliminar')?.addEventListener('click', asyn
   });
   if (!ok.isConfirmed) return;
   try {
-    await apiPost('eliminarexpedientearchivo', { id_predial: __bdpArchRow.id_predial });
+    const rQui = await apiPost('eliminarexpedientearchivo', { uid: uidActual_(), id_predial: __bdpArchRow.id_predial, rowIndex: __bdpArchRow.rowIndex });
     __bdpArchRow.archivo_expediente = '';
     playSoundOnce(SOUNDS.success);
     await Swal.fire({ icon: 'success', title: 'Archivo quitado', timer: 1200, showConfirmButton: false });
     bdpEscaneadoAviso_();
     bdpArchMostrarExplorador_();
-    loadBDPredial_();
+    bdpAplicarFila_(rQui && rQui.fila);
   } catch (e) {
     Swal.fire({ icon: 'error', title: 'Error', text: String(e.message || e) });
   }
@@ -7540,7 +7416,7 @@ document.getElementById('btn-bdp-agregar')?.addEventListener('click', () => {
 
 document.getElementById('btn-bdp-panel')?.addEventListener('click', () => {
   playSoundOnce(SOUNDS.back);
-  Swal.fire({ icon:'info', title:'Panel 📊', text:'Disponible en Fase 4.', timer:1400, showConfirmButton:false });
+  Swal.fire({ icon:'info', title:'Panel', text:'Disponible en Fase 4.', timer:1400, showConfirmButton:false });
 });
 
 /* ============================================================
@@ -8200,7 +8076,8 @@ document.getElementById('btn-bdp-form-guardar')?.addEventListener('click', async
       const res = await apiPost('agregarpredial', payload);
       playSoundOnce(SOUNDS.success);
       await Swal.fire({ icon:'success', title:'Expediente creado', html:`<b>${res.id_predial}</b><br>Clasificación: ${res.clasificacion}`, timer:2200, showConfirmButton:false });
-      await abrirBDPredial_();
+      if (res && res.fila && __bdpListCache.length) { showView('view-bd-predial'); bdpAplicarFila_(res.fila); }
+      else await abrirBDPredial_();
     } catch (e) {
       Swal.fire({ icon:'error', title:'Error', text:String(e.message||e) });
     }
@@ -8217,10 +8094,11 @@ document.getElementById('btn-bdp-form-guardar')?.addEventListener('click', async
       showCancelButton:true, confirmButtonText:'Guardar', cancelButtonText:'Cancelar'
     });
     if (!ok.isConfirmed) return;
-    await apiPost('editarpredial', payload);
+    const rEdP = await apiPost('editarpredial', payload);
     playSoundOnce(SOUNDS.success);
     await Swal.fire({ icon:'success', title:'Guardado', timer:1400, showConfirmButton:false });
-    await abrirBDPredial_();
+    if (rEdP && rEdP.fila && __bdpListCache.length) { showView('view-bd-predial'); bdpAplicarFila_(rEdP.fila); }
+    else await abrirBDPredial_();
   } catch (e) {
     Swal.fire({ icon:'error', title:'Error', text:String(e.message||e) });
   }
@@ -8297,7 +8175,7 @@ function abrirBDPDetalle_(row) {
   body.innerHTML = '';
 
   /* Sección: Identificación */
-  const ident = bdpDetSection_('🏠 Identificación del predio', [
+  const ident = bdpDetSection_(ICO_('casa',18) + ' Identificación del predio', [
     ['ID Predial',          row.id_predial],
     ['No. Exp. Físico',     row.no_exp_fisico],
     ['Nombres',             row.nombres],
@@ -8311,7 +8189,7 @@ function abrirBDPDetalle_(row) {
   body.appendChild(ident);
 
   /* Sección: Deuda */
-  const deuda = bdpDetSection_('💰 Información de deuda', [
+  const deuda = bdpDetSection_(ICO_('dinero',18) + ' Información de deuda', [
     ['Debe desde',     bdpFormatDebeDesde_(row.debe_desde)],
     ['Deuda hasta',    bdpFormatDebeDesde_(row.deuda_hasta)],
     ['Valor deuda',    bdpFormatPesos_(row.valor_deuda)],
@@ -8320,7 +8198,7 @@ function abrirBDPDetalle_(row) {
   body.appendChild(deuda);
 
   /* Sección: Gestión */
-  const gest = bdpDetSection_('⚖️ Gestión jurídica', [
+  const gest = bdpDetSection_(ICO_('balanza',18) + ' Gestión jurídica', [
     ['Actuación',       row.actuacion],
     ['Estado proceso',  row.estado_proceso],
     ['Sustanciador',    row.sustanciador],
@@ -8338,15 +8216,15 @@ function abrirBDPDetalle_(row) {
     const wrap = document.createElement('div');
     wrap.className = 'bdp-det-section';
     wrap.innerHTML =
-      '<div class="bdp-det-section-title">📅 Seguimiento</div>' +
+      '<div class="bdp-det-section-title">' + ICO_('calendario',18) + ' Seguimiento</div>' +
       '<div class="bdp-det-grid"><div><b>Fecha de seguimiento</b>' +
       '<span class="val">' + escapeHtml_(row.fecha_seguimiento) + '</span></div></div>' +
-      (msg ? '<div class="bdp-seg-aviso" style="margin-top:8px;">🔔 ' + escapeHtml_(msg) + '</div>' : '');
+      (msg ? '<div class="bdp-seg-aviso" style="margin-top:8px;">' + ICO_('campana',16) + ' ' + escapeHtml_(msg) + '</div>' : '');
     body.appendChild(wrap);
   }
 
   /* Sección: Persuasivo */
-  const persuas = bdpDetSection_('📨 Persuasivo', [
+  const persuas = bdpDetSection_(ICO_('sobre',18) + ' Persuasivo', [
     ['Oficio persuasivo',       row.oficio_persuas],
     ['Fecha oficio persuasivo', row.fecha_oficio_persuas],
     ['Fecha entrega',           row.fecha_entrega]
@@ -8354,7 +8232,7 @@ function abrirBDPDetalle_(row) {
   if (persuas) body.appendChild(persuas);
 
   /* Sección: Liquidación */
-  const liq = bdpDetSection_('📜 Liquidación y citación', [
+  const liq = bdpDetSection_(ICO_('documento',18) + ' Liquidación y citación', [
     ['Resolución liquidación', row.resol_liquidac],
     ['Fecha resolución',       row.fecha_resolucion],
     ['Oficio citación',        row.oficio_citacion],
@@ -8363,7 +8241,7 @@ function abrirBDPDetalle_(row) {
   if (liq) body.appendChild(liq);
 
   /* Sección: Notificaciones */
-  const notif = bdpDetSection_('🔔 Notificaciones', [
+  const notif = bdpDetSection_(ICO_('campana',18) + ' Notificaciones', [
     ['Citación',       row.notif_citacion],
     ['Electrónica',    row.notif_electr],
     ['Personal',       row.notif_personal],
@@ -8373,7 +8251,7 @@ function abrirBDPDetalle_(row) {
   if (notif) body.appendChild(notif);
 
   /* Sección: Coactivo */
-  const coac = bdpDetSection_('🚨 Coactivo', [
+  const coac = bdpDetSection_(ICO_('aviso',18) + ' Coactivo', [
     ['Ejecutoria',         row.ejecutoria],
     ['Mandamiento de pago',row.mandam_pago],
     ['F-MP',               row.f_mp]
@@ -8385,7 +8263,7 @@ function abrirBDPDetalle_(row) {
     const wrap = document.createElement('div');
     wrap.className = 'bdp-det-section';
     wrap.innerHTML = `
-      <div class="bdp-det-section-title">📝 Bitácora</div>
+      <div class="bdp-det-section-title">${ICO_('libro',18)} Bitácora</div>
       <div class="bdp-det-bitacora">${escapeHtml_(row.bitacora)}</div>
     `;
     body.appendChild(wrap);
@@ -8556,7 +8434,9 @@ document.getElementById('btn-bdp-dec-guardar')?.addEventListener('click', async 
     });
     if (!ok.isConfirmed) return;
 
-    await apiPost('decisionpredial', {
+    const rDecP = await apiPost('decisionpredial', {
+      uid: uidActual_(),
+      rowIndex: __bdpDecRow.rowIndex,
       id_predial: __bdpDecRow.id_predial,
       actuacion: nueva,
       usuario: currentUser?.nombre || '',
@@ -8568,7 +8448,7 @@ document.getElementById('btn-bdp-dec-guardar')?.addEventListener('click', async 
     __bdpDecRow = null;
     playSoundOnce(SOUNDS.success);
     await Swal.fire({ icon:'success', title:'Actuación actualizada', timer:1400, showConfirmButton:false });
-    await loadBDPredial_();
+    bdpAplicarFila_(rDecP && rDecP.fila);
   } catch (e) {
     Swal.fire({ icon:'error', title:'Error', text:String(e.message||e) });
   }
@@ -8657,7 +8537,11 @@ async function abrirBDPPanel_() {
   bdppShowTab_('resumen');
 
   try {
-    const data = await apiGet('listpredial', { uid: uidActual_() });
+    /* FASE 2 — la BD Predial ya está en memoria (9.500 expedientes, ~2 MB):
+       el panel trabaja con ella en vez de volver a bajarla. */
+    const data = (Array.isArray(__bdpListCache) && __bdpListCache.length)
+      ? __bdpListCache
+      : await apiGet('listpredial', { uid: uidActual_() });
     __bdppData = Array.isArray(data) ? data : [];
 
     const sub = document.getElementById('bdpp-subtitle');

@@ -266,10 +266,10 @@
     wrap.id = def.pastilla + '-wrap';
     wrap.innerHTML =
       '<button type="button" id="' + def.pastilla + '" class="proc-status-pill bit-pill" data-salida="1">' +
-        '🗒️ MIS BITÁCORAS<span class="bit-num" id="' + def.pastilla + '-num"></span>' +
+        ICOS('libro') + 'Mis bitácoras<span class="bit-num" id="' + def.pastilla + '-num"></span>' +
       '</button>' +
       '<button type="button" id="' + def.pastilla + '-ver" class="proc-status-pill bit-ver" data-salida="1">' +
-        '📖 VER MIS BITÁCORAS' +
+        ICOS('ojo') + 'Ver mis bitácoras' +
       '</button>';
 
     ancla.parentNode.insertBefore(wrap, ancla.nextSibling);
