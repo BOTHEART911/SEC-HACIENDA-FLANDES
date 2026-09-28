@@ -1383,6 +1383,30 @@
     </div>
   </div>
 
+  <!-- FOTO DE PERFIL: verla grande, cambiarla o ajustarla (js/hacienda.js) -->
+  <div id="modal-foto" class="hf-modal hidden" aria-modal="true" role="dialog" aria-labelledby="foto-t">
+    <div class="hf-modal__hoja hf-foto">
+      <div class="hf-modal__cab"><i class="hi" data-ico="camara"></i><h2 id="foto-t">Tu foto de perfil</h2></div>
+      <div class="hf-foto__marco" id="foto-marco">
+        <img id="foto-img" alt="Foto de perfil" draggable="false">
+        <span class="hf-foto__ini" id="foto-ini"></span>
+      </div>
+      <div class="hf-foto__zoom hidden" id="foto-zoom">
+        <i class="hi" data-ico="menos"></i>
+        <input type="range" id="foto-rango" min="1" max="3" step="0.01" value="1" aria-label="Acercar o alejar">
+        <i class="hi" data-ico="mas"></i>
+      </div>
+      <p class="hf-modal__p hf-foto__nota" id="foto-nota"></p>
+      <input type="file" id="foto-archivo" accept="image/*" hidden>
+      <div class="hf-modal__pie">
+        <button type="button" id="foto-cerrar" class="kit-btn">Cerrar</button>
+        <button type="button" id="foto-ajustar" class="kit-btn">Ajustar</button>
+        <button type="button" id="foto-cambiar" class="kit-btn kit-btn--marca"><i class="hi" data-ico="camara"></i> Cambiar foto</button>
+        <button type="button" id="foto-guardar" class="kit-btn kit-btn--marca hidden"><i class="hi" data-ico="check"></i> Guardar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- CAMBIAR PIN (lo gobierna js/hacienda.js) -->
   <div id="modal-pin" class="hf-modal hidden" aria-modal="true" role="dialog" aria-labelledby="pin-t">
     <div class="hf-modal__hoja">

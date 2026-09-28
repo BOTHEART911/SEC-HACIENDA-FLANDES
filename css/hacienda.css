@@ -796,3 +796,24 @@ html.hf-en-puerta .container { padding-top: 0 !important; }
 .etapa-badge-mini { flex-shrink: 1 !important; min-width: 0; max-width: 100%; white-space: normal; }
 .etapa-badge-mini > span { min-width: 0; overflow-wrap: anywhere; line-height: 1.25; }
 .etapa-badge-mini img, .etapa-badge-mini .hi-img { flex-shrink: 0; }
+
+/* FASE 4 — foto de perfil en grande, con encuadre y zoom */
+.hf-foto { width: min(420px, 100%); align-items: stretch; }
+.hf-foto__marco {
+  position: relative; width: min(240px, 70vw); aspect-ratio: 1; margin: 10px auto 6px;
+  border-radius: 50%; overflow: hidden; background: var(--k-papel-2);
+  box-shadow: 0 0 0 4px rgba(var(--k-marca-rgb), .18), var(--k-sombra-2);
+  touch-action: none; user-select: none;
+  animation: hf-foto-zoom .32s cubic-bezier(.22, 1, .36, 1) both;
+}
+@keyframes hf-foto-zoom { from { transform: scale(.35); opacity: .2; } to { transform: none; opacity: 1; } }
+.hf-foto__marco img { position: absolute; left: 0; top: 0; max-width: none; pointer-events: none; }
+.hf-foto__marco--editar { cursor: grab; box-shadow: 0 0 0 4px var(--k-marca), var(--k-sombra-2); }
+.hf-foto__marco--editar:active { cursor: grabbing; }
+.hf-foto__ini { position: absolute; inset: 0; display: grid; place-items: center; font: 700 3rem/1 var(--k-fuente-titulo); color: var(--k-marca); }
+.hf-foto__zoom { display: flex; align-items: center; gap: 10px; margin: 6px auto 0; width: min(260px, 100%); color: var(--k-apagado); }
+.hf-foto__zoom.hidden { display: none; }
+.hf-foto__zoom input[type="range"] { flex: 1; accent-color: var(--k-marca); padding: 0 !important; border: 0 !important; background: transparent !important; }
+.hf-foto__nota { text-align: center; min-height: 1.2em; }
+#modal-foto .hf-modal__pie { justify-content: center; }
+#modal-foto .kit-btn.hidden { display: none; }

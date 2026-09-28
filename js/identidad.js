@@ -227,6 +227,19 @@
     }
   }
 
+  /* FASE 4 — el modal de la foto (js/hacienda.js) sube la imagen ya
+     recortada y ajustada: base64 JPEG cuadrado. */
+  window.IDN_guardarFotoB64 = async function (b64) {
+    if (!perfil || !perfil.uid) throw new Error('Sesión no válida.');
+    var res = await apiPost('subirfoto', { uid: perfil.uid, base64: b64, mime: 'image/jpeg' });
+    perfil.foto = (res && res.foto) || '';
+    if (currentUser) currentUser.foto = perfil.foto;
+    guardarSesion_();
+    guardarCuenta_();
+    pintarCabecera_();
+    return perfil.foto;
+  };
+
   /* ============================================================
      SESIÓN
      ============================================================ */

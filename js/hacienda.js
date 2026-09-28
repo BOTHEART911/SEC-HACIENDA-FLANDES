@@ -172,7 +172,150 @@
     return r.length ? r.join(' · ') : 'Sin rol asignado';
   }
 
-  function cambiarFoto() { var a = $('idn-avatar'); if (a) a.click(); }
+  /* ══════════════ FOTO DE PERFIL (FASE 4) ══════════════
+     Tocar la cara del saludo abre la foto en grande. Desde ahí:
+       · Cambiar foto → elegir otra imagen y encuadrarla.
+       · Ajustar      → mover (arrastrar) y acercar (barra) la actual.
+     Se guarda un cuadrado de 320 px, igual que antes (subirfoto). */
+  var FT = { img: null, esc: 1, x: 0, y: 0, editando: false, nueva: false };
+  var LADO = 320;
+
+  function fotoNota(t) { var n = $('foto-nota'); if (n) n.textContent = t || ''; }
+  function fotoModo(editar) {
+    FT.editando = editar;
+    $('foto-zoom').classList.toggle('hidden', !editar);
+    $('foto-guardar').classList.toggle('hidden', !editar);
+    $('foto-ajustar').classList.toggle('hidden', editar || !FT.img);
+    $('foto-marco').classList.toggle('hf-foto__marco--editar', editar);
+    fotoNota(editar ? 'Arrastra la foto para encuadrarla y usa la barra para acercarla.' : '');
+  }
+  function fotoPintar() {
+    var el = $('foto-img'), m = $('foto-marco');
+    if (!FT.img) return;
+    var tam = m.clientWidth || 240;
+    var base = tam / Math.min(FT.img.naturalWidth, FT.img.naturalHeight);
+    var w = FT.img.naturalWidth * base * FT.esc, h = FT.img.naturalHeight * base * FT.esc;
+    /* que la foto siempre cubra el círculo */
+    FT.x = Math.min(0, Math.max(tam - w, FT.x));
+    FT.y = Math.min(0, Math.max(tam - h, FT.y));
+    el.style.width = w + 'px'; el.style.height = h + 'px';
+    el.style.transform = 'translate(' + FT.x + 'px,' + FT.y + 'px)';
+  }
+  function fotoCentrar() {
+    var m = $('foto-marco'), tam = m.clientWidth || 240;
+    var base = tam / Math.min(FT.img.naturalWidth, FT.img.naturalHeight);
+    FT.x = (tam - FT.img.naturalWidth * base * FT.esc) / 2;
+    FT.y = (tam - FT.img.naturalHeight * base * FT.esc) / 2;
+    fotoPintar();
+  }
+  function fotoCargar(src, cruzado) {
+    return new Promise(function (ok, mal) {
+      var im = new Image();
+      if (cruzado) im.crossOrigin = 'anonymous';
+      im.onload = function () { ok(im); };
+      im.onerror = function () { mal(new Error('No se pudo abrir la imagen')); };
+      im.src = src;
+    });
+  }
+  function fotoMostrar(im, nueva) {
+    FT.img = im; FT.nueva = !!nueva; FT.esc = 1;
+    var el = $('foto-img');
+    el.src = im.src; el.hidden = false;
+    $('foto-ini').hidden = true;
+    $('foto-rango').value = '1';
+    fotoCentrar();
+  }
+
+  function cambiarFoto() {
+    var p = perfil();
+    if (!p) return;
+    var m = $('modal-foto');
+    FT.img = null;
+    var el = $('foto-img'); el.hidden = true; el.removeAttribute('src'); el.style.transform = '';
+    var ini = $('foto-ini'); ini.hidden = false;
+    ini.textContent = (K.piezas.personas && K.piezas.personas.iniciales) ? K.piezas.personas.iniciales(p.nombre || '') : '';
+    m.classList.remove('hidden');
+    fotoModo(false);
+    var foto = fotoActual(p);
+    if (!foto) { fotoNota('Aún no tienes foto. Toca "Cambiar foto" para elegir una.'); return; }
+    /* la foto de Drive grande; se pide "sin credenciales" para poder recortarla */
+    var grande = foto.replace(/sz=w\d+/, 'sz=w800');
+    fotoCargar(grande, true).catch(function () { return fotoCargar(grande, false); })
+      .then(function (im) { fotoMostrar(im, false); fotoModo(false); })
+      .catch(function () { fotoNota('No se pudo mostrar tu foto actual.'); });
+  }
+  function cerrarFoto() { var m = $('modal-foto'); if (m) m.classList.add('hidden'); fotoModo(false); }
+
+  function guardarFoto() {
+    if (!FT.img || !window.IDN_guardarFotoB64) return;
+    var m = $('foto-marco'), tam = m.clientWidth || 240;
+    var base = tam / Math.min(FT.img.naturalWidth, FT.img.naturalHeight) * FT.esc;
+    var cv = document.createElement('canvas'); cv.width = LADO; cv.height = LADO;
+    var cx = cv.getContext('2d');
+    cx.drawImage(FT.img, -FT.x / base, -FT.y / base, tam / base, tam / base, 0, 0, LADO, LADO);
+    var b64;
+    try { b64 = cv.toDataURL('image/jpeg', 0.88).split(',')[1]; }
+    catch (e) {
+      /* la foto actual vino de Drive sin permiso para recortarla: se pide elegirla de nuevo */
+      fotoNota('Para ajustar esta foto, elígela de nuevo con "Cambiar foto".');
+      return;
+    }
+    var b = $('foto-guardar'); b.disabled = true;
+    Promise.resolve(window.IDN_guardarFotoB64(b64)).then(function () {
+      cerrarFoto();
+      pintarInicio();
+      K.aviso('Foto actualizada', 'ok', 2200);
+    }).catch(function (e) {
+      fotoNota('No se pudo guardar: ' + String((e && e.message) || e));
+    }).then(function () { b.disabled = false; });
+  }
+
+  function engancharFoto() {
+    var m = $('modal-foto');
+    if (!m || m.__hf) return;
+    m.__hf = true;
+    $('foto-cerrar').addEventListener('click', cerrarFoto);
+    $('foto-cambiar').addEventListener('click', function () { $('foto-archivo').click(); });
+    $('foto-ajustar').addEventListener('click', function () { if (FT.img) fotoModo(true); });
+    $('foto-guardar').addEventListener('click', guardarFoto);
+    $('foto-archivo').addEventListener('change', function (ev) {
+      var f = ev.target.files && ev.target.files[0];
+      ev.target.value = '';
+      if (!f) return;
+      var url = URL.createObjectURL(f);
+      fotoCargar(url, false).then(function (im) { fotoMostrar(im, true); fotoModo(true); })
+        .catch(function () { fotoNota('Esa imagen no se pudo abrir. Prueba con otra.'); });
+    });
+    $('foto-rango').addEventListener('input', function (ev) {
+      if (!FT.img) return;
+      var tam = $('foto-marco').clientWidth || 240, c = tam / 2;
+      var ant = FT.esc, nue = Number(ev.target.value) || 1;
+      /* acercar desde el centro del círculo */
+      FT.x = c - (c - FT.x) * nue / ant; FT.y = c - (c - FT.y) * nue / ant;
+      FT.esc = nue; fotoPintar();
+    });
+    var marco = $('foto-marco'), arr = null;
+    marco.addEventListener('pointerdown', function (ev) {
+      if (!FT.editando || !FT.img) return;
+      arr = { x: ev.clientX, y: ev.clientY, ox: FT.x, oy: FT.y };
+      try { marco.setPointerCapture(ev.pointerId); } catch (e) {}
+      ev.preventDefault();
+    });
+    marco.addEventListener('pointermove', function (ev) {
+      if (!arr) return;
+      FT.x = arr.ox + ev.clientX - arr.x; FT.y = arr.oy + ev.clientY - arr.y; fotoPintar();
+    });
+    ['pointerup', 'pointercancel'].forEach(function (t) { marco.addEventListener(t, function () { arr = null; }); });
+    marco.addEventListener('wheel', function (ev) {
+      if (!FT.editando || !FT.img) return;
+      ev.preventDefault();
+      var r = $('foto-rango');
+      r.value = String(Math.min(3, Math.max(1, Number(r.value) - ev.deltaY * 0.002)));
+      r.dispatchEvent(new Event('input'));
+    }, { passive: false });
+    m.addEventListener('click', function (ev) { if (ev.target === m) cerrarFoto(); });
+    document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape' && !m.classList.contains('hidden')) cerrarFoto(); });
+  }
   function salir() {
     var b = $('btn-logout');
     if (b) b.click();
@@ -482,6 +625,7 @@
     var g = $('btn-guia'); if (g) g.addEventListener('click', function () { if (window.GUIA) window.GUIA.abrir(); });
     var p = $('btn-cambiar-pin'); if (p) p.addEventListener('click', function () { abrirPin(); });
     var c = $('hf-cara'); if (c) c.addEventListener('click', cambiarFoto);
+    engancharFoto();
     /* Estadísticas: la pestaña dice el año en curso */
     var t = $('estad-tab-tiempo-t'); if (t) t.textContent = 'Año ' + new Date().getFullYear();
     var tl = $('estad-label-tiempo'); if (tl) tl.textContent = 'Atención predial por mes · ' + new Date().getFullYear();
