@@ -821,3 +821,10 @@ html.hf-en-puerta .container { padding-top: 0 !important; }
 /* 28/09 — "¿Olvidaste tu PIN?" debajo del teclado */
 #idn-login .idn-olvide { width: 100%; margin-top: 8px; font-size: .84rem; padding: 9px 10px; color: var(--k-marca); }
 :root[data-tema="oscuro"] #idn-login .idn-olvide { color: var(--k-marca-clara); }
+
+/* 28/09 — los desplegables de filtros (Mi semáforo y BD Predial) quedaban
+   DETRÁS de las tarjetas: la fila de filtros no tenía capa propia y las
+   tarjetas, que van después, se pintaban encima. Ahora la fila va arriba. */
+.vf-row { position: relative; z-index: 60; }
+.vf.abierto { z-index: 2; }
+.vf-panel { z-index: 70 !important; }
