@@ -94,7 +94,7 @@ html, body {
 .narrow { max-width: 560px; margin: 0 auto; }
  
 /* ── Typography ─────────────────────────────────────────── */
-h1, h2, h3 {
+:where(h1, h2, h3):not([class*="kit-"]) {
   font-family: 'Sora', sans-serif;
   margin: 8px 0 12px; text-align: center;
   color: var(--primary); letter-spacing: -.3px;
