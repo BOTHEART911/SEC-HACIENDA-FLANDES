@@ -224,6 +224,10 @@
     destapar_();
     var w = document.getElementById('lista-wrap');
     if (w) w.innerHTML = '';
+    /* 29/09 — solo si la persona SIGUE en Pendientes: si ya se fue a otra
+       vista (y la lectura se cortó), no se la saca de donde está. */
+    var activa = document.querySelector('.view.active');
+    if (activa && activa.id !== 'view-lista') return;
     if (typeof window.showView === 'function') window.showView('view-inicio');
   }
 

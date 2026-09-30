@@ -77,6 +77,38 @@ async function apiPost(action, body = {}){
   } finally { stopLoading(); }
 }
 
+/* 29/09 — CARGA ÚNICA POR SESIÓN (el patrón de BD Predial, en todas las
+   listas grandes). Una lista ya bajada por ESTE usuario se vuelve a pintar
+   de memoria al entrar, sin viajar, mientras el EN VIVO esté conectado y
+   no haya avisado de un cambio en su hoja (en ese caso la vista se marca
+   "sucia" y en-vivo.js la recarga al entrar). Sin EN VIVO se pinta lo que
+   hay en memoria al instante y se pide lo nuevo detrás. */
+function marcarLista_(lista){
+  if (Array.isArray(lista)) { try{ Object.defineProperty(lista, '__uid', { value: uidActual_(), writable: true, configurable: true }); }catch(_){ lista.__uid = uidActual_(); } }
+  return lista;
+}
+function listaDeEsteUsuario_(lista){
+  return Array.isArray(lista) && !!lista.__uid && lista.__uid === uidActual_();
+}
+/* Lo llama en-vivo.js después de cada guardado propio. */
+function hacOlvidarListas_(col, accion, res){
+  if (col === 'solicitudes') { __atencionesChatCache = []; __atencionesPresCache = []; }
+  if (col === 'procesos' && !(res && Array.isArray(res.lista))) __procListCache = [];
+  if (col === 'predial' && !(res && res.fila) && accion !== 'eliminarpredial') {
+    /* sin fila de vuelta no se sabe cómo quedó: se vuelve a pedir al entrar */
+    try { Object.defineProperty(__bdpListCache, '__uid', { value: '', writable: true, configurable: true }); }catch(_){}
+  }
+}
+window.hacOlvidarListas_ = hacOlvidarListas_;
+function listaVigente_(col, lista){
+  if (!listaDeEsteUsuario_(lista)) return false;
+  if (window.__HAC_VIVO) return false;                 /* EN VIVO pidió recargar */
+  const v = window.HACVIVO;
+  if (!v || typeof v.activo !== 'function' || !v.activo()) return false;
+  const s = (typeof v.sucias === 'function') ? v.sucias() : null;
+  return !(s && s[col]);
+}
+
 /* FASE 8 — abre un archivo en el VISOR de la app (js/visor.js).
    Si el visor no cargó (404, red), se comporta como siempre: pestaña nueva.
    Así ningún listado se queda sin poder abrir su archivo. */
@@ -102,7 +134,7 @@ async function initPWAVista(){
 }
 if ('serviceWorker' in navigator){
   window.addEventListener('load', ()=>{
-    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+    navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).catch(()=>{});
   });
 }
 window.addEventListener('load', initPWAVista);
@@ -724,6 +756,10 @@ document.getElementById('btn-pendientes')?.addEventListener('click', async ()=>{
     // ✅ Antes de entrar a la vista, validamos si hay filas
     const data = await apiGet('listSolicitudes', { estado: 'PENDIENTE' });
     const items = Array.isArray(data) ? data : [];
+    /* 29/09 — si mientras llegaba la lista la persona se fue a otra vista,
+       no se la trae de vuelta a Pendientes. */
+    const activaAhora = document.querySelector('.view.active');
+    if (activaAhora && activaAhora.id !== 'view-lista' && activaAhora.id !== 'view-inicio') return;
 
     if(items.length === 0){
       // Por si quedó algún refresco prendido
@@ -2231,10 +2267,13 @@ async function abrirVistaAsignaciones_(listaYa) {
    pedir al servidor. */
 async function loadAndRenderProcesos_(listaYa) {
   if (Array.isArray(listaYa)) {
-    __procListCache = listaYa;
+    __procListCache = marcarLista_(listaYa);
     applyProcFilters_();
     return;
   }
+  /* 29/09 — carga única: si la lista de este usuario sigue vigente, no se viaja. */
+  if (listaVigente_('procesos', __procListCache)) { applyProcFilters_(); return; }
+  if (!window.__HAC_VIVO && listaDeEsteUsuario_(__procListCache)) applyProcFilters_();
   /* FASE 5 — el navegador ya no dice a nombre de quién pide ni si es
      super: manda su uid y el servidor devuelve exactamente las filas
      donde esa persona es ASIGNADO o ASISTENTE (o todas, si es ADMIN,
@@ -2247,7 +2286,7 @@ async function loadAndRenderProcesos_(listaYa) {
     window.__HAC_VIVO_SINCAMBIO = true;
     return;
   }
-  __procListCache = Array.isArray(data) ? data : [];
+  __procListCache = marcarLista_(Array.isArray(data) ? data : []);
   /* FASE 7 — antes pintaba la caché entera: la pastilla de estado seguía
      marcada pero la lista se veía completa, y con el motor EN VIVO pasaba
      solo cada vez que alguien guardaba un proceso. */
@@ -5199,11 +5238,17 @@ function atencHidratar_(campos, filas) {
 }
 
 async function atencionesLoadAll_() {
+  /* 29/09 — carga única: Atenciones y Estadísticas comparten esta lista. */
+  if (listaVigente_('solicitudes', __atencionesChatCache)) { aplicarFiltroAtenciones_(); return; }
+  if (!window.__HAC_VIVO && listaDeEsteUsuario_(__atencionesChatCache)) aplicarFiltroAtenciones_();
+  await atencionesTraer_();
+  aplicarFiltroAtenciones_();
+}
+async function atencionesTraer_() {
   const res = await apiGet('listAtenciones', { uid: uidActual_() });
   const campos = (res && res.campos) || [];
-  __atencionesChatCache = atencHidratar_(campos, (res && res.chat) || []);
+  __atencionesChatCache = marcarLista_(atencHidratar_(campos, (res && res.chat) || []));
   __atencionesPresCache = atencHidratar_(campos, (res && res.pres) || []);
-  aplicarFiltroAtenciones_();
 }
 
 /** Un solo sitio decide qué se ve: la pestaña activa pasada por el
@@ -5990,10 +6035,11 @@ function destroyEstadChart_() {
 async function loadEstadisticasData_() {
   /* FASE 2 — UN solo viaje: 'listAtenciones' ya trae chat y presencial
      juntos (antes eran dos llamadas que recorrían la hoja entera cada una). */
-  const res = await apiGet('listAtenciones', { uid: uidActual_() });
-  const campos = (res && res.campos) || [];
-  const chat = atencHidratar_(campos, (res && res.chat) || []);
-  const pres = atencHidratar_(campos, (res && res.pres) || []);
+  /* 29/09 — reutiliza la lista de Atenciones (misma respuesta del servidor):
+     si ya está en memoria y vigente, Estadísticas no viaja. */
+  if (!listaVigente_('solicitudes', __atencionesChatCache)) await atencionesTraer_();
+  const chat = __atencionesChatCache;
+  const pres = __atencionesPresCache;
   __estadCache = [
     ...(Array.isArray(chat) ? chat.map(r => ({ ...r, estado: 'ATENDIDA CHAT' }))        : []),
     ...(Array.isArray(pres) ? pres.map(r => ({ ...r, estado: 'ATENDIDA PRESENCIAL' })) : [])
@@ -6237,8 +6283,13 @@ async function abrirBDPredial_() {
 /* ── Cargar desde backend (con cache de búsqueda) ─────── */
 async function loadBDPredial_() {
   try {
+    /* 29/09 — carga única POR SESIÓN: los 2,5 MB se bajan una vez; volver a
+       la vista pinta de memoria. El EN VIVO la marca sucia si otro cambia
+       PREDIAL; los guardados propios ya parchean la fila en memoria. */
+    if (listaVigente_('predial', __bdpListCache)) { applyBDPredialFilters_(); return; }
+    if (!window.__HAC_VIVO && listaDeEsteUsuario_(__bdpListCache)) applyBDPredialFilters_();
     const data = await apiGet('listpredial', { uid: uidActual_() });
-    const rows = Array.isArray(data) ? data : [];
+    const rows = marcarLista_(Array.isArray(data) ? data : []);
 
     /* Pre-calcular el blob de búsqueda UNA sola vez por fila.
        Esto evita recalcular normalizeText_(join(' ')) en cada keystroke. */
@@ -6269,7 +6320,7 @@ function bdpBlob_(r) {
 function bdpAplicarFila_(fila, idBorrado) {
   if (idBorrado) {
     const id = String(idBorrado);
-    __bdpListCache = __bdpListCache.filter(r => String(r.id_predial) !== id);
+    __bdpListCache = marcarLista_(__bdpListCache.filter(r => String(r.id_predial) !== id));
     applyBDPredialFilters_();
     return true;
   }

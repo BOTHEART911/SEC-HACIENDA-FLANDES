@@ -39,6 +39,28 @@
     setTimeout(function () { avisado = false; }, 4000);
   }
 
+  /** Texto de la respuesta SOLO si es un error corto; '' si es otra cosa. */
+  function mirarInicio(r) {
+    var copia = r.clone();
+    if (!copia.body || !copia.body.getReader || typeof TextDecoder !== 'function') {
+      return copia.text().then(function (t) { return t.length > 4096 ? '' : t; });
+    }
+    var lector = copia.body.getReader();
+    var dec = new TextDecoder();
+    var txt = '';
+    function paso() {
+      return lector.read().then(function (res) {
+        if (res.done) return txt;
+        txt += dec.decode(res.value, { stream: true });
+        var inicio = txt.replace(/^\s+/, '');
+        if (inicio.length >= 11 && inicio.indexOf('{"ok":false') !== 0) { try { lector.cancel(); } catch (e) {} return ''; }
+        if (txt.length > 4096) { try { lector.cancel(); } catch (e) {} return ''; }
+        return paso();
+      });
+    }
+    return paso();
+  }
+
   var fetchOriginal = raiz.fetch ? raiz.fetch.bind(raiz) : null;
   if (fetchOriginal) {
     raiz.fetch = function (entrada, opciones) {
@@ -55,8 +77,12 @@
            grandes no se leen dos veces). */
         var largo = Number(r.headers && r.headers.get && r.headers.get('content-length')) || 0;
         if (largo > 4096) return r;
-        return r.clone().text().then(function (txt) {
-          if (txt.length > 4096 || txt.indexOf('SESION_VENCIDA') === -1) return r;
+        /* 29/09 — Apps Script no manda content-length: antes se clonaba y se
+           leía ENTERA cada respuesta (también los 2,5 MB de BD Predial).
+           Ahora se mira solo el primer trozo: un error empieza por
+           {"ok":false y es pequeño; cualquier otra cosa se suelta ya. */
+        return mirarInicio(r).then(function (txt) {
+          if (!txt || txt.indexOf('SESION_VENCIDA') === -1) return r;
           var j = null;
           try { j = JSON.parse(txt); } catch (e) { return r; }
           if (j && j.ok === false && j.codigo === 'SESION_VENCIDA' && llaveUsada === leer()) vencida(j.error);

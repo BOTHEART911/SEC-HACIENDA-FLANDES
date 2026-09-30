@@ -39,6 +39,12 @@
                              las de fondo NO deben cegar la pantalla */
   var MAX_ESCUDO_MS = 15000; /* seguro del escudo: nunca más de 15 s */
 
+  var LECTURAS_DE_VISTA = {
+    listsolicitudes: 1, listatenciones: 1, listprocesos: 1, listpredial: 1,
+    getpredial: 1, getsolicitudbyid: 1, listdriverows: 1, listmisexpedientes: 1,
+    buscarmisexpedientes: 1, descargaopciones: 1, getpredialbloque: 1
+  };
+
   var ATRIBUTO = 'data-hac-busy';
   var CLASE_DIM = 'hac12-dim';
 
@@ -119,6 +125,12 @@
       if (typeof original !== 'function' || original.__hac12) return;
       var envuelto = function () {
         var clase = clasificar_();
+        /* 29/09 — las LECTURAS de una vista (listas y detalles) ya no ciegan
+           la pantalla: si la persona toca otro botón mientras cargan, esa
+           lectura se corta (js/corte.js) y la vista nueva entra al instante.
+           Antes el escudo se tragaba ese toque. Los guardados siguen igual. */
+        if (nombre === 'apiGet' && clase === 'usuario' &&
+            LECTURAS_DE_VISTA[String(arguments[0] || '').toLowerCase()]) clase = 'fondo';
         if (clase === 'silencio') silenciosas++;
         else if (clase === 'fondo') fondo++;
         else { enVuelo++; if (enVuelo === 1) tInicio = Date.now(); }

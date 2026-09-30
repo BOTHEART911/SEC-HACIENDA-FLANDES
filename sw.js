@@ -64,6 +64,7 @@ var APP_SHELL = [
   './version.js',
   './js/marca.js',
   './js/sesion.js',
+  './js/corte.js',
   './kit/avisos.js',
   './js/iconos-hacienda.js',
   './js/guia.js',
@@ -96,14 +97,60 @@ var APP_SHELL = [
   './img/icono-192.png',
   './img/icono-512.png'
 ];
+/* ============================================================
+   29/09/2026 · MODO FRESCO (versión vieja en los equipos)
+   Antes: HTML/JS/CSS "red primero" pero SIN cache:'no-cache', así que el
+   navegador contestaba con su propia caché HTTP (GitHub Pages da 10 min)
+   y tras publicar se mezclaban archivos viejos y nuevos. Y el respaldo
+   caches.match() buscaba en TODAS las cachés, incluso las de versiones
+   pasadas.
+   Ahora, en cada apertura (navegación):
+     · se pregunta version.js a la RED; si el número publicado NO es el de
+       este service worker, esa apertura entera sale de la red (cache:'reload')
+       y no se mezcla nada viejo;
+     · si coincide, el armazón sale de la caché de ESTA versión (rápido) y,
+       si falta algo, de la red revalidada.
+   Solo se lee de caches.open(CACHE_NAME): nunca de una versión anterior.
+   ============================================================ */
+var FRESCOS = {};                  /* clientId -> true: abrió con versión nueva */
+var ESPERA_VERSION_MS = 3000;
+
+function versionDeLaRed_() {
+  return new Promise(function (listo) {
+    var t = setTimeout(function () { listo(''); }, ESPERA_VERSION_MS);
+    fetch(RUTA_VERSION + '?sw=' + Date.now(), { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.text() : ''; })
+      .then(function (txt) {
+        clearTimeout(t);
+        var m = /APP_VERSION\s*=\s*["']([^"']+)["']/.exec(String(txt || ''));
+        listo(m ? m[1].trim() : '');
+      })
+      .catch(function () { clearTimeout(t); listo(''); });
+  });
+}
+
+function deMiCache_(req) {
+  return caches.open(CACHE_NAME).then(function (c) { return c.match(req, { ignoreSearch: false }); });
+}
+
+function guardar_(req, res) {
+  if (!res || !res.ok || res.type === 'opaque') return;
+  var copy = res.clone();
+  caches.open(CACHE_NAME).then(function (c) { return c.put(req, copy); }).catch(function () {});
+}
+
 self.addEventListener('install', (event) => {
   self.skipWaiting();
   event.waitUntil(
-    /* FASE 4: uno por uno, NO addAll. addAll es atómico: si un solo archivo
-       falta (como pasó con css/base-visual.css) se cae la precarga entera y
-       la app se queda sin caché para trabajar sin red. */
+    /* FASE 4: uno por uno, NO addAll (si falta un archivo no se cae todo).
+       29/09: cache:'reload' — la precarga NO puede salir de la caché HTTP
+       del navegador, o la caché nueva nacería con archivos viejos. */
     caches.open(CACHE_NAME).then(cache =>
-      Promise.all(APP_SHELL.map(u => cache.add(u).catch(() => {})))
+      Promise.all(APP_SHELL.map(u =>
+        fetch(new Request(u, { cache: 'reload' }))
+          .then(res => { if (res && res.ok) return cache.put(u, res); })
+          .catch(() => {})
+      ))
     )
   );
 });
@@ -129,28 +176,22 @@ self.addEventListener('fetch', (event) => {
 
   // version.js de la raíz SIEMPRE desde la red (kit/version.js decide con él)
   if (url.pathname === RUTA_VERSION) {
-    event.respondWith(fetch(req, { cache: 'no-store' }).catch(() => caches.match(req)));
+    event.respondWith(fetch(req, { cache: 'no-store' }).catch(() => deMiCache_(req)));
     return;
   }
 
   // Imágenes y sonidos del repo: caché primero (no cambian nunca)
-  /* FASE 10 — esta rama NO tenía .catch(). Si el archivo todavía no estaba
-     en caché y la red fallaba o la petición se abortaba (cambio de vista,
-     relevo del service worker), el promise se rechazaba y respondWith
-     devolvía un fallo de red: es el "net::ERR_FAILED" que aparecía en la
-     consola con los mp3, aunque el archivo SÍ existe en sound/. Ahora se
-     reintenta con la caché y, si tampoco está, se responde en silencio en
-     vez de romper la petición. */
+  /* FASE 10 — con .catch(): una petición abortada no rompe la respuesta. */
   if (url.origin === location.origin && /\/(img|sound)\//.test(url.pathname)) {
     const esSonido = /\/sound\//.test(url.pathname);
     event.respondWith(
-      caches.match(req).then(hit => hit || fetch(req).then(res => {
+      caches.match(req, { cacheName: CACHE_ARCHIVOS }).then(hit => hit || fetch(req).then(res => {
         if (res && res.ok) {
           const copy = res.clone();
           caches.open(CACHE_ARCHIVOS).then(cache => cache.put(req, copy)).catch(() => {});
         }
         return res;
-      }).catch(() => caches.match(req).then(h => h || (
+      }).catch(() => caches.match(req, { cacheName: CACHE_ARCHIVOS }).then(h => h || (
         esSonido
           ? new Response(new Uint8Array(), { status: 200, headers: { 'Content-Type': 'audio/mpeg' } })
           : new Response('', { status: 504, statusText: 'sin red' })
@@ -159,19 +200,44 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // HTML, JS y CSS: network-first (red primero, caché como respaldo)
-  const isAppShell = /\.(html|js|css)$/.test(url.pathname) || url.pathname.endsWith('/');
-  if (isAppShell && url.origin === location.origin) {
+  if (url.origin !== location.origin) return;   /* CDN, Apps Script: no se tocan */
+
+  // Apertura (navegación): se decide si esta carga va FRESCA.
+  if (req.mode === 'navigate') {
+    event.respondWith(versionDeLaRed_().then(function (red) {
+      const fresca = !!red && red !== String(APP_VERSION);
+      if (event.resultingClientId) FRESCOS[event.resultingClientId] = fresca;
+      return fetch(req, { cache: fresca ? 'reload' : 'no-cache' })
+        .then(function (res) { if (!fresca) guardar_(req, res); return res; })
+        .catch(function () { return deMiCache_(req).then(h => h || deMiCache_('./index.html')); });
+    }));
+    return;
+  }
+
+  // HTML, JS y CSS del armazón
+  const isAppShell = /\.(html|js|css|webmanifest)$/.test(url.pathname) || url.pathname.endsWith('/');
+  if (isAppShell) {
+    const fresca = FRESCOS[event.clientId];
+    if (fresca === true) {
+      /* La página abrió con una versión más nueva que este service worker:
+         todo de la red, sin pasar por ninguna caché. */
+      event.respondWith(fetch(req, { cache: 'reload' }).catch(() => deMiCache_(req)));
+      return;
+    }
+    if (fresca === false) {
+      /* Misma versión: la caché de ESTA versión primero (instantáneo). */
+      event.respondWith(deMiCache_(req).then(hit => hit || fetch(req, { cache: 'no-cache' }).then(res => { guardar_(req, res); return res; })));
+      return;
+    }
+    /* No se sabe (el service worker se durmió y perdió la lista): red
+       revalidada primero, caché de esta versión como respaldo. */
     event.respondWith(
-      fetch(req).then(res => {
-        const copy = res.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(req, copy)).catch(() => {});
-        return res;
-      }).catch(() => caches.match(req))
+      fetch(req, { cache: 'no-cache' }).then(res => { guardar_(req, res); return res; })
+        .catch(() => deMiCache_(req))
     );
     return;
   }
 
-  // Resto: red con fallback a caché
-  event.respondWith(fetch(req).catch(() => caches.match(req)));
+  // Resto: red con respaldo en la caché de esta versión
+  event.respondWith(fetch(req).catch(() => deMiCache_(req)));
 });

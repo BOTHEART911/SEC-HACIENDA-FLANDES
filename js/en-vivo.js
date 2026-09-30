@@ -326,6 +326,10 @@
       var col = ACCION_COL[String(accion || '').toLowerCase()];
       return Promise.resolve(original.apply(this, arguments)).then(function (v) {
         if (col) sellar_(col);
+        /* 29/09 — carga única: el propio cambio no llega por Firebase (se
+           ignora el sello propio). Las listas en memoria que la respuesta
+           NO trajo actualizadas se olvidan aquí (app.js). */
+        try { if (col && existe(window.hacOlvidarListas_)) window.hacOlvidarListas_(col, String(accion || '').toLowerCase(), v); } catch (e) {}
         return v;
       });
     };
@@ -390,6 +394,9 @@
           sellos[col] = sello;
           if (foto) return;
           if (d.por === CLIENTE) return;       /* mi propio cambio: ya lo tengo */
+          /* 29/09 — otro cambió algo: los detalles recordados (js/corte.js)
+             ya no sirven. */
+          try { if (window.HAC_CORTE) window.HAC_CORTE.olvidar(); } catch (e) {}
 
           /* FASE 6 — si cambió una hoja de la que dependen los botones
              (a alguien pudieron asignarle su primera fila), se vuelve a
@@ -432,8 +439,38 @@
     });
   }
 
+  /* 29/09 — el EN VIVO arrancaba en DOMContentLoaded, ANTES del login: la
+     configuración de Firebase (HAC_PUBLICO.chatFirebase) solo llega con
+     'loginpin' o 'perfil'. initFirebase_ respondía null, quedaba "sin base"
+     para toda la sesión y la app vivía de los relojes (un viaje cada 15 s
+     en Pendientes y cada 60 s en Mi semáforo). Ahora espera a que llegue
+     esa configuración y arranca en ese momento. */
+  function hayConfig_() {
+    var c = window.HAC_PUBLICO && window.HAC_PUBLICO.chatFirebase;
+    return !!(c && c.databaseURL);
+  }
+  (function vigilarPublico_() {
+    var valor = window.HAC_PUBLICO;
+    try {
+      Object.defineProperty(window, 'HAC_PUBLICO', {
+        configurable: true,
+        get: function () { return valor; },
+        set: function (v) {
+          valor = v;
+          if (!window.__HACVIVO_LISTO && hayConfig_()) setTimeout(arrancar_, 0);
+        }
+      });
+    } catch (e) {}
+  })();
+
   function arrancar_() {
     if (window.__HACVIVO_LISTO) return;   /* nunca montar dos veces */
+    if (!hayConfig_()) {
+      /* Sin configuración todavía (antes del login): relojes de respaldo
+         mientras tanto; al llegar HAC_PUBLICO se vuelve a intentar. */
+      encenderRespaldo_('esperando la configuración del login');
+      return;
+    }
     window.__HACVIVO_LISTO = true;
     if (!existe(window.initFirebase_)) { encenderRespaldo_('sin initFirebase_'); return; }
 
