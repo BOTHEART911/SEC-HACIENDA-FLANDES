@@ -28,7 +28,7 @@
   var pinBuf = '';
   var verPin = false;           // FASE 4 — el ojo del PIN (se cierra al salir del paso)
 
-  var ROLES = ['DEV', 'ADMIN', 'ABOGADO', 'ASISTENTE', 'ARCHIVO', 'ATENCION'];
+  var ROLES = ['DEV', 'ADMIN', 'ABOGADO', 'ASISTENTE', 'ARCHIVO', 'ATENCION', 'TRIBUTARIO'];
 
   function normaliza_(p) {
     var roles = [];

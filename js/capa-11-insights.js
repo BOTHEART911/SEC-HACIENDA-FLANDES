@@ -588,6 +588,21 @@
         { id: 'repetidos', et: 'Correos repetidos',  ic: '♻️' },
         { id: 'listado',   et: 'Listado completo',   ic: '📋' }
       ]
+    },
+    /* 04/10/2026 — Industria y Comercio · Requerimientos (js/ica.js) */
+    'view-ica-req': {
+      titulo: 'Consultas de requerimientos', sub: 'Industria y Comercio',
+      botones: [
+        { id: 'resumen',    et: 'Lo que estoy viendo',       ic: '👀' },
+        { id: 'pendientes', et: 'Pendientes de seguimiento', ic: '🚨' },
+        { id: 'porvencer',  et: 'Por vencer',                ic: '⏳' },
+        { id: 'respuesta',  et: 'Tasa de respuesta',         ic: '📬' },
+        { id: 'etapa',      et: 'Por etapa',                 ic: '🧭' },
+        { id: 'vigencias',  et: 'Por vigencia',              ic: '📅' },
+        { id: 'municipio',  et: 'Por municipio',             ic: '📍' },
+        { id: 'naturaleza', et: 'Naturales y jurídicas',     ic: '🏢' },
+        { id: 'envios',     et: 'Envíos por mes',            ic: '📤' }
+      ]
     }
   };
 
@@ -602,6 +617,7 @@
       case 'view-bd-predial':   return repPred(id, bdpFiltrado(), 'lista');
       case 'view-bdp-panel':    return repPred(id, bdpp(), 'panel');
       case 'view-drive-anexos': return repDrive(id, drive());
+      case 'view-ica-req':      return (window.ICA && window.ICA.insight) ? window.ICA.insight(id) : rep('', 'El módulo aún no cargó.', '');
     }
     return rep('', 'No conozco esa consulta.', '');
   }

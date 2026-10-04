@@ -80,6 +80,17 @@
         'Pendientes predial: responder las solicitudes que llegan por WhatsApp adjuntando los recibos, o marcarlas AL DÍA, NO ENCONTRADO, respuesta limpia o dar de baja.',
         'Agregar atención predial: registrar a quien viene en persona.'
       ]
+    },
+    {
+      id: 'TRIBUTARIO', t: 'Tributario (Industria y Comercio)', ic: 'sobre',
+      p: 'Fiscaliza el Impuesto de Industria y Comercio: requiere información a los contribuyentes y hace el seguimiento.',
+      puede: [
+        'Requerimientos: agregar contribuyentes uno a uno o con la plantilla de carga masiva en Excel.',
+        'Enviar el requerimiento por correo desde cobrocoactivo@flandes-tolima.gov.co (uno a uno o de 10 en 10). El PDF queda como primera evidencia.',
+        'Seguimiento: la app cuenta los días hábiles, manda un recordatorio antes de vencer, detecta la respuesta del contribuyente y, si vence sin respuesta, ofrece el 2.º requerimiento.',
+        'Evidencias (hasta 5 por contribuyente), bitácora, cambio de etapa, Mi trabajo con descarga a Excel y PDF, y la configuración de textos del correo.',
+        'El administrador y el desarrollador ven también este módulo.'
+      ]
     }
   ];
 
@@ -106,6 +117,16 @@
         'El botón <b>luna / sol</b> cambia entre modo claro y oscuro. En el celular está en el menú de tu foto.',
         'Tu foto abre el menú: guía, cambiar PIN, cambiar foto, instalar, cambiar de usuario y cerrar sesión.',
         'El botón <b>Consultar</b> de cada lista te da resúmenes de lo que tienes en pantalla (vencidas, por barrio, por sustanciador…).'
+      ]
+    },
+    {
+      t: 'Requerimientos de Industria y Comercio', ic: 'sobre', items: [
+        '<b>Agregar</b> un contribuyente o subir muchos con <b>Carga masiva</b> (descarga la plantilla, llénala y súbela; la app te dice qué filas corregir).',
+        '<b>Enviar</b>: la app arma el PDF con la plantilla, lo manda desde cobrocoactivo@flandes-tolima.gov.co y lo guarda como primera evidencia. Marca varias tarjetas para enviarlas de 10 en 10.',
+        'Desde el envío corre el plazo (15 días hábiles por defecto). Cuando faltan pocos días sale un <b>recordatorio</b> en el mismo hilo del correo.',
+        'Si el contribuyente responde al correo, la tarjeta pasa a <b>Respondió</b> sola y sus adjuntos quedan en el expediente.',
+        'Si vence sin respuesta, la tarjeta se pone en rojo (<b>Pendiente de seguimiento</b>) y aparece el botón del <b>2.º requerimiento</b>.',
+        'Etapas: Creado, Requerimiento y Evaluación cambian solas; las demás las mueves tú con el botón de etapa.'
       ]
     },
     {

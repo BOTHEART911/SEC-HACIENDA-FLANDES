@@ -12,7 +12,8 @@
     ABOGADO:   'Sustanciador: ve y gestiona los expedientes que tiene asignados.',
     ASISTENTE: 'Apoya expedientes donde está como asistente.',
     ARCHIVO:   'Bitácora de expediente en las asignaciones.',
-    ATENCION:  'Atención al ciudadano: agregar y responder solicitudes.'
+    ATENCION:  'Atención al ciudadano: agregar y responder solicitudes.',
+    TRIBUTARIO: 'Industria y Comercio: requerimientos, envíos por correo y seguimiento.'
   };
 
   var estado = {
@@ -296,7 +297,7 @@
     var yo = (window.IDN && window.IDN.perfil()) || {};
 
     var roles = (u && u.roles) || [];
-    var checks = ['DEV', 'ADMIN', 'ABOGADO', 'ASISTENTE', 'ARCHIVO', 'ATENCION'].map(function (r) {
+    var checks = ['DEV', 'ADMIN', 'ABOGADO', 'ASISTENTE', 'ARCHIVO', 'ATENCION', 'TRIBUTARIO'].map(function (r) {
       if (r === 'DEV' && !puedeDev) return '';
       return '<label class="cfg-check' + (roles.indexOf(r) !== -1 ? ' marcado' : '') + '">' +
                '<input type="checkbox" value="' + r + '"' + (roles.indexOf(r) !== -1 ? ' checked' : '') + ' />' +
@@ -567,6 +568,7 @@
       { t: 'Avisos push al teléfono', ic: 'campana', pre: ['push.'] },
       { t: 'Firebase: chat y EN VIVO', ic: 'nube', pre: ['chat.', 'envivo.'] },
       { t: 'Voz de las consultas', ic: 'altavoz', pre: ['voz.'] },
+      { t: 'Industria y Comercio (backend ICA)', ic: 'base-datos', pre: ['ica.'] },
       { t: 'Ingreso, enlaces y topes', ic: 'candado', pre: ['pin.', 'sesion.', 'app.', 'visor.'] }
     ];
     function grupoDe(clave) {

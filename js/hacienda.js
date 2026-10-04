@@ -149,7 +149,8 @@
     'view-bdp-form': 'Expediente predial',
     'view-bdp-detalle': 'Detalle del expediente',
     'view-bdp-panel': 'Panel base de datos',
-    'view-config': 'Configuración'
+    'view-config': 'Configuración',
+    'view-ica-req': 'Requerimientos ICA'
   };
   var PUERTA = { 'view-login': 1, 'view-instalar': 1 };
 
@@ -410,7 +411,7 @@
     var v = $('hf-vacio');
     if (!v) return;
     var algun = false;
-    document.querySelectorAll('#view-inicio [data-bloque="predial"] .acceso, #view-inicio [data-bloque="gestion"] .acceso').forEach(function (b) {
+    document.querySelectorAll('#view-inicio [data-bloque="predial"] .acceso, #view-inicio [data-bloque="gestion"] .acceso, #view-inicio [data-bloque="ica"] .acceso').forEach(function (b) {
       if (b.style.display !== 'none' && !b.hidden) algun = true;
     });
     var ocultar = algun || !perfil() || !window.ALC;

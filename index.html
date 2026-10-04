@@ -56,6 +56,8 @@
   <link rel="stylesheet" href="css/solicitud-exp.css">
   <!-- FASE 2: la cara del ecosistema Flandes, vista por vista (EL ÚLTIMO) -->
   <link rel="stylesheet" href="css/hacienda.css">
+  <!-- 04/10/2026: Industria y Comercio · Requerimientos -->
+  <link rel="stylesheet" href="css/ica.css">
 
   <!-- version.js y marca.js ANTES que el kit: el kit lee APP_VERSION y MARCA al cargarse -->
   <script src="version.js"></script>
@@ -177,6 +179,34 @@
           </div>
           <!-- compatibilidad: app.js lo busca para decidir si hay PREDIAL -->
           <button type="button" id="btn-cat-predial" hidden></button>
+        </section>
+
+        <!-- 04/10/2026 — INDUSTRIA Y COMERCIO (backend ICA en la cuenta cobrocoactivo).
+             Lo ven TRIBUTARIO, ADMIN y DEV (app.js · aplicarPermisosVistas_). -->
+        <section class="bloque" data-bloque="ica">
+          <h3 class="bloque__t">Industria y Comercio</h3>
+          <div class="kit-rejilla kit-rejilla--auto accesos">
+            <button type="button" class="acceso" id="btn-ica-req" style="display:none;">
+              <span class="acceso__img acceso__img--ico"><i class="hi" data-ico="sobre" data-t="24"></i></span>
+              <span class="acceso__txt"><span class="acceso__t">Requerimientos</span><span class="acceso__p">Requerimientos de información por correo y su seguimiento</span></span>
+            </button>
+            <button type="button" class="acceso" id="btn-ica-empl" data-ica-pronto="Emplazamientos" style="display:none;">
+              <span class="acceso__img acceso__img--ico"><i class="hi" data-ico="vencido" data-t="24"></i></span>
+              <span class="acceso__txt"><span class="acceso__t">Emplazamientos <span class="acceso__pronto">Próximamente</span></span><span class="acceso__p">Emplazamiento para declarar a quien no respondió</span></span>
+            </button>
+            <button type="button" class="acceso" id="btn-ica-rev" data-ica-pronto="Revisión técnica de declaraciones" style="display:none;">
+              <span class="acceso__img acceso__img--ico"><i class="hi" data-ico="buscar" data-t="24"></i></span>
+              <span class="acceso__txt"><span class="acceso__t">Revisión técnica declaraciones <span class="acceso__pronto">Próximamente</span></span><span class="acceso__p">Revisión de las declaraciones de ICA</span></span>
+            </button>
+            <button type="button" class="acceso" id="btn-ica-has" data-ica-pronto="Auditorio HAS SQL" style="display:none;">
+              <span class="acceso__img acceso__img--ico"><i class="hi" data-ico="base-datos" data-t="24"></i></span>
+              <span class="acceso__txt"><span class="acceso__t">Auditorio HAS SQL <span class="acceso__pronto">Próximamente</span></span><span class="acceso__p">Cruces con la base de HAS SQL</span></span>
+            </button>
+            <button type="button" class="acceso" id="btn-ica-bal" data-ica-pronto="Balance" style="display:none;">
+              <span class="acceso__img acceso__img--ico"><i class="hi" data-ico="balanza" data-t="24"></i></span>
+              <span class="acceso__txt"><span class="acceso__t">Balance <span class="acceso__pronto">Próximamente</span></span><span class="acceso__p">Resultados de la fiscalización de ICA</span></span>
+            </button>
+          </div>
         </section>
 
         <section class="bloque" data-bloque="gestion">
@@ -1450,6 +1480,8 @@
 <script src="js/solicitud-exp.js"></script>
 <script src="js/bitacora-export.js"></script>
 <script src="js/mi-trabajo.js"></script>
+<script src="js/ica-municipios.js" defer></script>  <!-- 04/10: catálogo DIVIPOLA (estático) -->
+<script src="js/ica.js"></script>          <!-- 04/10: Industria y Comercio · Requerimientos (backend ICA) -->
 <script src="js/guia.js"></script>        <!-- FASE 2: guía rápida y tipos de usuario -->
 <script src="js/hacienda.js"></script>    <!-- FASE 2: banner, tema, inicio, PIN, iconos (EL ÚLTIMO) -->
 </body>

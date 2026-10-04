@@ -597,6 +597,10 @@ function aplicarAlcanceAlUsuario_(alc){
   return true;
 }
 
+function puedeICA_(){
+  try{ return !!(window.IDN && window.IDN.tieneRol('TRIBUTARIO', 'ADMIN', 'DEV')); }catch(_){ return false; }
+}
+
 function aplicarPermisosVistas_(){
   const botones = [
     ['btn-estadisticas',            function(){ return alcVer_('estadisticas'); }],
@@ -611,7 +615,13 @@ function aplicarPermisosVistas_(){
        misma regla que la vista donde viven: tener filas a tu nombre. */
     ['btn-mis-informes',            function(){ return alcVer_('descargaSolicitudes'); }],
     ['btn-bdp-mis-exp',             function(){ return alcVer_('descargaPredial'); }],
-    ['btn-mis-procesos',            function(){ return alcVer_('descargaProcesos'); }]
+    ['btn-mis-procesos',            function(){ return alcVer_('descargaProcesos'); }],
+    /* 04/10/2026 — INDUSTRIA Y COMERCIO: rol TRIBUTARIO, ADMIN y DEV */
+    ['btn-ica-req',                 function(){ return puedeICA_(); }],
+    ['btn-ica-empl',                function(){ return puedeICA_(); }],
+    ['btn-ica-rev',                 function(){ return puedeICA_(); }],
+    ['btn-ica-has',                 function(){ return puedeICA_(); }],
+    ['btn-ica-bal',                 function(){ return puedeICA_(); }]
   ];
   for(let i = 0; i < botones.length; i++){
     try{
@@ -639,7 +649,8 @@ const APAGAR_AL_SALIR_ = [
   'btn-agregar', 'btn-pendientes', 'btn-atenciones-registradas', 'btn-bd-predial',
   'btn-estadisticas', 'btn-semaforo', 'btn-panel-dashboard', 'btn-drive-anexos',
   'btn-mis-informes', 'btn-bdp-mis-exp', 'btn-mis-procesos',
-  'btn-cat-predial', 'predial-submenu'
+  'btn-cat-predial', 'predial-submenu',
+  'btn-ica-req', 'btn-ica-empl', 'btn-ica-rev', 'btn-ica-has', 'btn-ica-bal'
 ];
 
 /* ================== ÉXITO DE LOGIN (compartido doc + PIN) ================== */
