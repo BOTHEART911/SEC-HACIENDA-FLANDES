@@ -301,14 +301,33 @@
     if (typeof window.showView === 'function') window.showView(VISTA);
     if (!S.cargado) {
       pintarEsqueleto();
-      cargar().then(function () { if (activa()) pintarTodo(); }, function (e) {
+      cargar().then(function () { if (activa()) pintarTodo(); novedades(); }, function (e) {
         if (cancelada(e)) return;
         if (!activa()) return;
         $('ica-lista').innerHTML = '<div class="ica-vacio">' + ico('aviso', 28) + '<p>' + esc(e.message) + '</p>' +
           '<button type="button" class="kit-btn" id="ica-reintentar">' + ico('recargar') + ' Reintentar</button></div>';
         var b = $('ica-reintentar'); if (b) b.addEventListener('click', abrir);
       });
-    } else pintarTodo();
+    } else { pintarTodo(); novedades(); }
+  }
+  /**
+   * Respuestas nuevas de los contribuyentes, DE FONDO (no frena la vista): el
+   * servidor mira el historial de Gmail y devuelve solo las filas que cambiaron.
+   * Una vez por minuto como mucho; se descarta si cambia la sesión. Si el backend
+   * aún no tiene la ruta (versión anterior), se ignora en silencio.
+   */
+  function novedades() {
+    var ahora = Date.now();
+    if (S.novEn && ahora - S.novEn < 60000) return;
+    S.novEn = ahora;
+    var llave = tk();
+    llamar('novedades', {}).then(function (d) {
+      if (llave !== tk() || !d || !d.filas || !d.filas.length || !S.lista) return;
+      var resp = 0;
+      d.filas.forEach(function (f) { var o = parchar(f); if (o.resp) resp++; });
+      if (activa()) pintarTodo();
+      if (resp) { sonar('success'); aviso(resp === 1 ? 'Un contribuyente respondió el requerimiento.' : resp + ' contribuyentes respondieron.', 'ok', 5000); }
+    }, function () {});
   }
   function activa() { var v = $(VISTA); return !!(v && v.classList.contains('active')); }
 

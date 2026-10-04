@@ -124,10 +124,13 @@
 .ica-opc[hidden] { display: none; }
 .ica-tipo { display: inline-block; padding: 2px 8px; border-radius: 8px; background: rgba(var(--k-marca-rgb), .1); color: var(--k-marca); font-size: .72rem; }
 .ica-ubic { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.ica-anios { display: flex; flex-wrap: wrap; gap: 8px; }
-.ica-anio-btn, .ica-anio-todos { appearance: none; cursor: pointer; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--k-linea); background: var(--k-papel); color: var(--k-tinta-2); font: 600 .9rem/1 var(--k-fuente); }
-.ica-anio-btn.on { background: var(--k-marca); border-color: var(--k-marca); color: #fff; }
-.ica-anio-todos { border-style: dashed; color: var(--k-apagado); }
+.ica-anios { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+/* Del tamaño de los 4 dígitos: anula el  button { width:100% }  global. */
+.ica-anios .ica-anio-btn, .ica-anios .ica-anio-todos { appearance: none; cursor: pointer; width: auto !important; flex: 0 0 auto; min-width: 0; margin: 0;
+  padding: 7px 9px; border-radius: 9px; border: 1px solid var(--k-linea); background: var(--k-papel); color: var(--k-tinta-2);
+  font: 600 .86rem/1 var(--k-fuente); font-variant-numeric: tabular-nums; }
+.ica-anios .ica-anio-btn.on { background: var(--k-marca); border-color: var(--k-marca); color: #fff; }
+.ica-anios .ica-anio-todos { border-style: dashed; color: var(--k-apagado); }
 
 /* detalle */
 .ica-ficha { display: flex; flex-direction: column; gap: 12px; }
