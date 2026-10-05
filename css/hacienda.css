@@ -828,3 +828,7 @@ html.hf-en-puerta .container { padding-top: 0 !important; }
 .vf-row { position: relative; z-index: 60; }
 .vf.abierto { z-index: 2; }
 .vf-panel { z-index: 70 !important; }
+
+/* 04/10 — el cohete de guardado va SOBRE los modales (10000–10015).
+   Antes quedaba a 9800 y se veía detrás del formulario. Debajo del visor (10050) y de Swal. */
+html .kit-guard { z-index: 10040; }

@@ -268,6 +268,9 @@
       '</div>';
     cont.appendChild(sec);
 
+    /* Botón atrás (barra y físico): el banner hace clic en .hf-atras de la vista activa.
+       Corta las lecturas en curso de la vista y vuelve al inicio. */
+    sec.querySelector('.hf-atras').addEventListener('click', salir);
     $('ica-agregar').addEventListener('click', function () { abrirForm(null); });
     $('ica-masiva').addEventListener('click', abrirMasiva);
     $('ica-enviar-sel').addEventListener('click', enviarSeleccion);
@@ -295,6 +298,11 @@
     return sec;
   }
 
+  function salir() {
+    try { if (window.VISOR && window.VISOR.abierto && window.VISOR.abierto()) window.VISOR.cerrar(); } catch (e) {}
+    document.querySelectorAll('.ica-modal').forEach(function (m) { if (!m.__ocupado && m.cerrar) m.cerrar(); });
+    if (typeof window.showView === 'function') window.showView('view-inicio');
+  }
   function abrir() {
     if (!puede()) { aviso('No tienes acceso a Industria y Comercio.', 'aviso'); return; }
     montarVista();
@@ -672,7 +680,6 @@
         '</div>',
       pie:
         '<button type="button" class="kit-btn" data-previa>' + ico('pdf') + ' Vista previa PDF</button>' +
-        '<button type="button" class="kit-btn" data-carpeta hidden>' + ico('carpeta') + ' Carpeta en Drive</button>' +
         (insistible(r) ? '<button type="button" class="kit-btn kit-btn--marca" data-ins>' + ico('megafono') + ' Enviar 2.º requerimiento</button>' :
           (enviable(r) ? '<button type="button" class="kit-btn kit-btn--marca" data-env>' + ico('enviar') + ' Enviar requerimiento</button>' : ''))
     });
@@ -717,7 +724,6 @@
           '<small>Para: ' + esc(x.para || '') + (x.por ? ' · por ' + esc(titulo(x.por)) : '') + '</small></span></div>';
       }).join('') : '<p class="ica-nada">Aún no se ha enviado.</p>';
       pintarBit(d.bitacora);
-      if (d.carpeta) { var c = m.q('[data-carpeta]'); c.hidden = false; c.addEventListener('click', function () { window.open('https://drive.google.com/drive/folders/' + d.carpeta, '_blank', 'noopener'); }); }
       m.q('[data-evid]').addEventListener('click', function (e) {
         var b = e.target.closest('[data-abrir]'); if (!b) return;
         verDrive(b.getAttribute('data-abrir'), b.getAttribute('data-nombre'));
@@ -737,7 +743,9 @@
   }
   function verDrive(id, nombre) {
     var u = 'https://drive.google.com/file/d/' + id + '/view';
-    if (window.VISOR && typeof window.VISOR.abrir === 'function') return window.VISOR.abrir(u, { nombre: nombre });
+    var p = perfil(), correo = String((p && p.correo) || '').trim().toLowerCase();
+    if (window.VISOR && typeof window.VISOR.abrir === 'function') return window.VISOR.abrir(u, { nombre: nombre, authuser: correo });
+    if (correo) u += '?authuser=' + encodeURIComponent(correo);
     window.open(u, '_blank', 'noopener');
   }
   function previa(r, tipo, btn) {

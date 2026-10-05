@@ -76,8 +76,11 @@
     return false;
   }
 
-  function urlPreview_(id) {
-    return 'https://drive.google.com/file/d/' + id + '/preview';
+  function urlPreview_(id, cuenta) {
+    /* authuser = la cuenta de Google con la que la persona tiene permiso:
+       sin él, Drive usa la primera sesión del navegador y, si esa no tiene
+       acceso, manda al inicio de sesión (que no se deja enmarcar). */
+    return 'https://drive.google.com/file/d/' + id + '/preview' + (cuenta ? '?authuser=' + encodeURIComponent(cuenta) : '');
   }
   function urlVista_(id) {
     return 'https://drive.google.com/file/d/' + id + '/view';
@@ -183,11 +186,12 @@
     $(ID_TITULO).title = actual.nombre;
     nota_('');
     var marco = $(ID_IFRAME);
-    marco.setAttribute('src', urlPreview_(id));
+    marco.setAttribute('src', urlPreview_(id, opciones.authuser));
+    if (opciones.authuser) nota_('Se muestra con tu cuenta de Google ' + opciones.authuser + '. Si no carga, entra a Google con ese correo en este navegador.');
 
     $(ID_MODAL).classList.remove('hidden');
     document.body.classList.add('visor-abierto');
-    try { if (window.BV && window.BV.sonar) window.BV.sonar('info'); } catch (_) {}
+    try { if (window.BV && window.BV.sonar) window.BV.sonar((typeof SOUNDS !== 'undefined' && SOUNDS.info) || 'sound/default-notification.mp3'); } catch (_) {}
     return true;
   }
 
