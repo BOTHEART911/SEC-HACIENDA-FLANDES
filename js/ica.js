@@ -592,7 +592,7 @@
   /* ══════════════ alta / edición ══════════════ */
   function abrirForm(r) {
     var nuevo = !r;
-    var d = r ? Object.assign({}, r) : { nat: 'NATURAL', dep: 'TOLIMA', mun: 'FLANDES', vig: '', pl: (S.cfg && S.cfg.plazo) || 15, un: (S.cfg && S.cfg.unidad) || 'HABILES' };
+    var d = r ? Object.assign({}, r) : { nat: 'NATURAL', dep: 'TOLIMA', mun: 'FLANDES', vig: '', pl: (S.cfg && S.cfg.plazo) || 15, ipl: (S.cfg && S.cfg.insDias) || 15, un: (S.cfg && S.cfg.unidad) || 'HABILES' };
     var anios = []; for (var y = ANIO0; y <= anioActual(); y++) anios.push(y);
     var vigSel = {}; String(d.vig || '').split(/[,\s]+/).forEach(function (x) { if (x) vigSel[x] = 1; });
     var m = modal({
@@ -619,6 +619,9 @@
         '<div class="ica-rej2">' +
           campo('pl', 'Días para responder', '<input name="pl" type="number" min="1" max="90" value="' + esc(d.pl || 15) + '">',
             'Automático: ' + ((S.cfg && S.cfg.plazo) || 15) + ' ' + unidadTxt((S.cfg && S.cfg.unidad) || 'HABILES') + '. Puedes cambiarlo para este contribuyente.') +
+          /* 05/10 — plazo del 2.º requerimiento (insistencia), por contribuyente */
+          campo('ipl', 'Días para responder el 2.º requerimiento', '<input name="ipl" type="number" min="1" max="90" value="' + esc(d.ipl || (S.cfg && S.cfg.insDias) || 15) + '">',
+            'Automático: ' + ((S.cfg && S.cfg.insDias) || 15) + ' ' + unidadTxt((S.cfg && S.cfg.unidad) || 'HABILES') + ', sin contar el día del envío.') +
         '</div>' +
         '<p class="ica-err" data-err hidden></p>' +
         '</form>',
@@ -659,7 +662,7 @@
         rep: f.rep.value.trim(), c1: f.c1.value.trim().toLowerCase(), c2: f.c2.value.trim().toLowerCase(), dir: f.dir.value.trim(),
         dep: f.dep.value, mun: f.mun.value,
         vig: Array.prototype.map.call(m.querySelectorAll('.ica-anio-btn.on'), function (b) { return b.getAttribute('data-anio'); }).join(', '),
-        pl: f.pl.value, un: (r && r.un) || (S.cfg && S.cfg.unidad) || 'HABILES'
+        pl: f.pl.value, ipl: f.ipl.value, un: (r && r.un) || (S.cfg && S.cfg.unidad) || 'HABILES'
       };
       var falta = validar(datos, r);
       var err = m.q('[data-err]');
@@ -705,6 +708,7 @@
     if (!d.mun) f.push('departamento y municipio');
     if (!d.vig) f.push('al menos una vigencia');
     var pl = Number(d.pl); if (!(pl >= 1 && pl <= 90)) f.push('días entre 1 y 90');
+    var ipl = Number(d.ipl || 15); if (!(ipl >= 1 && ipl <= 90)) f.push('días del 2.º requerimiento entre 1 y 90');
     return f;
   }
 
@@ -740,7 +744,7 @@
             (r.rep ? dt('Representante legal', r.rep) : '') +
             dt('Correo', [r.c1, r.c2].filter(String).join(', ')) +
             dt('Dirección', r.dir) + dt('Municipio', titulo(r.mun) + (r.dep ? ' (' + titulo(r.dep) + ')' : '')) +
-            dt('Vigencias', r.vig) + dt('Plazo', r.pl + ' ' + unidadTxt(r.un)) +
+            dt('Vigencias', r.vig) + dt('Plazo', r.pl + ' ' + unidadTxt(r.un)) + dt('Plazo 2.º requerimiento', (r.ipl || (S.cfg && S.cfg.insDias) || 15) + ' ' + unidadTxt(r.un)) +
             (r.env ? dt('Enviado', fLarga(r.env)) + dt('Vence', fLarga(r.ven)) : '') +
             (r.rec ? dt('Recordatorio', fLarga(r.rec)) : '') +
             (r.ins ? dt('2.º requerimiento', fLarga(r.ins) + ' · vence ' + fLarga(r.insv)) : '') +
@@ -893,7 +897,7 @@
     if (tipo === 'req' && r.env && !r.resp) {
       return confirmar('Reenviar requerimiento', '<p>Este requerimiento ya se envió el <b>' + esc(fLarga(r.env)) + '</b>. Si lo reenvías, el plazo vuelve a contar desde hoy.</p>', 'Reenviar').then(function (ok) { if (ok) enviarUno(Object.assign({}, r, { env: '' }), tipo); });
     }
-    var plazo = tipo === 'ins' ? ((S.cfg && S.cfg.insDias) || 10) : r.pl;
+    var plazo = tipo === 'ins' ? (r.ipl || (S.cfg && S.cfg.insDias) || 15) : r.pl;
     confirmar(tipo === 'ins' ? 'Enviar 2.º requerimiento' : 'Enviar requerimiento',
       '<ul class="ica-lista-conf">' +
         '<li><span>Contribuyente</span><b>' + esc(r.nom) + '</b></li>' +
@@ -1107,7 +1111,8 @@
       var cab = (filas[0] || []).map(norm);
       var col = function (txt) { for (var i = 0; i < cab.length; i++) if (cab[i].indexOf(txt) !== -1) return i; return -1; };
       var c = { of: col('OFICIO'), nat: col('NATURALEZA'), ide: col('IDENTIFICACION'), nom: col('NOMBRE'), rep: col('REPRESENTANTE'),
-        c1: col('CORREO PRINCIPAL'), c2: col('CORREO ADICIONAL'), dir: col('DIRECCION'), dep: col('DEPARTAMENTO'), mun: col('MUNICIPIO'), vig: col('VIGENCIA'), pl: col('DIAS') };
+        c1: col('CORREO PRINCIPAL'), c2: col('CORREO ADICIONAL'), dir: col('DIRECCION'), dep: col('DEPARTAMENTO'), mun: col('MUNICIPIO'), vig: col('VIGENCIA'), pl: col('DIAS'), ipl: col('2 REQ') };
+      if (c.ipl === c.pl) c.ipl = -1;
       if (c.of < 0 || c.ide < 0 || c.nom < 0) { m.q('[data-res]').innerHTML = '<p class="ica-err">El archivo no tiene las columnas de la plantilla. Descárgala y vuelve a intentarlo.</p>'; return; }
       var cat = window.ICA_MUNI, oficios = {}, malas = [];
       (S.lista || []).forEach(function (r) { oficios[r.of] = r.id; });
@@ -1124,7 +1129,7 @@
           dep = depOk || dep; mun = munOk || '';
         }
         var d = { of: v('of'), nat: nat, ide: v('ide').replace(/\D/g, ''), nom: v('nom').replace(/\s+/g, ' '), rep: v('rep'), c1: v('c1').toLowerCase(), c2: v('c2').toLowerCase(),
-          dir: v('dir'), dep: dep, mun: mun, vig: vig.join(', '), pl: v('pl') || ((S.cfg && S.cfg.plazo) || 15), un: (S.cfg && S.cfg.unidad) || 'HABILES' };
+          dir: v('dir'), dep: dep, mun: mun, vig: vig.join(', '), pl: v('pl') || ((S.cfg && S.cfg.plazo) || 15), ipl: v('ipl') || ((S.cfg && S.cfg.insDias) || 15), un: (S.cfg && S.cfg.unidad) || 'HABILES' };
         var falta = validar(d, null);
         if (oficios[d.of]) falta.push('oficio repetido');
         if (nat === 'JURIDICA' && d.ide && !nitOk(d.ide)) falta.push('dígito de verificación del NIT no coincide');
