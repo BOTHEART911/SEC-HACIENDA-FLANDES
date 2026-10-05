@@ -1666,9 +1666,23 @@ function festDelAnio_(anio) {
     meter(d);
   });
 
+  /* 05/10/2026 — ajustes de Configuración → Festivos (los mismos del backend
+     y de ICA): días que no aplican y días agregados. */
+  try {
+    const aj = (window.HAC_PUBLICO && window.HAC_PUBLICO.festivos) || null, pre = anio + '-';
+    const dmy = f => f.slice(8, 10) + '/' + f.slice(5, 7) + '/' + f.slice(0, 4);
+    if (aj) {
+      (aj.quitar || []).forEach(f => { if (f.indexOf(pre) === 0) set.delete(dmy(f)); });
+      (aj.agregar || []).forEach(f => { if (f.indexOf(pre) === 0) set.add(dmy(f)); });
+    }
+  } catch (_) {}
+
   __FEST_CACHE[anio] = set;
   return set;
 }
+
+/* Configuración → Festivos guardó: se olvidan los años ya calculados. */
+window.hacFestOlvidar_ = function () { Object.keys(__FEST_CACHE).forEach(k => { delete __FEST_CACHE[k]; }); };
 
 function esFestivo_(fecha) {
   return festDelAnio_(fecha.getFullYear()).has(formatDDMMYYYY_(fecha));

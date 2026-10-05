@@ -122,6 +122,8 @@
            documentos, llaves) son SOLO del desarrollador. */
         '<div class="cfg-tabs panel-toolbar hf-pestanas">' +
           '<button class="cfg-tab panel-tab activa active" data-tab="usuarios">' + ICOS('equipo') + 'Usuarios y roles</button>' +
+          /* 05/10/2026 — festivos editables (ADMIN y DEV): la misma lista que usa ICA */
+          '<button class="cfg-tab panel-tab" data-tab="festivos">' + ICOS('calendario') + 'Festivos</button>' +
           '<button class="cfg-tab panel-tab cfg-tab-dev" data-tab="plantillas" style="display:none;">' + ICOS('chat') + 'Plantillas de mensajes</button>' +
           '<button class="cfg-tab panel-tab cfg-tab-dev" data-tab="avanzado" style="display:none;">' + ICOS('llave') + 'IDs y ajustes</button>' +
         '</div>' +
@@ -132,6 +134,10 @@
             '<button id="cfg-nuevo" class="kit-btn kit-btn--marca cfg-mini">' + ICOS('mas') + 'Nuevo usuario</button>' +
           '</div>' +
           '<div id="cfg-usuarios" class="cfg-lista"></div>' +
+        '</div>' +
+
+        '<div id="cfg-panel-festivos" class="cfg-panel hidden">' +
+          '<div id="cfg-festivos"></div>' +
         '</div>' +
 
         '<div id="cfg-panel-plantillas" class="cfg-panel hidden">' +
@@ -178,7 +184,7 @@
 
   function pestana_(cual) {
     estado.pestana = cual;
-    ['usuarios', 'plantillas', 'avanzado'].forEach(function (p) {
+    ['usuarios', 'festivos', 'plantillas', 'avanzado'].forEach(function (p) {
       var panel = el_('cfg-panel-' + p);
       if (panel) panel.classList.toggle('hidden', p !== cual);
     });
@@ -214,7 +220,9 @@
       estado.sucias = {};
 
       document.querySelectorAll('.cfg-tab-dev').forEach(function (t) { t.style.display = estado.esDev ? '' : 'none'; });
-      if (!estado.esDev && estado.pestana !== 'usuarios') pestana_('usuarios');
+      if (!estado.esDev && estado.pestana !== 'usuarios' && estado.pestana !== 'festivos') pestana_('usuarios');
+      FES.datos = (todo && todo.festivos) || null;
+      FES.borrador = null;
 
       var sub = el_('cfg-sub');
       if (sub) {
@@ -223,6 +231,7 @@
       }
 
       pintarUsuarios_();
+      pintarFestivos_();
       pintarPlantillas_();
       pintarAvanzado_();
     } catch (e) {
@@ -636,6 +645,231 @@
   }
 
   /* ============================================================
+     FESTIVOS — 05/10/2026
+     Igual que ADMIN-FLANDES: los de LEY se calculan (fijos, Ley Emiliani
+     y Semana Santa) y aquí se marcan los que no aplican; los días no
+     laborales extra se AGREGAN con su nombre, se editan o se borran.
+     Se guardan en el backend HACIENDA (CONFIG 'festivos.ajustes'), la
+     MISMA fuente que usa ICA para los 15 días hábiles.
+     · Llega en el viaje de 'cfgtodo' (sin viajes extra).
+     · Los cambios se arman en pantalla y se guardan juntos: UN viaje,
+       botón ocupado desde el primer toque y rid (reintento solo ante
+       falla de red con el MISMO rid).
+     · Al guardar se parcha en memoria: la lista de aquí, los días
+       hábiles de la app (HAC_PUBLICO.festivos) y los de ICA.
+     ============================================================ */
+  var FES = { datos: null, borrador: null, guardando: false };
+  var DIAS_SEM = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
+
+  function fIsoOk_(s) {
+    var m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!m) return false;
+    var d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
+    return d.getUTCFullYear() === +m[1] && d.getUTCMonth() === +m[2] - 1 && d.getUTCDate() === +m[3];
+  }
+  function fDow_(f) { var p = f.split('-'); return new Date(Date.UTC(+p[0], +p[1] - 1, +p[2])).getUTCDay(); }
+  function fCorta_(f) { return f.slice(8, 10) + '/' + f.slice(5, 7); }
+  function fLarga_(f) { return f.slice(8, 10) + '/' + f.slice(5, 7) + '/' + f.slice(0, 4); }
+  function fBorrador_() {
+    if (!FES.borrador && FES.datos) {
+      FES.borrador = {
+        agregar: (FES.datos.agregar || []).map(function (x) { return { f: x.f, n: x.n }; }),
+        quitar: (FES.datos.quitar || []).slice()
+      };
+    }
+    return FES.borrador;
+  }
+  function fSucio_() {
+    if (!FES.datos || !FES.borrador) return false;
+    var a = JSON.stringify({ a: FES.borrador.agregar.slice().sort(function (x, y) { return x.f < y.f ? -1 : 1; }), q: FES.borrador.quitar.slice().sort() });
+    var b = JSON.stringify({ a: (FES.datos.agregar || []).map(function (x) { return { f: x.f, n: x.n }; }), q: (FES.datos.quitar || []).slice().sort() });
+    return a !== b;
+  }
+  function fLey_() { var m = {}; ((FES.datos && FES.datos.ley) || []).forEach(function (x) { m[x.f] = x.n; }); return m; }
+  /** Fechas que quedan como festivos (ISO) con el borrador: ley − no aplica + agregados. */
+  function fRango_(b) {
+    var q = {}; (b.quitar || []).forEach(function (f) { q[f] = 1; });
+    var out = ((FES.datos && FES.datos.ley) || []).filter(function (x) { return !q[x.f]; }).map(function (x) { return x.f; });
+    (b.agregar || []).forEach(function (x) { out.push(x.f); });
+    return out.sort();
+  }
+
+  function pintarFestivos_() {
+    var cont = el_('cfg-festivos');
+    if (!cont) return;
+    var D = FES.datos;
+    if (!D) { cont.innerHTML = '<p class="hf-intro">No llegaron los festivos. Cierra y vuelve a abrir Configuración.</p>'; return; }
+    var b = fBorrador_();
+    var ley = fLey_();
+    var q = {}; b.quitar.forEach(function (f) { q[f] = 1; });
+    var filas = (D.ley || []).map(function (x) { return { f: x.f, n: x.n, o: 'LEY', off: !!q[x.f] }; })
+      .concat(b.agregar.map(function (x) { return { f: x.f, n: x.n, o: 'AGREGADO', off: false }; }))
+      .sort(function (x, y) { return x.f < y.f ? -1 : 1; });
+    var sucio = fSucio_();
+    estado.sucias.festivos = sucio;
+
+    var h = '<p class="hf-intro">Los <b>de ley</b> se calculan solos (fijos, Ley Emiliani y Semana Santa). Si uno no aplica, márcalo; si hay un día no laboral extra (un decreto, una fecha local), agrégalo con su nombre. ' +
+      'Con estos días se cuentan los <b>días hábiles</b> de toda la app, incluidos los 15 días hábiles de los requerimientos de Industria y Comercio.</p>';
+    h += '<div class="cfgf-barra">' +
+      '<p class="cfgf-estado">' + ICOS('reloj') + (D.cuando ? 'Última edición: ' + esc_(D.cuando) + (D.por ? ' · ' + esc_(D.por) : '') : 'Sin cambios: solo los festivos de ley.') + '</p>' +
+      '<button type="button" id="cfgf-agregar" class="kit-btn kit-btn--marca cfg-mini">' + ICOS('mas') + 'Agregar festivo</button>' +
+    '</div>';
+    h += '<div class="cfgf-anios">';
+    (D.anios || []).forEach(function (y) {
+      var del = filas.filter(function (x) { return x.f.slice(0, 4) === String(y); });
+      var activos = del.filter(function (x) { return !x.off; }).length;
+      h += '<section class="cfgf-anio"><h4>' + y + ' <small>' + activos + ' festivos</small></h4><div class="cfgf-dias">';
+      del.forEach(function (x) {
+        h += '<div class="cfgf-dia' + (x.off ? ' cfgf-dia--off' : '') + (x.o === 'AGREGADO' ? ' cfgf-dia--mas' : '') + '">' +
+          '<b>' + fCorta_(x.f) + ' ' + DIAS_SEM[fDow_(x.f)] + '</b>' +
+          '<span class="cfgf-n">' + esc_(x.n) + (x.o === 'AGREGADO' ? ' <em>agregado</em>' : (x.off ? ' <em>no aplica</em>' : '')) + '</span>' +
+          '<span class="cfgf-acc">' +
+          (x.o === 'AGREGADO'
+            ? '<button type="button" class="kit-btn kit-btn--plano cfgf-mini" data-ed="' + x.f + '" title="Editar">' + ICOS('lapiz', 14) + 'Editar</button>' +
+              '<button type="button" class="kit-btn kit-btn--plano cfgf-mini cfg-peligro" data-bo="' + x.f + '" title="Borrar">' + ICOS('basura', 14) + 'Borrar</button>'
+            : (x.off
+              ? '<button type="button" class="kit-btn kit-btn--plano cfgf-mini" data-si="' + x.f + '">' + ICOS('mas', 14) + 'Sí aplica</button>'
+              : '<button type="button" class="kit-btn kit-btn--plano cfgf-mini" data-no="' + x.f + '">' + ICOS('menos', 14) + 'No aplica</button>')) +
+          '</span></div>';
+      });
+      h += '</div></section>';
+    });
+    h += '</div>';
+    h += '<div class="cfg-acc-pie cfgf-pie">' +
+      '<button type="button" id="cfgf-descartar" class="kit-btn"' + (sucio ? '' : ' disabled') + '>Descartar cambios</button>' +
+      '<button type="button" id="cfgf-guardar" class="kit-btn kit-btn--marca"' + (sucio ? '' : ' disabled') + '>' + ICOS('check') + 'Guardar festivos</button>' +
+      (sucio ? '<span class="cfgf-pend">' + ICOS('aviso', 14) + 'Hay cambios sin guardar</span>' : '') +
+    '</div>';
+    cont.innerHTML = h;
+
+    el_('cfgf-agregar').addEventListener('click', function () { sonido_('click'); modalFestivo_(null); });
+    cont.querySelectorAll('[data-ed]').forEach(function (bt) {
+      bt.addEventListener('click', function () { sonido_('click'); modalFestivo_(bt.dataset.ed); });
+    });
+    cont.querySelectorAll('[data-bo]').forEach(function (bt) {
+      bt.addEventListener('click', function () {
+        var f = bt.dataset.bo, x = b.agregar.filter(function (y) { return y.f === f; })[0];
+        Swal.fire({ icon: 'warning', title: '¿Borrar este festivo?', text: fLarga_(f) + ' · ' + (x ? x.n : '') + '. Ese día vuelve a ser hábil al guardar.',
+          showCancelButton: true, confirmButtonText: 'Sí, borrar', cancelButtonText: 'Cancelar' }).then(function (r) {
+          if (!r.isConfirmed) return;
+          b.agregar = b.agregar.filter(function (y) { return y.f !== f; });
+          pintarFestivos_();
+        });
+      });
+    });
+    cont.querySelectorAll('[data-no]').forEach(function (bt) {
+      bt.addEventListener('click', function () {
+        var f = bt.dataset.no;
+        Swal.fire({ icon: 'warning', title: '¿Ese festivo no aplica?', text: fLarga_(f) + ' · ' + (ley[f] || '') + '. Ese día pasa a contarse como hábil al guardar.',
+          showCancelButton: true, confirmButtonText: 'Sí, no aplica', cancelButtonText: 'Cancelar' }).then(function (r) {
+          if (!r.isConfirmed) return;
+          if (b.quitar.indexOf(f) === -1) b.quitar.push(f);
+          pintarFestivos_();
+        });
+      });
+    });
+    cont.querySelectorAll('[data-si]').forEach(function (bt) {
+      bt.addEventListener('click', function () {
+        sonido_('click');
+        b.quitar = b.quitar.filter(function (y) { return y !== bt.dataset.si; });
+        pintarFestivos_();
+      });
+    });
+    el_('cfgf-descartar').addEventListener('click', function () { sonido_('back'); FES.borrador = null; pintarFestivos_(); });
+    el_('cfgf-guardar').addEventListener('click', guardarFestivos_);
+  }
+
+  /** Agregar (f = null) o editar el agregado del día f. */
+  function modalFestivo_(f) {
+    var D = FES.datos, b = fBorrador_(), ley = fLey_();
+    var x = f ? b.agregar.filter(function (y) { return y.f === f; })[0] : null;
+    var y0 = D.anios[0], y1 = D.anios[D.anios.length - 1];
+    var m = document.createElement('div');
+    m.className = 'cfg-modal';
+    m.innerHTML =
+      '<div class="cfg-modal-caja cfgf-modal">' +
+        '<h3>' + (x ? 'Editar festivo' : 'Agregar festivo') + '</h3>' +
+        '<label class="cfg-lbl">Fecha' +
+          '<input id="cfgf-fecha" type="date" min="' + y0 + '-01-01" max="' + y1 + '-12-31" value="' + (x ? x.f : '') + '" />' +
+        '</label>' +
+        '<label class="cfg-lbl">Nombre del festivo' +
+          '<input id="cfgf-nombre" type="text" maxlength="80" placeholder="Ej.: Día cívico (Decreto 123 de ' + y0 + ')" value="' + esc_(x ? x.n : '') + '" />' +
+          '<small class="cfg-ayuda mal" id="cfgf-error"></small>' +
+        '</label>' +
+        '<div class="cfg-modal-pie">' +
+          '<button type="button" id="cfgf-cerrar" class="kit-btn" data-salida>Cancelar</button>' +
+          '<button type="button" id="cfgf-listo" class="kit-btn kit-btn--marca">' + ICOS('check') + (x ? 'Aplicar cambio' : 'Agregar') + '</button>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(m);
+    function cerrar_() { if (m.parentNode) m.parentNode.removeChild(m); }
+    m.addEventListener('click', function (ev) { if (ev.target === m) cerrar_(); });
+    m.querySelector('#cfgf-cerrar').addEventListener('click', function () { sonido_('back'); cerrar_(); });
+    var err = m.querySelector('#cfgf-error');
+    m.querySelector('#cfgf-listo').addEventListener('click', function () {
+      var fecha = String(m.querySelector('#cfgf-fecha').value || '').trim();
+      var nombre = String(m.querySelector('#cfgf-nombre').value || '').replace(/\s+/g, ' ').trim();
+      var e = '';
+      if (!fIsoOk_(fecha)) e = 'Elige una fecha válida.';
+      else if (+fecha.slice(0, 4) < y0 || +fecha.slice(0, 4) > y1) e = 'La fecha debe ser de ' + y0 + ' o ' + y1 + '.';
+      else if (fDow_(fecha) === 0 || fDow_(fecha) === 6) e = 'Ese día es fin de semana: ya no cuenta como hábil.';
+      else if (ley[fecha] && b.quitar.indexOf(fecha) === -1) e = 'El ' + fLarga_(fecha) + ' ya es festivo de ley (' + ley[fecha] + ').';
+      else if (b.agregar.some(function (y) { return y.f === fecha && (!x || y.f !== x.f); })) e = 'El ' + fLarga_(fecha) + ' ya está en la lista.';
+      else if (nombre.length < 3) e = 'Escribe el nombre del festivo.';
+      if (e) { err.textContent = e; sonido_('error'); return; }
+      if (ley[fecha]) {
+        /* era de ley y estaba como "no aplica": vuelve a aplicar con su nombre de ley */
+        b.quitar = b.quitar.filter(function (y) { return y !== fecha; });
+        if (x) b.agregar = b.agregar.filter(function (y) { return y.f !== x.f; });
+      } else if (x) { x.f = fecha; x.n = nombre; }
+      else b.agregar.push({ f: fecha, n: nombre });
+      cerrar_();
+      pintarFestivos_();
+    });
+    setTimeout(function () { var n = m.querySelector('#cfgf-nombre'); if (n && x) n.focus(); }, 60);
+  }
+
+  function guardarFestivos_() {
+    var bt = el_('cfgf-guardar');
+    if (!bt || bt.disabled || FES.guardando) return;
+    FES.guardando = true; bt.disabled = true;
+    var b = fBorrador_();
+    var rid = 'fe' + Date.now().toString(36) + Math.random().toString(36).slice(2, 9);
+    var cuerpo = { uid: uid_(), v: FES.datos.v, agregar: b.agregar, quitar: b.quitar, rid: rid };
+    function una(n) {
+      return window.apiPost('festivosguardar', cuerpo).catch(function (e) {
+        /* reintento ÚNICO y solo ante falla de red o respuesta que no es JSON (404 de echo) */
+        var red = (e instanceof TypeError) || (e instanceof SyntaxError);
+        if (red && n < 1) return new Promise(function (r) { setTimeout(r, 1200); }).then(function () { return una(n + 1); });
+        throw e;
+      });
+    }
+    var t0 = Date.now();
+    var p = una(0);
+    var K = window.KIT, conPieza = false;
+    try { if (K && K.piezas && K.piezas.guardado) conPieza = !!(p = K.piezas.guardado.mientras(p, { titulo: 'Guardando los festivos', sub: 'Los días hábiles de toda la app, también los de ICA, los respetan desde ya.' })); } catch (_) {}
+    p.then(function (r) {
+      try { (window.__cfgMed = window.__cfgMed || []).push({ ruta: 'festivosguardar', ms: Date.now() - t0 }); } catch (_) {}
+      FES.guardando = false;
+      if (!r || !r.festivos) throw new Error('El servidor no devolvió los festivos.');
+      FES.datos = r.festivos;
+      FES.borrador = null;
+      /* parche en memoria: la app y ICA cuentan con la lista nueva sin recargar nada */
+      window.HAC_PUBLICO = window.HAC_PUBLICO || {};
+      window.HAC_PUBLICO.festivos = { v: r.festivos.v, agregar: (r.festivos.agregar || []).map(function (x) { return x.f; }), quitar: (r.festivos.quitar || []).slice() };
+      try { if (typeof window.hacFestOlvidar_ === 'function') window.hacFestOlvidar_(); } catch (_) {}
+      try { if (window.ICA && window.ICA.festivosCambiaron) window.ICA.festivosCambiaron(fRango_(r.festivos)); } catch (_) {}
+      pintarFestivos_();
+      if (r.conflicto) aviso_('info', 'Alguien guardó antes', 'Otra persona cambió los festivos mientras editabas. Se cargó su lista: revisa y vuelve a hacer tu cambio.');
+      else if (!conPieza) { sonido_('success'); Swal.fire({ icon: 'success', title: 'Festivos guardados', timer: 1400, showConfirmButton: false }); }
+    }, function (e) {
+      FES.guardando = false;
+      var b2 = el_('cfgf-guardar'); if (b2) b2.disabled = false;
+      aviso_('error', 'No se pudo guardar', (e && e.message) || String(e));
+    });
+  }
+
+  /* ============================================================
      ENGANCHE CON app.js / identidad.js
      ============================================================ */
   var procesarOriginal = window.procesarLoginExitoso_;
@@ -665,6 +899,7 @@
   /* API pública para las fases siguientes */
   window.CFG = {
     abrir: abrir_,
+    _fes: function () { return FES; },
     recargar: cargar_,
     _estado: function () { return estado; }
   };

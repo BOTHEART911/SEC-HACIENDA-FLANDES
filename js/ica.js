@@ -112,6 +112,8 @@
   /* ══════════════ red ══════════════ */
   function url() { return (window.HAC_PUBLICO && window.HAC_PUBLICO.icaUrl) || (window.MARCA && window.MARCA.ICA_URL) || ''; }
   function tk() { return window.HAC_SESION ? window.HAC_SESION.tk() : ''; }
+  /* 05/10 — versión de los festivos de HACIENDA: ICA la compara y, si es más nueva, se pone al día */
+  function fv() { var f = window.HAC_PUBLICO && window.HAC_PUBLICO.festivos; return (f && f.v) || ''; }
   function nuevoRid() { return 'ica' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10); }
   function error(codigo, msg) { var e = new Error(msg); e.codigo = codigo; return e; }
   function esperar(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
@@ -131,13 +133,13 @@
     function una(n) {
       var p;
       if (!op.post) {
-        var qs = '?action=' + encodeURIComponent(accion) + '&tk=' + encodeURIComponent(llave);
+        var qs = '?action=' + encodeURIComponent(accion) + '&tk=' + encodeURIComponent(llave) + (fv() ? '&fv=' + encodeURIComponent(fv()) : '');
         Object.keys(datos).forEach(function (k) { qs += '&' + k + '=' + encodeURIComponent(datos[k]); });
         p = fetch(u + qs, { signal: op.signal, cache: 'no-store' });
       } else {
         p = fetch(u + '?action=' + encodeURIComponent(accion), {
           method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify(Object.assign({ tk: llave, rid: op.rid || '' }, datos)), signal: op.signal
+          body: JSON.stringify(Object.assign({ tk: llave, rid: op.rid || '', fv: fv() }, datos)), signal: op.signal
         });
       }
       return p.then(function (r) { return r.text(); }).then(function (t) {
@@ -148,6 +150,7 @@
         try { window.__icaMed.push({ ruta: accion, ms: ms, kb: Math.round(t.length / 102.4) / 10, n: n }); if (window.__icaMed.length > 200) window.__icaMed.shift(); } catch (e) {}
         if (j.v && S.v && j.v !== S.v) S.versionNueva = true;
         if (j.v) S.v = j.v;
+        if (j.fe) { try { aplicarFestivos(j.fe); } catch (e) {} }
         if (!j.ok) {
           if (j.codigo === 'SESION_VENCIDA') { try { window.dispatchEvent(new CustomEvent('hac:sesionVencida', { detail: { mensaje: j.error } })); } catch (e) {} }
           throw error(j.codigo || 'ERROR', j.error || 'No se pudo completar.');
@@ -229,6 +232,23 @@
     S.cargando = p;
     p.then(function () { S.cargando = null; }, function () { S.cargando = null; });
     return p;
+  }
+  /** 05/10 — cambiaron los festivos: lista nueva y las filas con su vencimiento ajustado. */
+  function aplicarFestivos(fe) {
+    if (fe.festivos) { S.festivos = {}; fe.festivos.forEach(function (f) { S.festivos[f] = 1; }); }
+    if (fe.filas && fe.filas.length && S.lista) {
+      fe.filas.forEach(function (f) {
+        if (Array.isArray(f) && fe.campos) { var o = {}; fe.campos.forEach(function (c, i) { o[c] = f[i] == null ? '' : f[i]; }); parchar(o); }
+        else parchar(f);
+      });
+    }
+    if (activa() && S.lista) pintarTodo();
+  }
+  /** Lo llama Configuración → Festivos al guardar: la lista local al instante y el
+      servidor de ICA se pone al día en la próxima consulta de fondo. */
+  function festivosCambiaron(rango) {
+    if (Array.isArray(rango)) { S.festivos = {}; rango.forEach(function (f) { S.festivos[f] = 1; }); }
+    if (S.cargado) { S.novEn = 0; novedades(); }
   }
   function olvidar() { S.lista = null; S.porId = {}; S.cfg = null; S.cargado = false; S.sel = {}; }
   window.addEventListener('hac:sesionVencida', olvidar);
@@ -1353,7 +1373,7 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', enchufar); else enchufar();
 
   window.ICA = {
-    abrir: abrir, cargar: cargar, olvidar: olvidar, insight: insight, puede: puede,
+    abrir: abrir, cargar: cargar, olvidar: olvidar, insight: insight, puede: puede, festivosCambiaron: festivosCambiaron,
     _S: S, _seg: seg, _dv: dvNit, _nitOk: nitOk, _habiles: habilesHasta, _validar: validar, _identTxt: identTxt
   };
 }());
