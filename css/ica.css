@@ -219,3 +219,18 @@ div.ica-doc { cursor: default; }
 .acceso[data-ica-pronto] { opacity: .78; }
 .acceso__pronto { display: inline-block; margin-left: 6px; padding: 2px 7px; border-radius: 8px; font: 700 .64rem/1.3 var(--k-fuente); letter-spacing: .3px; text-transform: uppercase;
   background: rgba(var(--k-marca-rgb), .1); color: var(--k-marca); vertical-align: middle; }
+
+/* 05/10 — respuesta del contribuyente (texto del correo) */
+.ica-resps { display: flex; flex-direction: column; gap: 10px; }
+.ica-resp { border: 1px solid var(--k-linea); border-left: 4px solid var(--k-ok, #2e7d4f); border-radius: 12px; padding: 12px 14px; background: var(--k-ok-fondo); display: flex; flex-direction: column; gap: 6px; }
+.ica-resp--auto { border-left-color: var(--k-apagado); background: var(--k-papel); opacity: .85; }
+.ica-resp__cab { display: flex; gap: 10px; align-items: flex-start; color: var(--k-marca); }
+.ica-resp__cab div { display: flex; flex-direction: column; min-width: 0; }
+.ica-resp__cab b { color: var(--k-tinta); font-size: .9rem; }
+.ica-resp__cab small { color: var(--k-apagado); font-size: .76rem; overflow-wrap: anywhere; }
+.ica-resp__as { margin: 0; font-size: .82rem; color: var(--k-apagado); font-style: italic; overflow-wrap: anywhere; }
+.ica-resp__tx { white-space: pre-wrap; overflow-wrap: anywhere; font-size: .9rem; line-height: 1.5; color: var(--k-tinta); background: var(--k-papel); border-radius: 8px; padding: 10px 12px; max-height: 50vh; overflow: auto; }
+.ica-resp__nota { margin: 0; font-size: .74rem; color: var(--k-apagado); }
+.ica-resp__adj { margin: 0; display: flex; gap: 6px; align-items: center; font-size: .8rem; color: var(--k-tinta); }
+.ica-resp__acc { display: flex; flex-wrap: wrap; gap: 8px; }
+.ica-btn--resp { color: var(--k-ok, #2e7d4f) !important; }

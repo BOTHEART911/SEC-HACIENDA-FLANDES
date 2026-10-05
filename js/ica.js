@@ -43,7 +43,8 @@
 
   var S = {
     lista: null, porId: {}, cfg: null, festivos: {}, hoy: '', cargado: false, cargando: null,
-    et: 'ALL', seg: 'ALL', q: '', sel: {}, mostrar: 60, ctrl: null, tkCarga: '', v: ''
+    et: 'ALL', seg: 'ALL', q: '', sel: {}, mostrar: 60, ctrl: null, tkCarga: '', v: '',
+    fichas: {}   /* 05/10 — ficha por id, válida mientras no cambie la fila (r.act) */
   };
   window.__icaMed = window.__icaMed || [];
 
@@ -460,6 +461,7 @@
     var vig = String(r.vig || '').split(/,\s*/).filter(String).map(function (y) { return '<span class="ica-anio">' + esc(y) + '</span>'; }).join('');
     var acc = '';
     acc += btn('ver', 'ojo', 'Ver detalle');
+    if (respondio(r)) acc += btn('respuesta', 'bandeja-entrada', 'Leer la respuesta del contribuyente', 'ica-btn--resp');
     acc += btn('editar', 'lapiz', 'Editar datos');
     if (insistible(r)) acc += btn('insistir', 'megafono', 'Enviar 2.º requerimiento', 'ica-btn--alerta');
     else acc += btn('enviar', 'enviar', r.env ? 'Reenviar requerimiento' : 'Enviar requerimiento', enviable(r) ? 'bdp-icon-btn--marca' : '', !(enviable(r) || (r.env && !r.resp)));
@@ -492,6 +494,7 @@
     var a = b.getAttribute('data-a');
     sonar('menu');
     if (a === 'ver') abrirFicha(r);
+    else if (a === 'respuesta') abrirRespuesta(r);
     else if (a === 'editar') abrirForm(r);
     else if (a === 'enviar') enviarUno(r, 'req');
     else if (a === 'insistir') enviarUno(r, 'ins');
@@ -785,6 +788,7 @@
             (r.resp ? dt('Respondió', fLarga(r.resp)) : '') +
             dt('Creado', (r.cre || '') + (r.crep ? ' · ' + titulo(r.crep) : '')) +
           '</dl>' +
+          (respondio(r) ? '<h3 class="ica-h3">' + ico('bandeja-entrada', 18) + ' Respuesta del contribuyente</h3><div class="ica-resps" data-resps><div class="ica-cargando">Cargando el texto del correo…</div></div>' : '') +
           '<h3 class="ica-h3">' + ico('clip', 18) + ' Evidencias y documentos</h3><div class="ica-evid" data-evid><div class="ica-cargando">Cargando…</div></div>' +
           '<h3 class="ica-h3">' + ico('enviar', 18) + ' Envíos</h3><div class="ica-envios" data-envios><div class="ica-cargando">Cargando…</div></div>' +
           '<h3 class="ica-h3">' + ico('libro', 18) + ' Bitácora</h3>' +
@@ -822,12 +826,14 @@
         return '<div class="ica-bit__it"><div class="ica-bit__cab"><b>' + esc(titulo(a.autor || 'Sin autor')) + '</b><span>' + esc(a.fecha) + '</span></div><p>' + esc(a.texto) + '</p></div>';
       }).join('') : '<p class="ica-nada">Sin anotaciones.</p>';
     }
-    llamar('ficha', { id: r.id, archivos: 1 }, { signal: ctrl && ctrl.signal }).then(function (d) {
+    traerFicha(r, true, ctrl && ctrl.signal).then(function (d) {
       if (!document.body.contains(m)) return;
       var ev = d.evidencias || [];
       var archivos = d.archivos || ev.map(function (e) { return { id: e.id, n: e.n, m: e.m, f: e.f, t: e.t }; });
+      var cr = m.q('[data-resps]');
+      if (cr) pintarRespuestas(cr, d, r, archivos);
       m.q('[data-evid]').innerHTML = ev.length ? ev.map(function (e) {
-        var tipo = e.t === 'doc' ? 'Documento enviado' : (e.t === 'resp' ? 'Respuesta del contribuyente' : 'Evidencia');
+        var tipo = e.t === 'doc' ? 'Documento enviado' : (e.t === 'resp' ? (e.c ? 'Texto del correo de respuesta' : 'Respuesta del contribuyente') : 'Evidencia');
         return '<button type="button" class="ica-doc ica-doc--' + e.t + '" data-abrir="' + esc(e.id) + '" data-nombre="' + esc(e.n) + '" data-mime="' + esc(e.m) + '">' +
           ico(/pdf/.test(e.m) ? 'pdf' : (/image/.test(e.m) ? 'imagen' : 'documento'), 22) +
           '<span><b>' + esc(e.n) + '</b><small>' + esc(tipo) + ' · ' + esc(e.f || '') + (e.por ? ' · ' + esc(titulo(e.por)) : '') + '</small></span></button>';
@@ -845,9 +851,93 @@
       });
     }, function (e) {
       if (cancelada(e)) return;
-      ['[data-evid]', '[data-envios]', '[data-bitlista]'].forEach(function (s) { var x = m.q(s); if (x) x.innerHTML = '<p class="ica-err">' + esc(e.message) + '</p>'; });
+      ['[data-resps]', '[data-evid]', '[data-envios]', '[data-bitlista]'].forEach(function (s) { var x = m.q(s); if (x) x.innerHTML = '<p class="ica-err">' + esc(e.message) + '</p>'; });
     });
     function dt(a, b) { return '<div><dt>' + esc(a) + '</dt><dd>' + esc(b || '—') + '</dd></div>'; }
+  }
+  /* ══════════════ respuesta del contribuyente (05/10) ══════════════
+     El texto del correo viaja en la ficha (columna RESPUESTAS del backend):
+     se lee sin abrir Drive. El documento con el mismo texto queda en el
+     expediente y se abre en el visor. La ficha se recuerda por id mientras
+     la fila no cambie (r.act), así abrir de nuevo no viaja. */
+  function respondio(r) { return !!(r && (Number(r.nresp) > 0 || r.resp)); }
+  function traerFicha(r, conArchivos, signal) {
+    var k = r.id, c = S.fichas[k];
+    if (c && c.act === r.act && (c.archivos || !conArchivos)) return Promise.resolve(c.d);
+    return llamar('ficha', conArchivos ? { id: r.id, archivos: 1 } : { id: r.id }, { signal: signal }).then(function (d) {
+      S.fichas[k] = { act: r.act, archivos: !!conArchivos, d: d };
+      return d;
+    });
+  }
+  function pintarRespuestas(cont, d, r, archivos) {
+    var l = d.respuestas;
+    if (!Array.isArray(l)) {
+      /* servidor anterior (aún sin la columna): se dice dónde está, sin error */
+      cont.innerHTML = '<p class="ica-nada">El texto del correo se verá aquí cuando se publique la nueva versión del servidor. Los adjuntos están en Evidencias.</p>';
+      return;
+    }
+    l = l.slice().reverse();
+    cont.innerHTML = l.length ? l.map(function (x, i) {
+      return '<article class="ica-resp' + (x.a ? ' ica-resp--auto' : '') + '">' +
+        '<header class="ica-resp__cab">' + ico(x.a ? 'reloj' : 'bandeja-entrada', 18) + '<div><b>' +
+          esc(x.a ? 'Respuesta automática (no cuenta como respuesta)' : (l.length > 1 ? 'Respuesta ' + (l.length - i) : 'Respuesta del contribuyente')) +
+          '</b><small>' + esc(fHora(x.f)) + (x.de ? ' · ' + esc(x.de) : '') + '</small></div></header>' +
+        (x.as ? '<p class="ica-resp__as">' + esc(x.as) + '</p>' : '') +
+        '<div class="ica-resp__tx">' + (x.tx ? esc(x.tx) : '<i>El correo no traía texto.</i>') + '</div>' +
+        (x.cit ? '<p class="ica-resp__nota">Se omitió el texto citado del requerimiento.</p>' : '') +
+        (x.adj && x.adj.length ? '<p class="ica-resp__adj">' + ico('clip', 14) + '<span>' + esc(x.adj.join(' · ')) + '</span></p>' : '') +
+        '<div class="ica-resp__acc">' +
+          (x.doc ? '<button type="button" class="kit-btn" data-verdoc="' + esc(x.doc) + '">' + ico('expediente') + ' Ver en el expediente</button>' : '') +
+          (x.tx ? '<button type="button" class="kit-btn" data-copiar="' + i + '">' + ico('copiar') + ' Copiar texto</button>' : '') +
+        '</div></article>';
+    }).join('') : '<p class="ica-nada">Respondió, pero el correo no traía texto. Revisa los adjuntos en Evidencias.</p>';
+    cont.onclick = function (e) {
+      var b = e.target.closest('button'); if (!b) return;
+      if (b.hasAttribute('data-verdoc')) { abrirVisor(r, archivos, b.getAttribute('data-verdoc')); return; }
+      if (b.hasAttribute('data-copiar')) {
+        var t = (l[Number(b.getAttribute('data-copiar'))] || {}).tx || '';
+        copiar(t).then(function () { sonar('success'); aviso('Texto copiado.', 'ok'); }, function () { aviso('No se pudo copiar.', 'aviso'); });
+      }
+    };
+  }
+  function copiar(t) {
+    if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(t);
+    return new Promise(function (ok, mal) {
+      try { var ta = document.createElement('textarea'); ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select();
+        var b = document.execCommand('copy'); ta.remove(); if (b) ok(); else mal(); } catch (e) { mal(e); }
+    });
+  }
+  /** "2026-10-05 14:20" → "5 oct 2026, 2:20 p. m." */
+  function fHora(s) {
+    var m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})(?:\s+(\d{2}):(\d{2}))?/);
+    if (!m) return s || '';
+    var M = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+    var t = (+m[3]) + ' ' + M[+m[2] - 1] + ' ' + m[1];
+    if (m[4]) { var h = +m[4]; t += ', ' + ((h % 12) || 12) + ':' + m[5] + (h < 12 ? ' a. m.' : ' p. m.'); }
+    return t;
+  }
+  /** Botón de la tarjeta: cabecera al instante, el texto llega de la ficha (o de la memoria si ya se abrió). */
+  function abrirRespuesta(r) {
+    var m = modal({
+      titulo: 'Respuesta de ' + r.nom, icono: 'bandeja-entrada', ancha: true,
+      cuerpo: '<div class="ica-ficha">' +
+        '<div class="ica-ficha__cab"><span class="ica-of">Oficio ' + esc(r.of) + '</span>' +
+          (r.resp ? '<span class="ica-seg ica-seg--RESP">Respondió el ' + esc(fLarga(r.resp)) + '</span>' : '') + '</div>' +
+        '<div class="ica-resps" data-resps><div class="ica-cargando">Cargando el texto del correo…</div></div></div>',
+      pie: '<button type="button" class="kit-btn" data-detalle>' + ico('ojo') + ' Ver detalle completo</button>'
+    });
+    var ctrl = (typeof AbortController === 'function') ? new AbortController() : null;
+    var cerrarOrig = m.cerrar;
+    m.cerrar = function () { try { ctrl && ctrl.abort(); } catch (e) {} cerrarOrig(); };
+    m.q('[data-detalle]').addEventListener('click', function () { m.cerrar(); abrirFicha(r); });
+    traerFicha(r, false, ctrl && ctrl.signal).then(function (d) {
+      if (!document.body.contains(m)) return;
+      var archivos = d.archivos || (d.evidencias || []).map(function (e) { return { id: e.id, n: e.n, m: e.m, f: e.f, t: e.t }; });
+      pintarRespuestas(m.q('[data-resps]'), d, r, archivos);
+    }, function (e) {
+      if (cancelada(e)) return;
+      var x = m.q('[data-resps]'); if (x) x.innerHTML = '<p class="ica-err">' + esc(e.message) + '</p>';
+    });
   }
   function leerBit(texto) {
     if (window.BITACORA && typeof window.BITACORA.anotaciones === 'function') return window.BITACORA.anotaciones(texto || '');
