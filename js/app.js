@@ -93,7 +93,8 @@ function listaDeEsteUsuario_(lista){
 /* Lo llama en-vivo.js después de cada guardado propio. */
 function hacOlvidarListas_(col, accion, res){
   if (col === 'solicitudes') { __atencionesChatCache = []; __atencionesPresCache = []; }
-  if (col === 'procesos' && !(res && Array.isArray(res.lista))) __procListCache = [];
+  /* procarchivo devuelve la fila y ya se parchó en memoria: no se olvida la lista */
+  if (col === 'procesos' && !(res && (Array.isArray(res.lista) || (accion === 'procarchivo' && res.fila)))) __procListCache = [];
   if (col === 'predial' && !(res && res.fila) && accion !== 'eliminarpredial') {
     /* sin fila de vuelta no se sabe cómo quedó: se vuelve a pedir al entrar */
     try { Object.defineProperty(__bdpListCache, '__uid', { value: '', writable: true, configurable: true }); }catch(_){}
@@ -131,6 +132,96 @@ function verLista_(items, indice, op){
   const it = items[indice || 0];
   if (it) window.open(it.url, '_blank', 'noopener');
   return true;
+}
+
+/* 04/10 — DOCUMENTOS DE LA ASIGNACIÓN (como Industria y Comercio): todos en
+   el visor único, el RECIBIDO siempre primero, y AGREGAR suma uno más desde
+   el visor hasta 5 (PDF o Word, privados). El backend ocupa la casilla libre
+   (X, Y, Z y luego U, V) y devuelve la fila: se parcha en memoria, sin
+   recargar la lista. */
+const PROC_MAX_DOCS_ = 5;
+const PROC_CASILLAS_ = [
+  ['recibido1', 'Recibido', 'in'], ['recibido2', 'Recibido 2', 'in'], ['recibido3', 'Recibido 3', 'in'],
+  ['respuesta1', 'Respuesta 1', 'out'], ['respuesta2', 'Respuesta 2', 'out'], ['respuesta3', 'Respuesta 3', 'out']
+];
+function docsAsignacion_(row){
+  return PROC_CASILLAS_.filter(c => String(row[c[0]] || '').trim())
+    .map(c => ({ url: String(row[c[0]]).trim(), titulo: c[1], detalle: c[2] === 'in' ? 'Recibido' : 'Respuesta', _tipo: c[2] }));
+}
+function puedeAgregarDocAsig_(row){
+  const estado = String(row.estado || '').toUpperCase();
+  const yo = normalizeText_(currentUser?.nombre || '');
+  const esCoord = yo === normalizeText_(row.coordinador || '');
+  const esAsig = yo === normalizeText_(row.asignado || '') || yo === normalizeText_(row.asistente || '');
+  return !!(currentUser?.isSuper || esCoord || (esAsig && estado !== 'FINALIZADO'));
+}
+function pintarDocsAsignacion_(row, filesWrap){
+  if (!filesWrap) return;
+  filesWrap.innerHTML = '';
+  const docs = docsAsignacion_(row);
+  docs.forEach((d, pos) => {
+    const item = document.createElement('div');
+    item.className = 'proc-file-item';
+    item.title = d.titulo;
+    item.innerHTML = `<img src="${d._tipo === 'in' ? ICONO_INBOX : ICONO_OUTBOX}" alt="${d.titulo}" />
+      <span class="proc-file-label">${d.titulo}</span>`;
+    item.addEventListener('click', () => abrirDocsAsignacion_(row, pos));
+    filesWrap.appendChild(item);
+  });
+}
+function abrirDocsAsignacion_(row, pos){
+  const docs = docsAsignacion_(row);
+  const puede = puedeAgregarDocAsig_(row) && !!String(row.recibido1 || '').trim();
+  const op = {};
+  if (puede && docs.length < PROC_MAX_DOCS_) {
+    op.agregarTexto = 'Agregar';
+    op.agregarAyuda = 'Agregar un documento a esta asignación (PDF o Word, máx. ' + PROC_MAX_DOCS_ + ')';
+    op.agregar = (_d, api) => agregarDocAsignacion_(row, api);
+  }
+  return verLista_(docs, pos || 0, op);
+}
+let __procAgregando = false;
+function agregarDocAsignacion_(row, api){
+  const K = window.KIT || {};
+  const avisa = (t, tipo, ms) => { try { if (K.aviso) return K.aviso(t, tipo, ms); } catch(_){} };
+  if (__procAgregando) return;                                   /* escudo: nada de doble envío */
+  if (docsAsignacion_(row).length >= PROC_MAX_DOCS_) { avisa('La asignación ya tiene ' + PROC_MAX_DOCS_ + ' documentos.', 'aviso', 4000); return; }
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.hidden = true;
+  inp.accept = '.pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+  document.body.appendChild(inp);
+  inp.addEventListener('change', async () => {
+    const file = (inp.files || [])[0]; inp.remove();
+    if (!file) return;
+    if (!/\.(pdf|docx?)$/i.test(file.name || '')) { avisa('Solo se pueden agregar PDF o Word.', 'aviso', 4000); return; }
+    if (file.size > 20 * 1024 * 1024) { avisa(file.name + ': pasa de 20 MB.', 'aviso', 4000); return; }
+    const btn = document.querySelector('.kit-visor [data-a="agregar"]');
+    __procAgregando = true;
+    if (btn) { btn.disabled = true; btn.classList.add('kit-ocupado'); }
+    const rid = 'pa-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+    try {
+      avisa('Subiendo ' + file.name + '…', 'info', 2500);
+      const base64 = await fileToBase64_(file);
+      const res = await apiPost('procarchivo', { uid: uidActual_(), rid: rid, id_proceso: row.id_proceso, rowIndex: row.rowIndex,
+        archivo: { filename: file.name, base64: base64 } });
+      if (res && res.fila) Object.assign(row, res.fila);
+      const cache = Array.isArray(__procListCache) ? __procListCache.find(r => r !== row && r.id_proceso === row.id_proceso) : null;
+      if (cache && res && res.fila) Object.assign(cache, res.fila);
+      const casilla = PROC_CASILLAS_.find(c => String(row[c[0]] || '').trim() === String(res.url || ''));
+      api.sumar({ id: res.id, url: res.url, titulo: casilla ? casilla[1] : (res.nombre || 'Documento'), detalle: 'Agregado ahora' }, true);
+      pintarDocsAsignacion_(row, document.getElementById('proc-ver-files'));
+      try { playSoundOnce(SOUNDS.success); } catch(_){}
+      avisa('Documento agregado.', 'ok', 2500);
+      if (docsAsignacion_(row).length >= PROC_MAX_DOCS_ && btn) btn.classList.add('kit-oculto');
+    } catch (e) {
+      avisa(e.message || 'No se pudo agregar el documento.', 'aviso', 6000);
+      try { playSoundOnce(SOUNDS.error); } catch(_){}
+    } finally {
+      __procAgregando = false;
+      if (btn) { btn.disabled = false; btn.classList.remove('kit-ocupado'); }
+    }
+  }, { once: true });
+  inp.click();
 }
 
 /* 04/10 — miniatura de una evidencia de Drive: si ya no es pública (las nuevas
@@ -3676,27 +3767,7 @@ if (creacionEl) {
   /* 04/10 — VISOR ÚNICO: todos los documentos de la asignación (recibidos y
      respuestas) van juntos en el visor, con anterior/siguiente; se abre en
      el que se tocó. */
-  const docsFila_ = [];
-  const addFileIcon_ = (urls, srcIcon, label) => {
-    const validUrls = urls.filter(Boolean);
-    if (!validUrls.length) return;
-    validUrls.forEach((url, idx) => {
-      if (!url) return;
-      const item = document.createElement('div');
-      item.className = 'proc-file-item';
-      item.title = `${label} ${idx + 1}`;
-      item.innerHTML = `
-        <img src="${srcIcon}" alt="${label}" />
-        ${validUrls.length > 1 ? `<span class="proc-file-counter">${idx + 1}</span>` : ''}
-        <span class="proc-file-label">${label} ${idx + 1}</span>`;
-      const pos = docsFila_.length;
-      docsFila_.push({ url: url, titulo: `${label} ${idx + 1}` });
-      item.addEventListener('click', () => verLista_(docsFila_, pos));
-      filesWrap.appendChild(item);
-    });
-  };
-  addFileIcon_([row.recibido1, row.recibido2, row.recibido3],     ICONO_INBOX,  'Recibido');
-  addFileIcon_([row.respuesta1, row.respuesta2, row.respuesta3],  ICONO_OUTBOX, 'Respuesta');
+  pintarDocsAsignacion_(row, filesWrap);
 
    // Botones acción
   const actionsWrap = document.getElementById('proc-ver-actions');

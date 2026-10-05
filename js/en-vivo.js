@@ -95,7 +95,7 @@
     marcarrespuesta: 'solicitudes', dardebajasolicitud: 'solicitudes',
 
     agregarproceso: 'procesos', editarproceso: 'procesos',
-    eliminarproceso: 'procesos', rebotarproceso: 'procesos',
+    eliminarproceso: 'procesos', rebotarproceso: 'procesos', procarchivo: 'procesos',
     /* 17/09 — SOLICITUD EXPEDIENTE (js/solicitud-exp.js) */
     solicitudexpproceso: 'procesos', solicitudexppredial: 'predial',
 
