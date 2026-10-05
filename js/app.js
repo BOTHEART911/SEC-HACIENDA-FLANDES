@@ -604,23 +604,7 @@ function renderDriveGrid_(list){
       window.open(url, '_blank', 'noopener');
     });
 
-    /* Ver los documentos sin salir de la app (visor único, 04/10). */
-    const btnVer = document.createElement('button');
-    btnVer.type = 'button';
-    btnVer.className = 'btn-icon';
-    btnVer.setAttribute('aria-label','Ver documentos de la carpeta');
-    btnVer.title = 'Ver documentos aquí';
-    btnVer.innerHTML = ICO_('ojo', 22);
-    btnVer.addEventListener('click', ()=>{
-      playSoundOnce(SOUNDS.info);
-      const link = String(row.enlace || '').trim();
-      if(!link){ Swal.fire({ icon:'info', title:'Sin carpeta', text:'Este registro no tiene enlace de carpeta.' }); return; }
-      if (window.VISOR && typeof window.VISOR.carpeta === 'function') window.VISOR.carpeta(link, {});
-      else window.open(link, '_blank', 'noopener');
-    });
-
     iconRow.appendChild(btnEdit);
-    iconRow.appendChild(btnVer);
     iconRow.appendChild(btnDrive);
 
     card.appendChild(nameEl);
