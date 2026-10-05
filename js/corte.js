@@ -38,10 +38,10 @@
     listsolicitudes: 1, listatenciones: 1, listprocesos: 1, listpredial: 1,
     getpredial: 1, getpredialbloque: 1, getsolicitudbyid: 1, listdriverows: 1,
     listmisexpedientes: 1, buscarmisexpedientes: 1, buscarcontacto: 1,
-    vozestado: 1, descargaopciones: 1
+    vozestado: 1, descargaopciones: 1, bitpendientes: 1
   };
   /* Segundo plano: detrás de lo de primer plano. */
-  var FONDO = { getpredialbloque: 1, vozestado: 1 };
+  var FONDO = { getpredialbloque: 1, vozestado: 1, bitpendientes: 1 };
   /* Detalles que se recuerdan un rato. */
   var MEMO = { getpredial: 1, getsolicitudbyid: 1, listmisexpedientes: 1 };
 

@@ -49,6 +49,7 @@ var APP_SHELL = [
   './css/asignador.css',
   './js/asistente.js',
   './js/bitacora.js',
+  './js/bitacora-abierta.js',
   './css/bitacora.css',
   './js/adjuntos.js',
   './js/bdp-rapido.js',

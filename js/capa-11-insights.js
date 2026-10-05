@@ -532,6 +532,7 @@
         { id: 'etapa',     et: 'Etapa jurídica',     ic: '⚖️' },
         { id: 'evidencia', et: 'Sin evidencia',      ic: '📎' },
         { id: 'mias',      et: 'Las mías',           ic: '🙋' },
+        { id: 'bitrev',    et: 'Bitácoras por revisar', ic: '🗒️' },
         { id: 'misbit',    et: 'Mis bitácoras',      ic: '🗒️' },
         { id: 'bitfrias',  et: 'Sin anotación mía',  ic: '🥶' },
         { id: 'medio',     et: 'Por medio',          ic: '📮' },
@@ -557,6 +558,7 @@
         { id: 'correo',    et: 'Sin correo',         ic: '📧' },
         { id: 'aldia',     et: 'Al día y sin deuda', ic: '🟢' },
         { id: 'mias',      et: 'Las mías',           ic: '🙋' },
+        { id: 'bitrev',    et: 'Bitácoras por revisar', ic: '🗒️' },
         { id: 'misbit',    et: 'Mis bitácoras',      ic: '🗒️' },
         { id: 'bitfrias',  et: 'Sin anotación mía',  ic: '🥶' }
       ]
@@ -608,6 +610,13 @@
 
   /* Un informe = una función pura sobre la lista de la vista. */
   function informe(vista, id) {
+    /* 05/10 — BITÁCORA ABIERTA (js/bitacora-abierta.js): sobre la lista
+       COMPLETA de la vista, no sobre lo filtrado en pantalla. */
+    if (id === 'bitrev' && (vista === 'view-asignaciones' || vista === 'view-bd-predial')) {
+      if (!window.BITAB) return rep('Bitácoras por revisar', 'El módulo aún no cargó. Recarga la app.', '');
+      var bi = window.BITAB.insight(vista);
+      return rep(bi.titulo, bi.texto, bi.voz);
+    }
     switch (vista) {
       case 'view-lista':        return repSol(id, solicitudes(), modoLista());
       case 'view-atenciones':   return repAtn(id, atenciones());

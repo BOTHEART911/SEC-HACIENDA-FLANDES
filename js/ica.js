@@ -336,8 +336,11 @@
 
   function salir() {
     try { if (window.VISOR && window.VISOR.abierto && window.VISOR.abierto()) window.VISOR.cerrar(); } catch (e) {}
-    document.querySelectorAll('.ica-modal').forEach(function (m) { if (!m.__ocupado && m.cerrar) m.cerrar(); });
-    if (typeof window.showView === 'function') window.showView('view-inicio');
+    var abiertos = Array.prototype.filter.call(document.querySelectorAll('.ica-modal'), function (m) { return m.cerrar; });
+    if (abiertos.some(function (m) { return m.__ocupado; })) return;
+    /* uno por uno: si alguno tiene datos sin guardar pregunta y, si dicen que no, no se sale */
+    abiertos.reverse().reduce(function (p, m) { return p.then(function (ok) { return ok ? m.cerrar() : false; }); }, Promise.resolve(true))
+      .then(function (ok) { if (ok && typeof window.showView === 'function') window.showView('view-inicio'); });
   }
   function abrir() {
     if (!puede()) { aviso('No tienes acceso a Industria y Comercio.', 'aviso'); return; }
@@ -561,10 +564,31 @@
       '<div class="ica-modal__cuerpo">' + (op.cuerpo || '') + '</div>' +
       (op.pie != null ? '<div class="hf-modal__pie">' + op.pie + '</div>' : '') + '</div>';
     document.body.appendChild(m);
-    var cerrar = function () { if (m.__ocupado) return; m.remove(); document.removeEventListener('keydown', tecla); if (op.alCerrar) op.alCerrar(); };
-    var tecla = function (e) { if (e.key === 'Escape') cerrar(); };
+    /* 05/10 — los modales donde se escribe (op.fijo) se cierran SOLO con la X
+       o con Cancelar; si hay datos escritos (op.sucio) se pregunta antes de
+       descartar. Los demás se cierran tocando el fondo solo si el toque
+       EMPIEZA y TERMINA en el fondo (antes, arrastrar desde un campo hasta
+       afuera disparaba el clic en el fondo y cerraba el modal). */
+    var quitar = function () { m.remove(); document.removeEventListener('keydown', tecla); if (op.alCerrar) op.alCerrar(); };
+    var cerrar = function (forzar) {
+      if (m.__ocupado) return Promise.resolve(false);
+      if (forzar !== true && op.sucio && m.__preguntando) return Promise.resolve(false);
+      if (forzar !== true && op.sucio && op.sucio()) {
+        m.__preguntando = true;
+        return confirmar('¿Descartar los datos?', '<p>Escribiste datos en este formulario que aún no se han guardado. Si cierras, se pierden.</p>', 'Sí, descartar')
+          .then(function (ok) { m.__preguntando = false; if (ok) quitar(); return ok; });
+      }
+      quitar(); return Promise.resolve(true);
+    };
+    var tecla = function (e) { if (e.key === 'Escape' && !op.fijo && document.body.lastElementChild === m) cerrar(); };
     document.addEventListener('keydown', tecla);
-    m.addEventListener('click', function (e) { if (e.target === m || e.target.closest('[data-cerrar]')) cerrar(); });
+    var bajoEnFondo = false;
+    m.addEventListener('pointerdown', function (e) { bajoEnFondo = (e.target === m); });
+    m.addEventListener('click', function (e) {
+      if (e.target.closest('[data-cerrar]')) { cerrar(); return; }
+      if (e.target === m && bajoEnFondo && !op.fijo) cerrar();
+      bajoEnFondo = false;
+    });
     m.cerrar = cerrar;
     m.q = function (s) { return m.querySelector(s); };
     try { if (window.KIT && K.piezas && K.piezas.iconos) {} } catch (e) {}
@@ -595,7 +619,8 @@
     var d = r ? Object.assign({}, r) : { nat: 'NATURAL', dep: 'TOLIMA', mun: 'FLANDES', vig: '', pl: (S.cfg && S.cfg.plazo) || 15, ipl: (S.cfg && S.cfg.insDias) || 15, un: (S.cfg && S.cfg.unidad) || 'HABILES' };
     var anios = []; for (var y = ANIO0; y <= anioActual(); y++) anios.push(y);
     var vigSel = {}; String(d.vig || '').split(/[,\s]+/).forEach(function (x) { if (x) vigSel[x] = 1; });
-    var m = modal({
+    var opForm = {
+      fijo: true,
       titulo: nuevo ? 'Agregar contribuyente' : 'Editar · Oficio ' + d.of, icono: nuevo ? 'mas' : 'lapiz', ancha: true,
       cuerpo:
         '<form class="ica-form" autocomplete="off" novalidate>' +
@@ -626,8 +651,16 @@
         '<p class="ica-err" data-err hidden></p>' +
         '</form>',
       pie: '<button type="button" class="kit-btn" data-cerrar>Cancelar</button><button type="button" class="kit-btn kit-btn--marca" data-guardar>' + ico('check') + (nuevo ? ' Guardar' : ' Guardar cambios') + '</button>'
-    });
+    };
+    var m = modal(opForm);
     var f = m.q('form');
+    /* foto del formulario: si cambia, Cancelar/X preguntan antes de descartar */
+    function fotoForm() {
+      return [nat].concat(Array.prototype.map.call(f.querySelectorAll('input,select'), function (x) { return x.name + '=' + x.value; }),
+        Array.prototype.map.call(m.querySelectorAll('.ica-anio-btn.on'), function (b) { return b.getAttribute('data-anio'); })).join('|');
+    }
+    var fotoInicial = null;
+    opForm.sucio = function () { return fotoInicial !== null && fotoForm() !== fotoInicial; };
     var nat = d.nat === 'JURIDICA' ? 'JURIDICA' : 'NATURAL';
     function ponerNat(v) {
       nat = v;
@@ -652,6 +685,7 @@
       b.classList.toggle('on');
     });
     ponerNat(nat);
+    fotoInicial = fotoForm();
     setTimeout(function () { try { f.of.focus(); } catch (e) {} }, 60);
 
     m.q('[data-guardar]').addEventListener('click', function () {
@@ -680,7 +714,7 @@
           var p = nuevo ? llamar('crear', { datos: datos }, { post: true, rid: rid }) : llamar('editar', { id: r.id, datos: datos }, { post: true, rid: rid });
           guardando(p, nuevo ? 'Guardando contribuyente' : 'Guardando cambios').then(function (res) {
             var fila = nuevo ? res.filas[0] : res.fila;
-            parchar(fila); ocupado(m, btn, false); m.cerrar();
+            parchar(fila); ocupado(m, btn, false); m.cerrar(true);
             sonar('success'); aviso(nuevo ? 'Contribuyente agregado.' : 'Cambios guardados.', 'ok');
             if (activa()) pintarTodo();
           }, function (e) {
@@ -969,6 +1003,7 @@
   /* ══════════════ evidencias ══════════════ */
   function abrirEvidencias(r) {
     var m = modal({
+      fijo: true,
       titulo: 'Evidencias · Oficio ' + r.of, icono: 'clip',
       cuerpo: '<p class="hf-modal__p">' + esc(r.nom) + '. Máximo 5 evidencias tuyas (los documentos enviados no cuentan). Cualquier tipo de archivo, hasta 20 MB.</p>' +
         '<div class="ica-drop" tabindex="0" data-drop>' + ico('subir', 30) + '<b>Arrastra aquí los archivos</b><span>o toca para elegirlos · si es una imagen, también puedes pegarla con Ctrl + V</span>' +
@@ -1087,6 +1122,7 @@
   }
   function abrirMasiva() {
     var m = modal({
+      fijo: true,
       titulo: 'Carga masiva', icono: 'excel', ancha: true,
       cuerpo: '<ol class="ica-pasos"><li><b>Descarga la plantilla</b> y llénala: una fila por contribuyente. Trae listas para naturaleza, departamento y municipio.</li>' +
         '<li><b>Súbela aquí.</b> La app revisa cada fila antes de guardar y te muestra cuáles tienen errores.</li></ol>' +
@@ -1260,6 +1296,7 @@
     if (!c) { aviso('Espera a que cargue la vista.', 'info'); return; }
     var porG = {}; c.campos.forEach(function (x) { (porG[x.g] = porG[x.g] || []).push(x); });
     var m = modal({
+      fijo: true,
       titulo: 'Configuración · Requerimientos', icono: 'engranaje', ancha: true,
       cuerpo: '<div class="ica-cfg-plant">' +
           '<button type="button" class="kit-btn" data-plant="' + esc(c.plantillaReq || '') + '"' + (c.plantillaReq ? '' : ' disabled') + '>' + ico('documento') + ' Ir a plantilla del requerimiento</button>' +

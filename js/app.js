@@ -584,8 +584,8 @@ function renderDriveGrid_(list){
     const btnDrive = document.createElement('button');
     btnDrive.type = 'button';
     btnDrive.className = 'btn-icon';
-    btnDrive.setAttribute('aria-label','Abrir carpeta Drive');
-    btnDrive.title = 'Abrir carpeta Drive';
+    btnDrive.setAttribute('aria-label','Ir a la carpeta en Google Drive');
+    btnDrive.title = 'Ir a la carpeta en Drive (cargar anexos)';
     btnDrive.innerHTML = '<img src="' + DRIVE_ICON_DRIVE + '" alt="Drive">';
     btnDrive.addEventListener('click', ()=>{
       playSoundOnce(SOUNDS.info);
@@ -594,12 +594,33 @@ function renderDriveGrid_(list){
         Swal.fire({ icon:'info', title:'Sin carpeta', text:'Este registro no tiene enlace de carpeta.' });
         return;
       }
-      /* 04/10 — los documentos de la carpeta en el visor único (bytes del backend) */
+      /* 05/10 — vuelve a ir a la CARPETA en Drive: el funcionario carga ahí
+         sus anexos con su propio correo (la carpeta está compartida con él).
+         authuser escoge esa cuenta si el navegador tiene varias abiertas. */
+      let url = link;
+      if (correo && /drive\.google\.com/.test(url) && !/[?&]authuser=/.test(url)) {
+        url += (url.indexOf('?') >= 0 ? '&' : '?') + 'authuser=' + encodeURIComponent(correo);
+      }
+      window.open(url, '_blank', 'noopener');
+    });
+
+    /* Ver los documentos sin salir de la app (visor único, 04/10). */
+    const btnVer = document.createElement('button');
+    btnVer.type = 'button';
+    btnVer.className = 'btn-icon';
+    btnVer.setAttribute('aria-label','Ver documentos de la carpeta');
+    btnVer.title = 'Ver documentos aquí';
+    btnVer.innerHTML = ICO_('ojo', 22);
+    btnVer.addEventListener('click', ()=>{
+      playSoundOnce(SOUNDS.info);
+      const link = String(row.enlace || '').trim();
+      if(!link){ Swal.fire({ icon:'info', title:'Sin carpeta', text:'Este registro no tiene enlace de carpeta.' }); return; }
       if (window.VISOR && typeof window.VISOR.carpeta === 'function') window.VISOR.carpeta(link, {});
       else window.open(link, '_blank', 'noopener');
     });
 
     iconRow.appendChild(btnEdit);
+    iconRow.appendChild(btnVer);
     iconRow.appendChild(btnDrive);
 
     card.appendChild(nameEl);

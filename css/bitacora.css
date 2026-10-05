@@ -184,3 +184,54 @@
   .bit-item { flex-direction: column; gap: 2px; }
   .bit-fecha { min-width: 0; }
 }
+
+/* ══════════════ 05/10/2026 — BITÁCORA ABIERTA (js/bitacora-abierta.js) ══════════════ */
+:root { --ba-normal: #2563eb; --ba-ambar: #d97706; --ba-rojo: #dc2626; }
+:root[data-tema="oscuro"] { --ba-normal: #60a5fa; --ba-ambar: #fbbf24; --ba-rojo: #f87171; }
+
+.ba-card { box-shadow: inset 4px 0 0 var(--ba-c, var(--ba-normal)), var(--k-sombra-1, 0 1px 3px rgba(0,0,0,.08)) !important; }
+.ba-card--normal { --ba-c: var(--ba-normal); }
+.ba-card--ambar  { --ba-c: var(--ba-ambar); }
+.ba-card--rojo   { --ba-c: var(--ba-rojo); }
+
+.ba-marca {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin: 8px 0 4px; padding: 6px 8px 6px 10px; border-radius: 10px;
+  font: 600 .82rem/1.25 var(--k-fuente, inherit);
+  color: var(--ba-c, var(--ba-normal));
+  background: color-mix(in srgb, var(--ba-c, var(--ba-normal)) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ba-c, var(--ba-normal)) 35%, transparent);
+}
+.ba-marca--normal { --ba-c: var(--ba-normal); }
+.ba-marca--ambar  { --ba-c: var(--ba-ambar); }
+.ba-marca--rojo   { --ba-c: var(--ba-rojo); }
+.ba-marca svg { flex: none; }
+.ba-marca > span { flex: 1 1 auto; min-width: 0; }
+.ba-marca--rojo svg { animation: baLatido 1.4s ease-in-out infinite; }
+.ba-marca--enviando { opacity: .6; }
+.ba-enterado {
+  display: inline-flex; align-items: center; gap: 4px; cursor: pointer;
+  padding: 4px 10px; border-radius: var(--k-r-pill, 999px);
+  border: 1px solid currentColor; background: var(--k-papel, #fff);
+  color: inherit; font: 600 .78rem/1 var(--k-fuente, inherit);
+}
+.ba-enterado:hover { background: color-mix(in srgb, currentColor 12%, var(--k-papel, #fff)); }
+.ba-enterado:disabled, .ba-ocupado { opacity: .55; cursor: progress; }
+
+.ba-pill { display: inline-flex; align-items: center; gap: 6px; }
+.ba-num {
+  min-width: 20px; padding: 1px 6px; border-radius: 999px; text-align: center;
+  font-size: .75rem; font-weight: 700; background: color-mix(in srgb, currentColor 14%, transparent);
+}
+.ba-pill--hay .ba-num { background: var(--ba-ambar); color: #fff; }
+.ba-pill--rojo .ba-num { background: var(--ba-rojo); color: #fff; }
+
+.acceso .ba-badge {
+  display: inline-block; margin-left: 6px; min-width: 20px; padding: 1px 7px; border-radius: 999px;
+  font: 700 .72rem/1.4 var(--k-fuente, inherit); text-align: center; vertical-align: middle;
+  color: #fff; background: var(--ba-ambar);
+}
+.acceso .ba-badge--rojo { background: var(--ba-rojo); }
+
+@keyframes baLatido { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.18); } }
+@media (prefers-reduced-motion: reduce) { .ba-marca--rojo svg { animation: none; } }

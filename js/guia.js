@@ -130,6 +130,15 @@
       ]
     },
     {
+      t: 'Bitácoras por responder', ic: 'libro', items: [
+        'En Asignaciones y en BD Predial cada tarjeta tiene tres lados: el <b>abogado</b>, el <b>asistente</b> y el <b>asignador o administrador</b>. Cuando uno guarda una bitácora, la tarjeta queda <b>por responder</b> para los otros dos.',
+        'La tarjeta lo muestra con una franja y los días hábiles que lleva: azul hasta 1 día, <b>naranja</b> 2 a 3, <b>rojo</b> más de 3.',
+        'Se cierra para tu lado cuando escribes tu bitácora o tocas <b>Enterado</b> (queda una línea corta “ENTERADO.” con tu nombre y la fecha).',
+        'La pastilla <b>Bitácoras por responder</b> deja solo esas tarjetas; en <b>Consultar</b> está <b>Bitácoras por revisar</b> con las más viejas primero. El número también sale en el inicio.',
+        'Te llega un aviso push al instante y un resumen a las 7 am. Si te reasignan una tarjeta, lo pendiente pasa a ti; al finalizar la asignación o dejar el expediente al día se cierra todo.'
+      ]
+    },
+    {
       t: 'Colores del semáforo', ic: 'semaforo', items: [
         '<b>Verde</b>: le queda más de la mitad del plazo. <b>Naranja</b>: le queda menos de la mitad. <b>Rojo claro</b>: faltan 3 días hábiles o menos. <b>Rojo</b>: vence hoy o ya venció. <b>Gris</b>: finalizada.',
         'Los días se cuentan hábiles: sin fines de semana ni festivos de Colombia.'
