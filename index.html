@@ -20,7 +20,6 @@
   <link rel="manifest" href="manifest.webmanifest">
 
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-  <link rel="preconnect" href="https://drive.google.com">          <!-- 04/10: el visor abre los archivos directo de Drive -->
   <link rel="dns-prefetch" href="https://docs.google.com">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css">
   <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
@@ -48,7 +47,7 @@
   <link rel="stylesheet" href="css/descargas.css">
   <link rel="stylesheet" href="css/bitacora.css">
   <link rel="stylesheet" href="css/vistas.css">
-  <link rel="stylesheet" href="css/visor.css">
+  <link rel="stylesheet" href="kit/visor.css">       <!-- 04/10: visor único (el de CONTRATACIÓN) -->
   <link rel="stylesheet" href="css/capa-11-insights.css">
   <link rel="stylesheet" href="css/asignador.css">
   <link rel="stylesheet" href="css/fechas-ios.css">
@@ -205,7 +204,7 @@
               <span class="acceso__txt"><span class="acceso__t">Auditorio HAS SQL <span class="acceso__pronto">Próximamente</span></span><span class="acceso__p">Cruces con la base de HAS SQL</span></span>
             </button>
             <button type="button" class="acceso" id="btn-ica-bal" data-ica-pronto="Balance" style="display:none;">
-              <span class="acceso__img acceso__img--ico"><i class="hi" data-ico="balanza" data-t="24"></i></span>
+              <span class="acceso__img acceso__img--ico"><i class="hi" data-ico="grafica" data-t="24"></i></span>
               <span class="acceso__txt"><span class="acceso__t">Balance <span class="acceso__pronto">Próximamente</span></span><span class="acceso__p">Resultados de la fiscalización de ICA</span></span>
             </button>
           </div>
@@ -1468,7 +1467,8 @@
 <script src="js/en-vivo.js"></script>
 <script src="js/alcance.js"></script>
 <script src="js/descargas.js"></script>
-<script src="js/visor.js"></script>
+<script src="kit/visor.js"></script>      <!-- 04/10: visor del KIT (zoom, lista, agregar) -->
+<script src="js/visor.js"></script>       <!-- 04/10: adaptador: bytes por el backend, nada de marcos de Drive -->
 <script src="js/esqueletos.js"></script>
 <script src="js/capa-11-insights.js"></script>
 <script src="js/fechas-ios.js"></script>

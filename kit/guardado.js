@@ -202,7 +202,7 @@
       q('p').innerHTML = op.sub || 'Ya quedó guardado.';
       q('paso').textContent = op.paso || 'Guardado correctamente';
       pintarPuntos(pasos.length, pasos.length);
-      K.sonar('sound/pay-success.mp3');
+      K.sonar('sound/pay_success.mp3');
       K.vibrar(14);
       setTimeout(function () { cerrar(); res(); }, op.espera || 1700);
     });
@@ -211,7 +211,7 @@
   /** Final triste: se cierra sin fiesta y deja que la app muestre el error. */
   function fallo() {
     parar();
-    K.sonar('sound/pay-fail.mp3');
+    K.sonar('sound/pay_fail.mp3');
     K.vibrar([12, 60, 12]);
     cerrar();
   }

@@ -1,325 +1,283 @@
 /************************************************************************
- *  FASE 8 — VISOR DE ARCHIVOS  (js/visor.js)
+ *  VISOR ÚNICO DE DOCUMENTOS  (js/visor.js) — 04/10/2026
  *  ---------------------------------------------------------------------
- *  Un solo visor para TODA la app. Antes cada sitio hacía window.open y el
- *  usuario terminaba con media docena de pestañas de Drive abiertas.
+ *  Un solo visor para TODA la app, el mismo de CONTRATACIÓN-FLANDES
+ *  (kit/visor.js): ventana que se mueve, se minimiza y cambia de tamaño,
+ *  anterior/siguiente, lista de todos los documentos del registro, zoom
+ *  (botones, Ctrl + rueda, pellizco, doble clic) y botón AGREGAR cuando
+ *  la vista lo ofrece.
  *
- *  window.VISOR.abrir(url, { nombre })
- *    · Imagen            → se manda al lightbox que ya existe (openLightbox_).
- *    · Archivo de Drive  → modal sobre la app, con scroll, y tres botones:
- *                          abrir en pestaña · descargar · imprimir.
- *    · Cualquier otra    → pestaña nueva (no se rompe nada).
+ *  Por qué ya no hay marco de Drive (/preview)
+ *    Los documentos llevan datos personales y no se publican por enlace.
+ *    Un marco de Drive solo se ve si el navegador le pasa a ese marco la
+ *    sesión de Google de una cuenta con permiso; casi nunca la tiene
+ *    (cookies de terceros), así que Drive manda al inicio de sesión y ese
+ *    no se deja enmarcar ("frame-ancestors"). Además el visor de Drive
+ *    registra 'unload', que Chrome ya no permite ("[Violation] unload").
+ *    Ahora los bytes los entrega el backend (HACIENDA o ICA) con la API de
+ *    Drive, se pintan aquí con pdf.js y quedan en memoria mientras el
+ *    visor esté abierto. Nada se descarga al equipo ni se publica.
  *
- *  IMPRIMIR: el iframe de Drive es de otro origen y el navegador no deja
- *  llamar print() sobre él. Por eso se le pide el PDF al backend
- *  (acción visorarchivo, Visor.gs), se arma un blob del MISMO origen y ese
- *  sí se imprime. Si el archivo no es imprimible (Word, imágenes) o pesa
- *  demasiado, se cae a abrir el visor de Drive, que trae su propia
- *  impresión: nunca se queda el usuario sin salida.
+ *  API
+ *    VISOR.abrir(url, { nombre, agregar, lista, indice })   (compatible)
+ *    VISOR.lista(items, { indice, agregar(doc, api), agregarTexto, fuente })
+ *        item = { titulo, id | url, mime, detalle, cargar }
+ *        fuente(id) → Promise {nombre, mime, b64}  (por defecto, HACIENDA)
+ *    VISOR.carpeta(folderIdOUrl, op)   todos los archivos de una carpeta
+ *    VISOR.cerrar() · VISOR.abierto() · VISOR.medidas()
  *
- *  Carga: después de app.js y de base-visual.js (usa BV._cierres).
+ *  Carga: después de kit/visor.js y de app.js.
  ************************************************************************/
 (function () {
   'use strict';
 
-  var ID_MODAL   = 'modal-visor';
-  var ID_MARCO   = 'visor-marco';
-  var ID_IFRAME  = 'visor-iframe';
-  var ID_TITULO  = 'visor-titulo';
-  var ID_CERRAR  = 'btn-visor-cerrar';
-  var ID_NOTA    = 'visor-nota';
+  var K = window.KIT || {};
+  function pieza() { return K.piezas && K.piezas.visor; }
 
-  var actual = { id: '', url: '', nombre: '', agregar: null };
-  var imprimiendo = false;
-  var urlBlob = '';
+  /* ══════════════ memoria de bytes (por id de Drive) ══════════════
+     Volver a un documento ya visto es inmediato. Tope 40 MB. */
+  var MEM = {}, ORDEN = [], PESO = 0, TOPE = 40 * 1024 * 1024;
+  var PEND = {};
+  var MEDIDAS = [];
 
-  function $(id) { return document.getElementById(id); }
-
-  function avisar(icono, titulo, texto) {
-    if (window.Swal) Swal.fire({ icon: icono, title: titulo, text: texto });
-    else if (icono === 'error') console.warn(titulo + ': ' + texto);
+  function guardar(id, v) {
+    if (MEM[id]) return;
+    MEM[id] = v; ORDEN.push(id); PESO += v.bytes.length;
+    while (PESO > TOPE && ORDEN.length > 1) {
+      var x = ORDEN.shift(); if (MEM[x]) { PESO -= MEM[x].bytes.length; delete MEM[x]; }
+    }
+  }
+  function aBytes(b64) {
+    var bin = atob(String(b64 || '').replace(/\s/g, ''));
+    var n = bin.length, out = new Uint8Array(n);
+    for (var k = 0; k < n; k++) out[k] = bin.charCodeAt(k);
+    return out;
+  }
+  function tipoDe(mime, nombre) {
+    var m = String(mime || '').toLowerCase(), n = String(nombre || '').toLowerCase();
+    if (/^image\//.test(m) || /\.(png|jpe?g|webp|gif|bmp|avif)$/.test(n)) return 'imagen';
+    if (/pdf/.test(m) || /\.pdf$/.test(n) || /google-apps\.(document|spreadsheet|presentation)/.test(m)) return 'pdf';
+    return m ? 'otro' : '';
   }
 
   function uid() {
     try {
-      if (typeof window.uidActual_ === 'function') {
-        var u = window.uidActual_();
-        if (u) return u;
-      }
+      if (typeof window.uidActual_ === 'function') { var u = window.uidActual_(); if (u) return u; }
       var p = (window.IDN && window.IDN.perfil) ? window.IDN.perfil() : null;
       if (p && p.uid) return p.uid;
     } catch (_) {}
     return '';
   }
 
-  /* ══════════════ qué clase de enlace es ══════════════ */
+  /** Bytes de HACIENDA (GET visordoc). Sin el cargando global: el visor
+      enseña su propio "Abriendo el documento…" y la app sigue libre.
+      Un reintento solo ante falla de red o el 404 de echo de Google.
+      Backend anterior (sin la ruta): 'visorarchivo' (solo PDF/Docs). */
+  function getHacienda(accion, params, n) {
+    var base = String((window.MARCA && window.MARCA.API_URL) || '');
+    if (!base || typeof fetch !== 'function') return Promise.reject(new Error('Sin conexión con el servidor.'));
+    var qs = '?action=' + encodeURIComponent(accion);
+    Object.keys(params || {}).forEach(function (k) { qs += '&' + k + '=' + encodeURIComponent(params[k]); });
+    return fetch(base + qs, { cache: 'no-store' }).then(function (r) { return r.text(); }).then(function (t) {
+      var j; try { j = JSON.parse(t); } catch (e) { var x = new Error('red'); x.red = true; throw x; }
+      if (!j.ok) { var er = new Error(j.error || 'No se pudo abrir el documento.'); er.codigo = j.codigo || ''; throw er; }
+      return j.data;
+    }).catch(function (e) {
+      if ((e instanceof TypeError || e.red) && !(n > 0)) return new Promise(function (res) { setTimeout(res, 900); }).then(function () { return getHacienda(accion, params, 1); });
+      if (e instanceof TypeError || e.red) throw new Error('Sin conexión con el servidor. Revisa tu internet.');
+      throw e;
+    });
+  }
+  function fuenteHacienda(id) {
+    return getHacienda('visordoc', { id: id }).then(function (r) {
+      if (r && r.b64) return { nombre: r.nombre, mime: r.mime, b64: r.b64 };
+      var e = new Error((r && r.motivo) || 'No se pudo abrir el documento.'); e.sinBytes = true; throw e;
+    }, function (e) {
+      if (!/acci[oó]n|action/i.test(String(e && e.message)) || typeof window.apiPost !== 'function') throw e;
+      return window.apiPost('visorarchivo', { uid: uid(), id: id }).then(function (r) {
+        if (r && r.imprimible && r.base64) return { nombre: r.nombre, mime: 'application/pdf', b64: r.base64 };
+        throw new Error((r && r.motivo) || 'Este archivo no se puede ver aquí. Usa descargar.');
+      });
+    });
+  }
 
-  function idDrive_(u) {
+  /** Pide (una sola vez) los bytes de un id con la fuente dada. */
+  function bytesDe(id, fuente, nombre) {
+    if (MEM[id]) return Promise.resolve(MEM[id]);
+    if (PEND[id]) return PEND[id];
+    var t0 = Date.now();
+    PEND[id] = Promise.resolve(fuente(id)).then(function (r) {
+      var bytes = r.bytes || aBytes(r.b64);
+      var v = { nombre: r.nombre || nombre || 'documento', mime: r.mime || 'application/octet-stream', bytes: bytes };
+      v.tipo = tipoDe(v.mime, v.nombre) || 'otro';
+      guardar(id, v);
+      MEDIDAS.push({ id: String(id).slice(0, 6), ms: Date.now() - t0, kb: Math.round(bytes.length / 1024) });
+      if (MEDIDAS.length > 100) MEDIDAS.shift();
+      delete PEND[id];
+      return v;
+    }, function (e) { delete PEND[id]; throw e; });
+    return PEND[id];
+  }
+
+  /* ══════════════ qué es cada enlace ══════════════ */
+  function idDrive(u) {
     var s = String(u || '').trim();
     if (!s) return '';
     if (/^[-\w]{20,}$/.test(s)) return s;
-    var m = s.match(/\/file\/d\/([-\w]{20,})/) ||
-            s.match(/[?&]id=([-\w]{20,})/) ||
+    var m = s.match(/\/file\/d\/([-\w]{20,})/) || s.match(/\/document\/d\/([-\w]{20,})/) ||
+            s.match(/\/spreadsheets\/d\/([-\w]{20,})/) || s.match(/\/presentation\/d\/([-\w]{20,})/) ||
+            s.match(/[?&]id=([-\w]{20,})/) || s.match(/googleusercontent\.com\/d\/([-\w]{20,})/) ||
             s.match(/\/d\/([-\w]{20,})/);
     return m ? m[1] : '';
   }
-
-  function esCarpeta_(u) {
-    return /drive\.google\.com\/(drive\/)?(u\/\d+\/)?folders\//.test(String(u || ''));
-  }
-
-  function esImagen_(u) {
+  function esCarpeta(u) { return /drive\.google\.com\/(drive\/)?(u\/\d+\/)?folders\/|[?&]folder/.test(String(u || '')); }
+  function idCarpeta(u) { var m = String(u || '').match(/folders\/([-\w]{15,})/); return m ? m[1] : (/^[-\w]{15,}$/.test(String(u || '')) ? String(u) : ''); }
+  function esImagenUrl(u) {
     var s = String(u || '').split('#')[0].split('?')[0];
-    if (/\.(png|jpe?g|webp|gif|bmp|avif)$/i.test(s)) return true;
-    /* Cloudinary y las fotos servidas por Google también son imágenes */
-    if (/res\.cloudinary\.com|googleusercontent\.com/.test(String(u || ''))) return true;
-    return false;
+    return /\.(png|jpe?g|webp|gif|bmp|avif)$/i.test(s) || /res\.cloudinary\.com/.test(String(u || ''));
   }
 
-  function urlPreview_(id, cuenta) {
-    /* authuser = la cuenta de Google con la que la persona tiene permiso:
-       sin él, Drive usa la primera sesión del navegador y, si esa no tiene
-       acceso, manda al inicio de sesión (que no se deja enmarcar). */
-    return 'https://drive.google.com/file/d/' + id + '/preview' + (cuenta ? '?authuser=' + encodeURIComponent(cuenta) : '');
-  }
-  function urlVista_(id) {
-    return 'https://drive.google.com/file/d/' + id + '/view';
-  }
-  function urlDescarga_(id) {
-    return 'https://drive.google.com/uc?export=download&id=' + id;
-  }
-
-  function pestana_(u) {
-    var w = window.open(u, '_blank', 'noopener');
-    if (!w) avisar('info', 'Permite las ventanas emergentes',
-                   'El navegador bloqueó la pestaña nueva.');
-    return w;
-  }
-
-  /* ══════════════ el modal ══════════════ */
-
-  function crear_() {
-    if ($(ID_MODAL)) return;
-
-    var capa = document.createElement('div');
-    capa.id = ID_MODAL;
-    capa.className = 'hidden';
-    capa.setAttribute('role', 'dialog');
-    capa.setAttribute('aria-modal', 'true');
-    capa.innerHTML =
-      '<div class="visor-caja">' +
-        '<div class="visor-cab">' +
-          '<span class="visor-icono" aria-hidden="true">' + ICO_('documento', 20) + '</span>' +
-          '<h3 id="' + ID_TITULO + '" class="visor-titulo">Archivo</h3>' +
-          '<button type="button" id="' + ID_CERRAR + '" class="visor-x" aria-label="Cerrar">' + ICO_('cerrar', 18) + '</button>' +
-        '</div>' +
-        '<div id="' + ID_MARCO + '" class="visor-marco">' +
-          '<iframe id="' + ID_IFRAME + '" src="" title="Vista del archivo" ' +
-                  'allow="autoplay" referrerpolicy="no-referrer"></iframe>' +
-        '</div>' +
-        '<p id="' + ID_NOTA + '" class="visor-nota"></p>' +
-        '<div class="visor-acciones">' +
-          /* FASE 9: se agrega el archivo que se está mirando al expediente.
-             Solo aparece cuando quien abre el visor pasa opciones.agregar. */
-          '<button type="button" class="visor-acc visor-acc-ok hidden" id="btn-visor-agregar">' + ICOS('mas') + 'Agregar</button>' +
-          '<button type="button" class="visor-acc" id="btn-visor-descargar">' + ICOS('descargar') + 'Descargar</button>' +
-        '</div>' +
-      '</div>';
-    document.body.appendChild(capa);
-
-    $(ID_CERRAR).addEventListener('click', cerrar);
-    $('btn-visor-descargar').addEventListener('click', function () {
-      if (actual.id) pestana_(urlDescarga_(actual.id));
-      else if (actual.url) pestana_(actual.url);
-    });
-    /* FASE 9 · ajuste 4 — "Abrir en pestaña" e "Imprimir" salieron de la fila:
-       la propia previsualización de Drive ya trae su botón para abrir el
-       archivo en ventana aparte, y esos dos abrían pestañas que el navegador
-       bloqueaba ("Permite las ventanas emergentes"). La impresión de verdad
-       sigue disponible por código: VISOR.imprimir(id, nombre). */
-    $('btn-visor-agregar').addEventListener('click', function () {
-      if (typeof actual.agregar === 'function') actual.agregar(actual.url, actual.nombre);
-    });
-
-    /* Clic fuera y Escape los maneja la Fase 3 (base-visual). Se registra
-       aquí en caliente para no tocar el mapa CIERRES a mano. */
-    try {
-      if (window.BV && window.BV._cierres) window.BV._cierres[ID_MODAL] = [ID_CERRAR];
-    } catch (_) {}
-  }
-
-  function nota_(texto) {
-    var el = $(ID_NOTA);
-    if (el) el.textContent = texto || '';
-  }
-
-  function abrir(url, opciones) {
-    opciones = opciones || {};
-    var u = String(url || '').trim();
-    if (!u) {
-      avisar('info', 'Sin archivo', 'Este registro no tiene archivo para mostrar.');
-      return false;
+  /** Convierte lo que manda cada vista en un documento del visor. */
+  function aDoc(it, fuente) {
+    it = it || {};
+    var titulo = it.titulo || it.nombre || it.name || 'Documento';
+    var url = it.url || '';
+    var id = it.id || idDrive(url);
+    var d = { titulo: titulo, detalle: it.detalle || '', _ref: it };
+    if (typeof it.cargar === 'function') { d.cargar = it.cargar; if (it.tipo) d.tipo = it.tipo; return d; }
+    if (id && !esCarpeta(url)) {
+      var f = it.fuente || fuente || fuenteHacienda;
+      var t = tipoDe(it.mime, titulo);
+      if (t) d.tipo = t;
+      d.cargar = function () {
+        return bytesDe(id, f, titulo).then(function (v) { return { nombre: v.nombre, mime: v.mime, bytes: v.bytes, tipo: v.tipo }; });
+      };
+      d._id = id; d._fuente = f;
+      return d;
     }
+    if (url && esImagenUrl(url)) { d.url = url; d.tipo = 'imagen'; return d; }
+    if (url) { d.url = url; d.externo = true; return d; }
+    return null;
+  }
 
-    /* 1) Imágenes: ya hay lightbox desde antes, no se duplica */
-    if (esImagen_(u) && typeof window.openLightbox_ === 'function') {
-      window.openLightbox_(u);
-      return true;
-    }
+  /* Adelanta el siguiente documento de fondo (uno a la vez: la fila de
+     Apps Script es de todos). Lo que la persona toca va primero. */
+  var adelantando = false;
+  function adelantar(docs, k) {
+    if (adelantando) return;
+    var d = docs[k];
+    if (!d || !d._id || MEM[d._id] || PEND[d._id]) return;
+    adelantando = true;
+    bytesDe(d._id, d._fuente, d.titulo).then(null, function () {}).then(function () { adelantando = false; });
+  }
 
-    /* 2) Carpetas: el visor no muestra carpetas */
-    if (esCarpeta_(u)) { pestana_(u); return true; }
-
-    var id = idDrive_(u);
-    if (!id) { pestana_(u); return true; }      /* enlace externo */
-
-    crear_();
-    actual = {
-      id: id, url: u,
-      nombre: opciones.nombre || 'Archivo',
-      agregar: (typeof opciones.agregar === 'function') ? opciones.agregar : null
-    };
-    var bAgr = $('btn-visor-agregar');
-    if (bAgr) bAgr.classList.toggle('hidden', !actual.agregar);
-
-    $(ID_TITULO).textContent = actual.nombre;
-    $(ID_TITULO).title = actual.nombre;
-    nota_('');
-    var marco = $(ID_IFRAME);
-    marco.setAttribute('src', urlPreview_(id, opciones.authuser));
-    if (opciones.authuser) nota_('Se muestra con tu cuenta de Google ' + opciones.authuser + '. Si no carga, entra a Google con ese correo en este navegador.');
-
-    $(ID_MODAL).classList.remove('hidden');
-    document.body.classList.add('visor-abierto');
+  function lista(items, op) {
+    op = op || {};
+    var v = pieza();
+    var docs = (items || []).map(function (it) { return aDoc(it, op.fuente); }).filter(Boolean);
+    if (!docs.length) { aviso('Este registro no tiene archivos para mostrar.'); return false; }
+    /* un enlace externo suelto (no de Drive) se abre como siempre */
+    if (docs.length === 1 && docs[0].externo) { pestana(docs[0].url); return true; }
+    docs = docs.filter(function (d) { return !d.externo; });
+    if (!v) { return sinKit(docs, op); }
+    /* el siguiente se adelanta al pedir cada uno */
+    docs.forEach(function (d, j) {
+      if (!d.cargar) return;
+      var orig = d.cargar;
+      d.cargar = function () { var p = orig(); p.then(function () { adelantar(docs, j + 1); }, function () {}); return p; };
+    });
+    var ag = op.agregar;
+    v.abrir(docs, {
+      indice: op.indice || 0,
+      agregarTexto: op.agregarTexto,
+      agregarAyuda: op.agregarAyuda,
+      alCerrar: op.alCerrar,
+      agregar: typeof ag === 'function' ? function (d, apiKit) {
+        /* la vista recibe un api que entiende sus ítems (id/url/titulo) */
+        var api = {
+          lista: apiKit.lista, indice: apiKit.indice, cerrar: apiKit.cerrar,
+          sumar: function (it, verlo) { var nd = aDoc(it, op.fuente); if (nd) apiKit.sumar(nd, verlo); }
+        };
+        return ag(d, api);
+      } : null
+    });
     try { if (window.BV && window.BV.sonar) window.BV.sonar((typeof SOUNDS !== 'undefined' && SOUNDS.info) || 'sound/default-notification.mp3'); } catch (_) {}
     return true;
   }
 
-  function cerrar() {
-    var m = $(ID_MODAL);
-    if (!m) return;
-    m.classList.add('hidden');
-    document.body.classList.remove('visor-abierto');
-    var f = $(ID_IFRAME);
-    if (f) f.setAttribute('src', '');           /* corta la carga y el audio */
-    actual = { id: '', url: '', nombre: '', agregar: null };
-    nota_('');
-    soltarBlob_();
+  /** Compatible con las llamadas de antes: VISOR.abrir(url, {nombre, agregar}). */
+  function abrir(url, op) {
+    op = op || {};
+    if (op.lista && op.lista.length) return lista(op.lista, op);
+    var u = String(url || '').trim();
+    if (!u) { aviso('Este registro no tiene archivo para mostrar.'); return false; }
+    if (esCarpeta(u)) return carpeta(u, op);
+    return lista([{ url: u, titulo: op.nombre || 'Archivo', mime: op.mime }], op);
   }
 
-  function abierto() {
-    var m = $(ID_MODAL);
-    return !!(m && !m.classList.contains('hidden'));
-  }
-
-  /* ══════════════ imprimir de verdad ══════════════ */
-
-  function soltarBlob_() {
-    if (!urlBlob) return;
-    try { URL.revokeObjectURL(urlBlob); } catch (_) {}
-    urlBlob = '';
-    var vieja = $('visor-print-frame');
-    if (vieja && vieja.parentNode) vieja.parentNode.removeChild(vieja);
-  }
-
-  function base64ABlob_(b64, mime) {
-    var bruto = atob(String(b64 || ''));
-    var n = bruto.length;
-    var bytes = new Uint8Array(n);
-    for (var i = 0; i < n; i++) bytes[i] = bruto.charCodeAt(i);
-    return new Blob([bytes], { type: mime || 'application/pdf' });
-  }
-
-  function caerAPestana_(id, motivo) {
-    if (motivo) nota_(motivo);
-    if (id) pestana_(urlVista_(id));
-  }
-
-  function imprimir(id, nombre) {
-    id = id || actual.id;
-    if (!id) { avisar('warning', 'Sin archivo abierto', ''); return; }
-    if (imprimiendo) return;
-
-    var u = uid();
-    if (!u) {                       /* sin sesión no hay endpoint que valga */
-      caerAPestana_(id, 'Sin sesión: se abre el visor de Drive para imprimir.');
-      return;
-    }
-    if (typeof window.apiPost !== 'function') {
-      caerAPestana_(id, 'Se abre el visor de Drive para imprimir.');
-      return;
-    }
-
-    imprimiendo = true;
-    var btn = $('btn-visor-imprimir');
-    var textoBtn = btn ? btn.innerHTML : '';
-    if (btn) { btn.disabled = true; btn.innerHTML = ICOS('reloj') + 'Preparando…'; }
-    nota_('Preparando la impresión…');
-
-    window.apiPost('visorarchivo', { uid: u, id: id }).then(function (res) {
-      if (!res || !res.imprimible) {
-        caerAPestana_(id, (res && res.motivo) ? res.motivo + ' Se abre el visor de Drive.'
-                                              : 'Se abre el visor de Drive para imprimir.');
-        return;
-      }
-      soltarBlob_();
-      urlBlob = URL.createObjectURL(base64ABlob_(res.base64, 'application/pdf'));
-
-      var marco = document.createElement('iframe');
-      marco.id = 'visor-print-frame';
-      marco.style.position = 'fixed';
-      marco.style.width = '1px';
-      marco.style.height = '1px';
-      marco.style.opacity = '0';
-      marco.style.border = '0';
-      marco.style.left = '-9999px';
-      marco.setAttribute('aria-hidden', 'true');
-      marco.src = urlBlob;
-
-      var lanzado = false;
-      marco.onload = function () {
-        if (lanzado) return;
-        lanzado = true;
-        try {
-          marco.contentWindow.focus();
-          marco.contentWindow.print();
-          nota_('Se abrió el diálogo de impresión de ' + (nombre || res.nombre || 'el archivo') + '.');
-        } catch (err) {
-          /* iOS y algunos navegadores no imprimen iframes ocultos:
-             se abre el PDF propio en una pestaña y desde ahí se imprime. */
-          pestana_(urlBlob);
-          nota_('Tu navegador no imprime desde la app: se abrió el PDF en otra pestaña.');
-        }
-      };
-      document.body.appendChild(marco);
-    }).catch(function (e) {
-      caerAPestana_(id, 'No se pudo preparar la impresión (' +
-        ((e && e.message) ? e.message : String(e)) + '). Se abre el visor de Drive.');
-    }).then(function () {
-      imprimiendo = false;
-      if (btn) { btn.disabled = false; btn.innerHTML = textoBtn || (ICOS('imprimir') + 'Imprimir'); }
+  /** Todos los archivos de una carpeta (HACIENDA 'visorcarpeta'). */
+  function carpeta(ref, op) {
+    op = op || {};
+    var id = idCarpeta(ref);
+    if (!id) { pestana(ref); return true; }
+    aviso('Buscando los documentos de la carpeta…', 'info', 2500);
+    return getHacienda('visorcarpeta', { id: id }).then(function (r) {
+      var fs = (r && r.archivos) || [];
+      if (!fs.length) { aviso('La carpeta no tiene archivos.', 'aviso'); return false; }
+      return lista(fs.map(function (f) { return { id: f.id, titulo: f.nombre, mime: f.mime, detalle: f.ruta || f.fecha || '' }; }), op);
+    }, function (e) {
+      /* backend anterior sin la ruta: la carpeta en Drive, como antes */
+      if (/acci[oó]n|action|desconocid|no v[aá]lid/i.test(String(e && e.message))) { pestana(ref); return true; }
+      aviso((e && e.message) || 'No se pudo leer la carpeta.', 'aviso');
+      return false;
     });
   }
 
-  /* ══════════════ API ══════════════ */
+  /* ══════════════ sin kit (no debería pasar): pestaña ══════════════ */
+  function sinKit(docs, op) {
+    var d = docs[op.indice || 0] || docs[0];
+    if (d && d._id) pestana('https://drive.google.com/file/d/' + d._id + '/view');
+    else if (d && d.url) pestana(d.url);
+    return true;
+  }
+  function pestana(u) {
+    var w = window.open(u, '_blank', 'noopener');
+    if (!w) aviso('El navegador bloqueó la pestaña nueva. Permite las ventanas emergentes.', 'aviso');
+    return w;
+  }
+  function aviso(t, tipo, ms) {
+    try { if (K.aviso) return K.aviso(t, tipo || 'info', ms || 3500); } catch (_) {}
+    try { if (window.Swal) Swal.fire({ icon: 'info', text: t }); } catch (_) {}
+  }
+
+  function cerrar() { var v = pieza(); if (v && v.abierto()) v.cerrar(); }
+  function abierto() { var v = pieza(); return !!(v && v.abierto()); }
+
+  /** URL en memoria (blob) de un archivo de Drive privado: para miniaturas en línea. */
+  function urlDe(id, fuente) {
+    return bytesDe(id, fuente || fuenteHacienda, '').then(function (v) {
+      if (!v._blobUrl) v._blobUrl = URL.createObjectURL(new Blob([v.bytes], { type: v.mime }));
+      return v._blobUrl;
+    });
+  }
 
   window.VISOR = {
-    abrir: abrir,
-    cerrar: cerrar,
-    abierto: abierto,
-    imprimir: imprimir,
-    _id: idDrive_,
-    _esImagen: esImagen_,
-    _esCarpeta: esCarpeta_
+    abrir: abrir, lista: lista, carpeta: carpeta, cerrar: cerrar, abierto: abierto, urlDe: urlDe, bytes: bytesDe,
+    medidas: function () { return MEDIDAS.slice(); },
+    olvidar: function (id) { if (MEM[id]) { PESO -= MEM[id].bytes.length; delete MEM[id]; ORDEN = ORDEN.filter(function (x) { return x !== id; }); } },
+    _id: idDrive, _tipo: tipoDe, _esCarpeta: esCarpeta,
+    /* imprimir: el propio visor lo hace sobre los bytes (botón de la barra) */
+    imprimir: function (id, nombre) { return lista([{ id: id, titulo: nombre || 'Documento' }], {}); }
   };
 
-  /* Atajo cómodo para app.js: si por lo que sea el visor no cargó, la app
-     sigue funcionando exactamente como antes (pestaña nueva). */
-  window.abrirArchivo_ = function (url, nombre, agregar) {
-    if (window.VISOR && typeof window.VISOR.abrir === 'function') {
-      return window.VISOR.abrir(url, { nombre: nombre, agregar: agregar });
-    }
-    window.open(url, '_blank', 'noopener');
-    return true;
+  /* Las imágenes también van al visor (zoom, arrastre); el lightbox viejo
+     queda de respaldo si el kit no cargó. */
+  var lbViejo = window.openLightbox_;
+  window.openLightbox_ = function (src) {
+    if (!pieza()) return typeof lbViejo === 'function' ? lbViejo(src) : pestana(src);
+    var id = idDrive(src);
+    return lista([id ? { id: id, titulo: 'Imagen', mime: 'image/jpeg' } : { url: src, titulo: 'Imagen' }], {});
   };
+
+  window.abrirArchivo_ = function (url, nombre, agregar) { return abrir(url, { nombre: nombre, agregar: agregar }); };
 })();

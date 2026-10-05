@@ -1,0 +1,378 @@
+/* ============================================================
+   KIT-FLANDES · PIEZA 7 · VISOR DE DOCUMENTOS — estilos
+   Pareja de kit/visor.js.
+   ============================================================ */
+
+.kit-visor {
+  position: fixed;
+  inset: 0;
+  z-index: 9750;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.kit-visor--on { display: flex; }
+
+.kit-visor__velo {
+  position: absolute;
+  inset: 0;
+  background: var(--k-velo);
+  backdrop-filter: blur(3px);
+}
+
+.kit-visor__caja {
+  position: relative;
+  /* 4.6.1 · aprovecha el ancho de verdad. Con 940 px, en una pantalla de
+     1.440 el documento quedaba en una columna estrecha con dos franjas
+     vacías a los lados; una planilla se lee mucho mejor ancha. */
+  width: min(1280px, 100%);
+  height: min(92vh, 1000px);
+  background: var(--k-papel);
+  color: var(--k-tinta);
+  border-radius: var(--k-r-lg);
+  box-shadow: var(--k-sombra-2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: kit-visor-entra .22s cubic-bezier(.2, .9, .3, 1) both;
+}
+@keyframes kit-visor-entra {
+  from { opacity: 0; transform: translateY(16px) scale(.98); }
+  to   { opacity: 1; transform: none; }
+}
+/* una vez movida por el usuario, la animación no debe pisarle el transform */
+.kit-visor__caja--movida { animation: none; }
+
+/* ── minimizado: se va a una esquina y deja ver la tarjeta de debajo ── */
+
+.kit-visor--chico { pointer-events: none; }
+.kit-visor--chico .kit-visor__velo { display: none; }
+.kit-visor--chico .kit-visor__caja {
+  pointer-events: auto;
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  width: min(380px, calc(100vw - 32px));
+  height: 300px;
+}
+.kit-visor--chico .kit-visor__pie { display: none; }
+
+/* ── barra ── */
+
+.kit-visor__barra {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--k-marca);
+  color: #fff;
+  cursor: grab;
+  flex: 0 0 auto;
+  touch-action: none;
+  user-select: none;
+}
+.kit-visor__barra:active { cursor: grabbing; }
+
+.kit-visor__agarre { opacity: .7; font-size: 14px; letter-spacing: -2px; }
+
+.kit-visor__t {
+  flex: 1 1 auto;
+  min-width: 0;
+  font: 600 14px/1.3 var(--k-fuente);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.kit-visor__cuenta {
+  font: 600 11px/1 var(--k-fuente);
+  background: rgba(255, 255, 255, .2);
+  color: inherit;
+  border: 0;
+  padding: 5px 10px;
+  border-radius: var(--k-r-pill);
+  flex: 0 0 auto;
+  cursor: pointer;
+}
+.kit-visor__cuenta:empty { display: none; }
+.kit-visor__cuenta:disabled { cursor: default; }
+.kit-visor__cuenta:not(:disabled):hover { background: rgba(255, 255, 255, .32); }
+
+/* 04/10 · lista de todos los documentos del registro */
+.kit-visor__menu {
+  position: absolute;
+  z-index: 5;
+  top: 48px;
+  right: 10px;
+  left: 10px;
+  max-width: 460px;
+  margin-left: auto;
+  max-height: min(60vh, 420px);
+  overflow: auto;
+  background: var(--k-papel);
+  color: var(--k-tinta);
+  border: 1px solid rgba(127,127,127,.25);
+  border-radius: 14px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, .25);
+  padding: 6px;
+}
+.kit-visor__it {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  appearance: none; border: 0; background: transparent; color: inherit;
+  text-align: left; padding: 9px 10px; border-radius: 10px; cursor: pointer;
+  font: 500 13px/1.3 var(--k-fuente);
+}
+.kit-visor__it span { min-width: 0; display: flex; flex-direction: column; }
+.kit-visor__it b { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kit-visor__it small { opacity: .7; font-size: 11.5px; }
+.kit-visor__it:hover { background: rgba(127, 127, 127, .12); }
+.kit-visor__it.sel { background: rgba(var(--k-marca-rgb), .14); }
+
+/* 04/10 · botón Agregar con texto (se encoge a ícono en pantallas chicas) */
+.kit-visor__b--agregar { width: auto !important; padding: 0 10px !important; gap: 4px; font: 600 12.5px/1 var(--k-fuente); display: inline-flex; align-items: center; }
+@media (max-width: 520px) { .kit-visor__bt { display: none; } .kit-visor__b--agregar { padding: 0 !important; width: 34px !important; } }
+.kit-visor--chico .kit-visor__bt { display: none; }
+
+.kit-visor__acciones { display: flex; gap: 2px; flex: 0 0 auto; }
+
+.kit-visor__b {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  width: 32px; height: 32px;
+  border-radius: var(--k-r-sm);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+.kit-visor__b:hover { background: rgba(255, 255, 255, .2); }
+.kit-visor__b:active { transform: scale(.9); }
+.kit-visor__b--x:hover { background: var(--k-malo); }
+
+/* ── lienzo ── */
+
+.kit-visor__lienzo {
+  flex: 1 1 auto;
+  position: relative;
+  background: var(--k-papel-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+  min-height: 0;
+}
+.kit-visor__marco { width: 100%; height: 100%; border: 0; display: block; }
+.kit-visor__img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
+
+.kit-visor__cargando,
+.kit-visor__malo {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  font: 500 14px/1.4 var(--k-fuente);
+  color: var(--k-apagado);
+  text-align: center;
+  padding: 20px;
+  background: var(--k-papel-2);
+}
+.kit-visor__malo { color: var(--k-malo); }
+
+/* ── pie ── */
+
+.kit-visor__pie {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--k-linea);
+  flex: 0 0 auto;
+}
+.kit-visor__pie .kit-btn { min-height: 38px; padding: 8px 14px; font-size: 13px; }
+
+.kit-visor__puntos { flex: 1 1 auto; display: flex; gap: 7px; justify-content: center; flex-wrap: wrap; }
+
+.kit-visor__punto {
+  appearance: none;
+  border: 0;
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: var(--k-linea);
+  cursor: pointer;
+  padding: 0;
+  transition: transform .14s ease, background .14s ease;
+}
+.kit-visor__punto.sel { background: var(--k-marca); transform: scale(1.35); }
+
+@media (max-width: 560px) {
+  .kit-visor { padding: 0; }
+  .kit-visor__caja { width: 100%; height: 100%; border-radius: 0; }
+  .kit-visor__b[data-a="encoger"] { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kit-visor__caja { animation: none; }
+}
+
+/* ── 4.7 · el PDF dibujado página por página (pdf.js) ──
+   El lienzo centra su contenido; las hojas ocupan todo el alto y se
+   desplazan por dentro, así la barra del visor no se va con el scroll. */
+.kit-visor__hojas {
+  align-self: stretch;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 12px;
+  box-sizing: border-box;
+  background: #3b4046;
+}
+.kit-visor__hoja {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 0 auto 12px;
+  background: #fff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .35);
+  border-radius: 2px;
+}
+.kit-visor__nota {
+  position: absolute;
+  left: 50%; bottom: 10px;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: var(--k-papel);
+  color: var(--k-tinta-2);
+  font: 500 12.5px/1.2 var(--k-fuente);
+  box-shadow: var(--k-sombra-1);
+  display: inline-flex; align-items: center; gap: 6px;
+  white-space: nowrap;
+}
+
+/* 4.7 · con muchos documentos (una cuenta trae 9) los puntos se partían
+   en dos filas y los botones en dos líneas en el teléfono */
+.kit-visor__nav { white-space: nowrap; }
+@media (max-width: 480px) {
+  .kit-visor__puntos { flex-wrap: nowrap; overflow: hidden; min-width: 0; gap: 4px; }
+  .kit-visor__punto { flex: 0 0 auto; }
+  .kit-visor__nav { padding-inline: 12px; }
+}
+
+/* ============================================================
+   29/09 · TAMAÑO AL GUSTO Y ZOOM
+   ============================================================ */
+
+/* posición y tamaño libres (tras mover o cambiar el tamaño) */
+.kit-visor__caja--libre {
+  position: fixed;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+}
+.kit-visor__caja--cambiando { user-select: none; }
+.kit-visor__caja--cambiando .kit-visor__lienzo { pointer-events: none; }  /* el iframe no se come el arrastre */
+
+/* cuerpo: el lienzo y, encima, la pastilla del zoom */
+.kit-visor__cuerpo {
+  flex: 1 1 auto;
+  min-height: 0;
+  position: relative;
+  display: flex;
+}
+.kit-visor__cuerpo > .kit-visor__lienzo { flex: 1 1 auto; min-width: 0; }
+
+/* asas para cambiar el tamaño: invisibles, con el cursor que toca */
+.kit-visor__asa { position: absolute; z-index: 3; touch-action: none; }
+.kit-visor__asa--e  { top: 56px; right: 0; bottom: 18px; width: 8px; cursor: ew-resize; }
+.kit-visor__asa--w  { top: 56px; left: 0;  bottom: 18px; width: 8px; cursor: ew-resize; }
+.kit-visor__asa--s  { left: 18px; right: 18px; bottom: 0; height: 8px; cursor: ns-resize; }
+.kit-visor__asa--se,
+.kit-visor__asa--sw { bottom: 0; width: 20px; height: 20px; }
+.kit-visor__asa--se { right: 0; cursor: nwse-resize; }
+.kit-visor__asa--sw { left: 0;  cursor: nesw-resize; }
+/* la esquina derecha se marca con dos rayitas para que se sepa que se puede agarrar */
+.kit-visor__asa--se::after {
+  content: '';
+  position: absolute;
+  right: 4px; bottom: 4px;
+  width: 10px; height: 10px;
+  background:
+    linear-gradient(135deg, transparent 45%, var(--k-apagado) 45%, var(--k-apagado) 55%, transparent 55%),
+    linear-gradient(135deg, transparent 72%, var(--k-apagado) 72%, var(--k-apagado) 82%, transparent 82%);
+  opacity: .7;
+  border-radius: 0 0 4px 0;
+}
+.kit-visor__asa--se:hover::after { opacity: 1; }
+/* minimizada también cambia de tamaño (29/09): se ven las asas; la esquina
+   manda la posición solo hasta que se mueve o se ajusta */
+.kit-visor--chico .kit-visor__caja--libre { position: fixed; right: auto; bottom: auto; }
+
+/* escena del zoom: se mueve por dentro, el pliego se centra sin cortarse */
+.kit-visor__hojas {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  touch-action: pan-x pan-y;
+}
+.kit-visor__pliego { flex: none; margin: 0 auto; max-width: none; }
+.kit-visor__hojas--img { background: var(--k-papel-2); }
+.kit-visor__hojas--img .kit-visor__pliego { margin: auto; }
+.kit-visor__hojas--img .kit-visor__img { width: 100%; height: auto; max-width: none; max-height: none; user-select: none; -webkit-user-drag: none; }
+.kit-visor__hojas--zoom { cursor: grab; }
+.kit-visor__hojas--agarrada { cursor: grabbing; }
+
+/* pastilla del zoom, abajo a la derecha del documento */
+.kit-visor__zoom {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--k-r-pill);
+  background: var(--k-papel);
+  color: var(--k-tinta);
+  box-shadow: var(--k-sombra-1);
+  border: 1px solid var(--k-linea);
+}
+.kit-visor__zb,
+.kit-visor__zp {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  height: 32px;
+  border-radius: var(--k-r-pill);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+.kit-visor__zb { width: 32px; }
+.kit-visor__zp { min-width: 52px; padding: 0 6px; font: 700 12px/1 var(--k-fuente); font-variant-numeric: tabular-nums; }
+.kit-visor__zb:hover,
+.kit-visor__zp:hover { background: rgba(var(--k-marca-rgb), .12); color: var(--k-marca); }
+.kit-visor__zb:disabled { opacity: .35; cursor: default; background: transparent; color: inherit; }
+.kit-visor__zb:active:not(:disabled) { transform: scale(.9); }
+/* el zoom va en cualquier tamaño, también minimizada (29/09): ahí la pastilla
+   se pega más a la esquina para no tapar el documento */
+.kit-visor--chico .kit-visor__zoom { right: 8px; bottom: 8px; }
+
+@media (max-width: 560px) {
+  .kit-visor__asa { display: none; }
+  .kit-visor__zoom { right: 10px; bottom: 10px; }
+  .kit-visor__caja--libre { width: 100% !important; height: 100% !important; left: 0 !important; top: 0 !important; }
+}

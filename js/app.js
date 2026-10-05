@@ -123,6 +123,25 @@ function verArchivo_(url, nombre, agregar){
   return true;
 }
 
+/* 04/10 — varios documentos en el visor único, empezando en `indice`. */
+function verLista_(items, indice, op){
+  if(window.VISOR && typeof window.VISOR.lista === 'function'){
+    return window.VISOR.lista(items, Object.assign({ indice: indice || 0 }, op || {}));
+  }
+  const it = items[indice || 0];
+  if (it) window.open(it.url, '_blank', 'noopener');
+  return true;
+}
+
+/* 04/10 — miniatura de una evidencia de Drive: si ya no es pública (las nuevas
+   no se publican por enlace) se pinta con los bytes del backend. */
+function miniaturaDrive_(img, url){
+  const m = String(url || '').match(/\/d\/([A-Za-z0-9_-]{10,})/) || String(url || '').match(/[?&]id=([A-Za-z0-9_-]{10,})/);
+  img.onerror = null;
+  if (!m || !window.VISOR || typeof window.VISOR.urlDe !== 'function') return;
+  img.onerror = () => { img.onerror = null; window.VISOR.urlDe(m[1]).then(u => { img.src = u; }).catch(() => {}); };
+}
+
 /* ================== PWA ==================
    FASE 2 SEC-HACIENDA-FLANDES — la instalación la llevan las piezas del
    kit Flandes (kit/instalar.js: los 8 casos de instalación, también el
@@ -484,7 +503,9 @@ function renderDriveGrid_(list){
         Swal.fire({ icon:'info', title:'Sin carpeta', text:'Este registro no tiene enlace de carpeta.' });
         return;
       }
-      window.open(link, '_blank', 'noopener');
+      /* 04/10 — los documentos de la carpeta en el visor único (bytes del backend) */
+      if (window.VISOR && typeof window.VISOR.carpeta === 'function') window.VISOR.carpeta(link, {});
+      else window.open(link, '_blank', 'noopener');
     });
 
     iconRow.appendChild(btnEdit);
@@ -2755,6 +2776,7 @@ function abrirVerAsignacion_(row) {
   const evWrap = document.getElementById('proc-ver-evidencia');
   const evImg  = document.getElementById('proc-ver-evidencia-img');
   if (row.evidencia) {
+    miniaturaDrive_(evImg, row.evidencia);
     evImg.src = row.evidencia;
     evWrap.style.display = '';
     /* FASE 8: la evidencia es una imagen y ya hay lightbox; se unifica.
@@ -2769,6 +2791,10 @@ function abrirVerAsignacion_(row) {
   // Archivos recibidos y respuestas
   const filesWrap = document.getElementById('proc-ver-files');
   filesWrap.innerHTML = '';
+  /* 04/10 — VISOR ÚNICO: todos los documentos de la asignación (recibidos y
+     respuestas) van juntos en el visor, con anterior/siguiente; se abre en
+     el que se tocó. */
+  const docsFila_ = [];
   const addFileIcon_ = (urls, srcIcon, label) => {
     const validUrls = urls.filter(Boolean);
     if (!validUrls.length) return;
@@ -2781,8 +2807,9 @@ function abrirVerAsignacion_(row) {
         <img src="${srcIcon}" alt="${label}" />
         ${validUrls.length > 1 ? `<span class="proc-file-counter">${idx + 1}</span>` : ''}
         <span class="proc-file-label">${label} ${idx + 1}</span>`;
-      /* FASE 8: se abre en el visor de la app, no en pestaña nueva */
-      item.addEventListener('click', () => verArchivo_(url, `${label} ${idx + 1}`));
+      const pos = docsFila_.length;
+      docsFila_.push({ url: url, titulo: `${label} ${idx + 1}` });
+      item.addEventListener('click', () => verLista_(docsFila_, pos));
       filesWrap.appendChild(item);
     });
   };
@@ -3629,11 +3656,12 @@ if (creacionEl) {
     if (driveMatch) {
       evUrl = `https://lh3.googleusercontent.com/d/${driveMatch[1]}`;
     }
-    evImg.src = evUrl;
     evImg.style.cursor = 'zoom-in';
     // Reemplazar listener previo
     const newEvImg = evImg.cloneNode(true);
     evImg.parentNode.replaceChild(newEvImg, evImg);
+    miniaturaDrive_(newEvImg, String(row.evidencia));
+    newEvImg.src = evUrl;
     newEvImg.addEventListener('click', () => {
       if (typeof openLightbox_ === 'function') openLightbox_(evUrl);
     });
@@ -3645,6 +3673,10 @@ if (creacionEl) {
   // Archivos recibidos / respuestas
   const filesWrap = document.getElementById('proc-ver-files');
   filesWrap.innerHTML = '';
+  /* 04/10 — VISOR ÚNICO: todos los documentos de la asignación (recibidos y
+     respuestas) van juntos en el visor, con anterior/siguiente; se abre en
+     el que se tocó. */
+  const docsFila_ = [];
   const addFileIcon_ = (urls, srcIcon, label) => {
     const validUrls = urls.filter(Boolean);
     if (!validUrls.length) return;
@@ -3657,8 +3689,9 @@ if (creacionEl) {
         <img src="${srcIcon}" alt="${label}" />
         ${validUrls.length > 1 ? `<span class="proc-file-counter">${idx + 1}</span>` : ''}
         <span class="proc-file-label">${label} ${idx + 1}</span>`;
-      /* FASE 8: se abre en el visor de la app, no en pestaña nueva */
-      item.addEventListener('click', () => verArchivo_(url, `${label} ${idx + 1}`));
+      const pos = docsFila_.length;
+      docsFila_.push({ url: url, titulo: `${label} ${idx + 1}` });
+      item.addEventListener('click', () => verLista_(docsFila_, pos));
       filesWrap.appendChild(item);
     });
   };
@@ -7095,7 +7128,10 @@ function bdpExpPintarItems_(items, folderId, showPath) {
       openBtn.textContent = 'Abrir';
       openBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        verArchivo_(it.url, it.name);          /* FASE 8: visor en modal */
+        /* 04/10 — visor único con TODOS los archivos que se ven en la lista */
+        const archivos = items.filter(x => x.type !== 'folder');
+        verLista_(archivos.map(x => ({ id: x.id, url: x.url, titulo: x.name, mime: x.mimeType, detalle: x.path || '' })),
+          Math.max(0, archivos.indexOf(it)));
       });
 
       const copyBtn = document.createElement('button');
@@ -7274,7 +7310,11 @@ function bdpArchRender_(filtro) {
       /* FASE 9 · ajuste 3: el visor lleva el botón ＋ Agregar con esta misma acción. */
       openBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        verArchivo_(it.url, it.name, () => bdpArchAgregar_(it));
+        /* 04/10 — visor único con los archivos de la carpeta; AGREGAR toma el que se está viendo */
+        const archivos = items.filter(x => x.type !== 'folder');
+        verLista_(archivos.map(x => ({ id: x.id, url: x.url, titulo: x.name, mime: x.mimeType, _it: x })),
+          Math.max(0, archivos.indexOf(it)),
+          { agregar: (d) => bdpArchAgregar_((d && d._ref && d._ref._it) || it), agregarTexto: 'Agregar al expediente' });
       });
 
       const addBtn = document.createElement('button');

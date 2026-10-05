@@ -289,7 +289,7 @@
     e.prompt();
     return e.userChoice.then(function (r) {
       if (r && r.outcome === 'accepted') {
-        K.sonar('sound/pay-success.mp3');
+        K.sonar('sound/pay_success.mp3');
         return 'instalada';
       }
       /* si dijo que no, se guarda el evento otra vez por si cambia de idea */

@@ -247,6 +247,7 @@
           '<button type="button" class="kit-btn" id="ica-enviar-sel" disabled>' + ico('enviar') + ' Enviar seleccionados <b id="ica-nsel">0</b></button>' +
           '<button type="button" class="kit-btn" id="ica-mitrabajo">' + ico('libro') + ' Mi trabajo</button>' +
           '<button type="button" class="kit-btn" id="ica-config">' + ico('engranaje') + ' Configuración</button>' +
+          '<button type="button" class="kit-btn" id="ica-refrescar" title="Volver a traer la lista del servidor">' + ico('recargar') + ' Refrescar</button>' +
         '</div>' +
         '<div class="ica-resumen" id="ica-resumen"></div>' +
         '<div class="hf-barra">' +
@@ -276,6 +277,7 @@
     $('ica-enviar-sel').addEventListener('click', enviarSeleccion);
     $('ica-mitrabajo').addEventListener('click', abrirMiTrabajo);
     $('ica-config').addEventListener('click', abrirConfig);
+    $('ica-refrescar').addEventListener('click', refrescar);
     $('ica-vermas').addEventListener('click', function () { S.mostrar += 60; pintarLista(); });
     $('ica-sel-vis').addEventListener('click', seleccionarVisibles);
     $('ica-sel-limpiar').addEventListener('click', function () { S.sel = {}; pintarLista(); });
@@ -296,6 +298,20 @@
       pintarSeleccion();
     });
     return sec;
+  }
+
+  /** 04/10 · REFRESCAR: vuelve a pedir la lista (un viaje) y las respuestas nuevas. */
+  function refrescar() {
+    var b = $('ica-refrescar');
+    if (!b || b.disabled) return;
+    b.disabled = true; b.classList.add('ica-ocupado');
+    sonar('menu');
+    cargar(true).then(function () {
+      if (activa()) pintarTodo();
+      S.novEn = 0; novedades();
+      aviso('Lista actualizada.', 'ok', 2000);
+    }, function (e) { if (!cancelada(e)) aviso(e.message, 'aviso', 5000); })
+      .then(function () { b.disabled = false; b.classList.remove('ica-ocupado'); });
   }
 
   function salir() {
@@ -426,6 +442,7 @@
     else acc += btn('enviar', 'enviar', r.env ? 'Reenviar requerimiento' : 'Enviar requerimiento', enviable(r) ? 'bdp-icon-btn--marca' : '', !(enviable(r) || (r.env && !r.resp)));
     acc += btn('evidencia', 'clip', 'Anexar evidencia');
     acc += btn('etapa', 'adelante', 'Cambiar etapa');
+    if (puedeEliminar(r)) acc += btn('eliminar', 'basura', 'Eliminar contribuyente', 'danger-icon');
     return '<article class="sol-card ica-card ica-card--' + s.k + '" data-id="' + esc(r.id) + '">' +
       '<div class="ica-card__top">' +
         (sel ? '<label class="ica-sel" title="Seleccionar para envío"><input type="checkbox" class="ica-chk" data-id="' + esc(r.id) + '"' + (S.sel[r.id] ? ' checked' : '') + '></label>' : '') +
@@ -457,6 +474,45 @@
     else if (a === 'insistir') enviarUno(r, 'ins');
     else if (a === 'evidencia') abrirEvidencias(r);
     else if (a === 'etapa') abrirEtapa(r);
+    else if (a === 'eliminar') eliminar(r);
+  }
+
+  /* ══════════════ eliminar (04/10) ══════════════
+     ADMIN y DEV siempre; TRIBUTARIO solo si nunca se le envió nada (el
+     servidor vuelve a revisarlo). Se borra la fila y su carpeta de Drive va
+     a la papelera con todos sus documentos (se recupera durante 30 días). */
+  function puedeEliminar(r) { return esJefe() || (tiene('TRIBUTARIO') && !r.env); }
+  function eliminar(r) {
+    var m = modal({
+      titulo: 'Eliminar contribuyente', icono: 'basura',
+      cuerpo: '<div class="ica-conf"><p>Vas a eliminar a <b>' + esc(r.nom) + '</b> (oficio ' + esc(r.of) + ').</p>' +
+        '<ul class="ica-lista-conf"><li><span>Registro y bitácora</span><b>se borran de la hoja</b></li>' +
+        '<li><span>Carpeta de Drive</span><b>va a la papelera con todos sus documentos (' + (r.nev || 0) + ' evidencias)</b></li></ul>' +
+        '<p class="ica-nota">Drive guarda la papelera 30 días. Escribe el número de oficio para confirmar.</p>' +
+        '<label class="ica-campo"><span class="ica-campo__t">Número de oficio</span><input data-conf inputmode="numeric" autocomplete="off" placeholder="' + esc(r.of) + '"></label>' +
+        '<p class="ica-err" data-err hidden></p></div>',
+      pie: '<button type="button" class="kit-btn" data-cerrar>Cancelar</button><button type="button" class="kit-btn kit-btn--malo" data-si disabled>' + ico('basura') + ' Eliminar</button>'
+    });
+    var inp = m.q('[data-conf]'), si = m.q('[data-si]');
+    inp.addEventListener('input', function () { si.disabled = inp.value.trim() !== String(r.of); });
+    setTimeout(function () { inp.focus(); }, 80);
+    si.addEventListener('click', function () {
+      if (si.disabled) return;
+      ocupado(m, si, true);
+      var rid = si.__rid || (si.__rid = nuevoRid());
+      guardando(llamar('eliminar', { id: r.id }, { post: true, rid: rid }), 'Eliminando').then(function (d) {
+        ocupado(m, si, false); m.cerrar();
+        S.lista = (S.lista || []).filter(function (x) { return x.id !== r.id; });
+        delete S.porId[r.id]; delete S.sel[r.id];
+        sonar('success');
+        aviso('Contribuyente eliminado' + (d && d.carpeta ? '; su carpeta quedó en la papelera de Drive.' : '.'), 'ok', 4500);
+        if (activa()) pintarTodo();
+      }, function (e) {
+        ocupado(m, si, false);
+        if (e.codigo !== 'RED') si.__rid = null;
+        var er = m.q('[data-err]'); er.hidden = false; er.textContent = e.message; sonar('error');
+      });
+    });
   }
 
   function pintarSeleccion() {
@@ -708,9 +764,10 @@
         return '<div class="ica-bit__it"><div class="ica-bit__cab"><b>' + esc(titulo(a.autor || 'Sin autor')) + '</b><span>' + esc(a.fecha) + '</span></div><p>' + esc(a.texto) + '</p></div>';
       }).join('') : '<p class="ica-nada">Sin anotaciones.</p>';
     }
-    llamar('ficha', { id: r.id }, { signal: ctrl && ctrl.signal }).then(function (d) {
+    llamar('ficha', { id: r.id, archivos: 1 }, { signal: ctrl && ctrl.signal }).then(function (d) {
       if (!document.body.contains(m)) return;
       var ev = d.evidencias || [];
+      var archivos = d.archivos || ev.map(function (e) { return { id: e.id, n: e.n, m: e.m, f: e.f, t: e.t }; });
       m.q('[data-evid]').innerHTML = ev.length ? ev.map(function (e) {
         var tipo = e.t === 'doc' ? 'Documento enviado' : (e.t === 'resp' ? 'Respuesta del contribuyente' : 'Evidencia');
         return '<button type="button" class="ica-doc ica-doc--' + e.t + '" data-abrir="' + esc(e.id) + '" data-nombre="' + esc(e.n) + '" data-mime="' + esc(e.m) + '">' +
@@ -726,7 +783,7 @@
       pintarBit(d.bitacora);
       m.q('[data-evid]').addEventListener('click', function (e) {
         var b = e.target.closest('[data-abrir]'); if (!b) return;
-        verDrive(b.getAttribute('data-abrir'), b.getAttribute('data-nombre'));
+        abrirVisor(r, archivos, b.getAttribute('data-abrir'));
       });
     }, function (e) {
       if (cancelada(e)) return;
@@ -741,19 +798,73 @@
       return m ? { autor: m[1], fecha: m[2], texto: m[3], dia: Number(m[2].slice(6) + m[2].slice(3, 5) + m[2].slice(0, 2)) } : { autor: '', fecha: '', texto: l, dia: 0 };
     });
   }
-  function verDrive(id, nombre) {
-    var u = 'https://drive.google.com/file/d/' + id + '/view';
-    var p = perfil(), correo = String((p && p.correo) || '').trim().toLowerCase();
-    if (window.VISOR && typeof window.VISOR.abrir === 'function') return window.VISOR.abrir(u, { nombre: nombre, authuser: correo });
-    if (correo) u += '?authuser=' + encodeURIComponent(correo);
-    window.open(u, '_blank', 'noopener');
+  /* ══════════════ visor (04/10) ══════════════
+     El mismo de CONTRATACIÓN: todos los documentos de la carpeta del
+     contribuyente, anterior/siguiente, zoom y AGREGAR (evidencia). Los
+     bytes los entrega el backend ICA ('archivo'): nada se publica por
+     enlace ni se enmarca Drive. */
+  var TIPO_DOC = { doc: 'Documento enviado', resp: 'Respuesta del contribuyente', usr: 'Evidencia', otro: 'Documento' };
+  function fuenteICA(rid) {
+    return function (archivoId) {
+      return llamar('archivo', { id: rid, archivoId: archivoId }).then(function (d) {
+        if (d && d.b64) return { nombre: d.nombre, mime: d.mime, b64: d.b64 };
+        throw new Error((d && d.motivo) || 'No se pudo abrir el documento.');
+      });
+    };
+  }
+  function itemsDe(archivos) {
+    return (archivos || []).map(function (a) {
+      return { id: a.id, titulo: a.n, mime: a.m, detalle: (TIPO_DOC[a.t] || 'Documento') + (a.f ? ' · ' + a.f : '') };
+    });
+  }
+  /** Abre el visor con todos los documentos del registro, empezando en `idActual` (o en `primero`). */
+  function abrirVisor(r, archivos, idActual, primero) {
+    if (!window.VISOR || typeof window.VISOR.lista !== 'function') { aviso('El visor no cargó. Recarga la app.', 'aviso'); return; }
+    var items = itemsDe(archivos), ind = 0;
+    for (var k = 0; k < items.length; k++) if (items[k].id === idActual) { ind = k; break; }
+    if (primero) { items.unshift(primero); ind = 0; }
+    if (!items.length) { aviso('Este contribuyente aún no tiene documentos.', 'info'); return; }
+    window.VISOR.lista(items, {
+      indice: ind, fuente: fuenteICA(r.id),
+      agregarTexto: 'Agregar', agregarAyuda: 'Agregar una evidencia a este contribuyente (máx. 5)',
+      agregar: function (d, api) { agregarDesdeVisor(r, api); }
+    });
+  }
+  /** AGREGAR del visor: elige archivos, los sube como evidencia y los suma al visor sin cerrarlo. */
+  function agregarDesdeVisor(r, api) {
+    var inp = document.createElement('input');
+    inp.type = 'file'; inp.multiple = true; inp.hidden = true;
+    document.body.appendChild(inp);
+    inp.addEventListener('change', function () {
+      var files = Array.prototype.slice.call(inp.files || []); inp.remove();
+      var cola = Promise.resolve();
+      files.forEach(function (file) {
+        cola = cola.then(function () {
+          if (file.size > 20 * 1024 * 1024) { aviso(file.name + ': pasa de 20 MB.', 'aviso'); return; }
+          aviso('Subiendo ' + file.name + '…', 'info', 2500);
+          return leerB64(file).then(function (b64) {
+            return llamar('evidencia', { id: r.id, archivo: { nombre: file.name || ('imagen-' + Date.now() + '.png'), mime: file.type || 'application/octet-stream', b64: b64 } }, { post: true, rid: nuevoRid() });
+          }).then(function (res) {
+            parchar(res.fila); if (activa()) pintarLista();
+            var nueva = (res.evidencias || []).filter(function (e) { return e.t === 'usr'; }).slice(-1)[0];
+            if (nueva) api.sumar({ id: nueva.id, titulo: nueva.n, mime: nueva.m, detalle: 'Evidencia · ' + (nueva.f || ''), fuente: fuenteICA(r.id) }, true);
+            sonar('success'); aviso('Evidencia agregada.', 'ok', 2500);
+          }, function (e) { aviso(e.message, 'aviso', 5000); sonar('error'); });
+        });
+      });
+    }, { once: true });
+    inp.click();
   }
   function previa(r, tipo, btn) {
     if (btn && btn.disabled) return;
     if (btn) btn.disabled = true;
     guardando(llamar('previa', { id: r.id, tipo: tipo }, { post: true }), 'Armando la vista previa').then(function (d) {
       if (btn) btn.disabled = false;
-      verDrive(d.archivoId, d.nombre);
+      var b64 = d.b64;
+      var primero = b64 ? { titulo: d.nombre, tipo: 'pdf', detalle: 'Vista previa (aún no enviada)',
+        cargar: function () { return Promise.resolve({ nombre: d.nombre + '.pdf', mime: 'application/pdf', base64: b64 }); } } : null;
+      if (!primero) { aviso('El servidor aún no tiene la vista previa en PDF. Pide al administrador desplegar la versión nueva de ICA.', 'aviso', 7000); return; }
+      abrirVisor(r, d.archivos || [], null, primero);
     }, function (e) { if (btn) btn.disabled = false; aviso(e.message, 'aviso', 6000); });
   }
 
@@ -853,7 +964,8 @@
       drop.classList.toggle('ica-drop--lleno', propias() >= 5);
       drop.querySelector('b').textContent = propias() >= 5 ? 'Ya tiene 5 evidencias' : 'Arrastra aquí los archivos (' + propias() + '/5)';
     }
-    llamar('ficha', { id: r.id }).then(function (d) { ev = d.evidencias || []; pintar(); }, function (e) { m.q('[data-lista]').innerHTML = '<p class="ica-err">' + esc(e.message) + '</p>'; });
+    var archivos = null;
+    llamar('ficha', { id: r.id, archivos: 1 }).then(function (d) { ev = d.evidencias || []; archivos = d.archivos || null; pintar(); }, function (e) { m.q('[data-lista]').innerHTML = '<p class="ica-err">' + esc(e.message) + '</p>'; });
     function subir(files) {
       Array.prototype.forEach.call(files, function (file) {
         cola = cola.then(function () {
@@ -888,7 +1000,14 @@
     document.addEventListener('paste', pegar);
     m.q('[data-lista]').addEventListener('click', function (e) {
       var a = e.target.closest('[data-abrir]');
-      if (a) { verDrive(a.getAttribute('data-abrir'), a.getAttribute('data-nombre')); return; }
+      if (a) {
+        /* la lista de la carpeta + lo subido en este modal (sin repetir) */
+        var todos = (archivos || []).slice(), vistos = {};
+        todos.forEach(function (x) { vistos[x.id] = 1; });
+        ev.forEach(function (x) { if (!vistos[x.id] && x.id.charAt(0) !== '_') todos.push({ id: x.id, n: x.n, m: x.m, f: x.f, t: x.t }); });
+        abrirVisor(r, todos, a.getAttribute('data-abrir'));
+        return;
+      }
       var q = e.target.closest('[data-quitar]'); if (!q || q.disabled) return;
       var fid = q.getAttribute('data-quitar');
       confirmar('Quitar evidencia', '<p>El archivo va a la papelera de Drive (se puede recuperar durante 30 días).</p>', 'Quitar').then(function (ok) {
@@ -1129,8 +1248,8 @@
               var inp = x.largo ? '<textarea rows="8" data-k="' + esc(x.k) + '">' + esc(x.v) + '</textarea>' :
                 (x.k === 'plazo.unidad' ? '<select data-k="plazo.unidad"><option value="HABILES"' + (x.v !== 'CALENDARIO' ? ' selected' : '') + '>Días hábiles</option><option value="CALENDARIO"' + (x.v === 'CALENDARIO' ? ' selected' : '') + '>Días calendario</option></select>' :
                   /\.on$/.test(x.k) ? '<select data-k="' + esc(x.k) + '"><option' + (x.v !== 'NO' ? ' selected' : '') + '>SI</option><option' + (x.v === 'NO' ? ' selected' : '') + '>NO</option></select>' :
-                  '<input data-k="' + esc(x.k) + '" value="' + esc(x.v) + '"' + (x.tipo === 'numero' ? ' type="number" min="0"' : '') + '>');
-              return '<label class="ica-campo"><span class="ica-campo__t">' + esc(x.t) + '</span>' + inp + '</label>';
+                  '<input data-k="' + esc(x.k) + '" value="' + esc(x.v) + '"' + (x.tipo === 'numero' ? ' type="number" min="0"' : '') + (x.bloq ? ' disabled' : '') + '>');
+              return '<label class="ica-campo' + (x.bloq ? ' ica-campo--bloq' : '') + '"><span class="ica-campo__t">' + esc(x.t) + (x.bloq ? ' <span class="ica-opc">· solo el desarrollador</span>' : '') + '</span>' + inp + '</label>';
             }).join('') + '</details>';
         }).join('') + '<p class="ica-err" data-err hidden></p>',
       pie: '<button type="button" class="kit-btn" data-cerrar>Cerrar</button><button type="button" class="kit-btn kit-btn--marca" data-guardar>' + ico('check') + ' Guardar cambios</button>'
@@ -1147,7 +1266,7 @@
     });
     m.q('[data-guardar]').addEventListener('click', function () {
       var btn = this, cambios = {}, n = 0;
-      c.campos.forEach(function (x) { var el = m.q('[data-k="' + x.k + '"]'); if (el && String(el.value) !== String(x.v)) { cambios[x.k] = el.value; n++; } });
+      c.campos.forEach(function (x) { if (x.bloq) return; var el = m.q('[data-k="' + x.k + '"]'); if (el && String(el.value) !== String(x.v)) { cambios[x.k] = el.value; n++; } });
       if (!n) { m.cerrar(); return; }
       ocupado(m, btn, true);
       var rid = btn.__rid || (btn.__rid = nuevoRid());

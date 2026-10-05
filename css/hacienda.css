@@ -832,3 +832,6 @@ html.hf-en-puerta .container { padding-top: 0 !important; }
 /* 04/10 — el cohete de guardado va SOBRE los modales (10000–10015).
    Antes quedaba a 9800 y se veía detrás del formulario. Debajo del visor (10050) y de Swal. */
 html .kit-guard { z-index: 10040; }
+/* 04/10 · el visor único va sobre los modales de la app (10000) y por debajo del guardado */
+html .kit-visor { z-index: 10030; }
+.ica-campo--bloq input { opacity: .7; cursor: not-allowed; }
