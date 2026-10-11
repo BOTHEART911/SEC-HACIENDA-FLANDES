@@ -1,0 +1,14 @@
+/* SEC-HACIENDA-FLANDES · INFORME GERENCIAL (11/10/2026) — modal de js/gerencial.js */
+.ger { width: min(560px, 100%); }
+.ger__campo { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; font-size: .85rem; font-weight: 600; color: var(--k-apagado); }
+.ger__campo select, .ger__campo input {
+  font: inherit; font-weight: 500; font-size: .95rem; color: var(--k-texto);
+  background: var(--k-superficie, #fff); border: 1px solid var(--k-borde, #d8e1dc); border-radius: 12px;
+  padding: 10px 12px; min-height: 44px; width: 100%; box-sizing: border-box;
+}
+.ger__pastillas { display: flex; flex-wrap: wrap; gap: 8px; }
+.ger__fechas { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.ger--ocupado { opacity: .75; pointer-events: none; cursor: progress; }
+.ger--ocupado i.hi { animation: ger-gira 1s linear infinite; display: inline-flex; }
+@keyframes ger-gira { to { transform: rotate(360deg); } }
+@media (max-width: 420px) { .ger__fechas { grid-template-columns: 1fr; gap: 0; } }
