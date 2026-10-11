@@ -50,7 +50,10 @@
   function libPDF() { return (window.jspdf && window.jspdf.jsPDF) ? Promise.resolve(true) : guion(CDN_PDF); }
   function libGer() { return window.KIT_GERENCIAL ? Promise.resolve(true) : guion('kit/gerencial.js?v=' + encodeURIComponent(window.APP_VERSION || '')); }
 
-  /* el escudo de la app a 240 px (en el PDF mide 26 mm; el de 512 hace lento cada página) */
+  /* el escudo de la app a 240 px. Va SIEMPRE sobre la franja verde del
+     membrete (cabecera y portada), así que sale en JPEG sobre ese verde:
+     jsPDF mete el JPEG tal cual y el PNG lo tiene que descomprimir y volver
+     a comprimir (medido en tu PC: 786 ms el PNG, 274 ms el JPEG; PDF 157 → 108 KB). */
   var escudo = null;
   function escudoPNG() {
     if (escudo !== null) return Promise.resolve(escudo);
@@ -59,8 +62,10 @@
       img.onload = function () {
         try {
           var c = document.createElement('canvas'); c.width = 240; c.height = 240;
-          c.getContext('2d').drawImage(img, 0, 0, 240, 240);
-          escudo = c.toDataURL('image/png');
+          var g = c.getContext('2d');
+          g.fillStyle = 'rgb(6,64,43)'; g.fillRect(0, 0, 240, 240);     /* el verde del membrete (kit/gerencial.js C.verde) */
+          g.drawImage(img, 0, 0, 240, 240);
+          escudo = c.toDataURL('image/jpeg', 0.92);
         } catch (e) { escudo = ''; }
         res(escudo);
       };
@@ -106,12 +111,17 @@
       return j.data;
     });
   }
-  function traerPersonas() {
-    if (!jefe()) return Promise.resolve(null);
-    if (personasListas) return Promise.resolve(personasListas);
+  /* Al abrir el modal, UN viaje de fondo: calienta en el servidor las 3
+     hojas (si estaban en frío, 2-4 s que ya no paga el clic en Descargar) y,
+     a ADMIN/DEV, le trae la lista de personas. No más de uno cada 5 min. */
+  var prepHecho = 0;
+  function prepararFondo() {
+    var conLista = jefe() && !personasListas;
+    if (!conLista && Date.now() - prepHecho < 5 * 60e3) return Promise.resolve(personasListas);
     if (!pidiendoPersonas) {
-      pidiendoPersonas = pedir({ personas: '1' }).then(function (d) {
-        personasListas = (d && d.personas) || null;
+      prepHecho = Date.now();
+      pidiendoPersonas = pedir(conLista ? { prep: '1', personas: '1' } : { prep: '1' }).then(function (d) {
+        if (d && d.personas) personasListas = d.personas;
         return personasListas;
       }).catch(function () { return null; }).then(function (x) { pidiendoPersonas = null; return x; });
     }
@@ -213,10 +223,8 @@
     armar();
     var esJefe = jefe();
     $('ger-quien-c').hidden = !esJefe;
-    if (esJefe) {
-      pintarPersonas(personasListas);
-      if (!personasListas) traerPersonas().then(function (l) { if (l && modal && !modal.classList.contains('hidden')) pintarPersonas(l); });
-    }
+    if (esJefe) pintarPersonas(personasListas);
+    prepararFondo().then(function (l) { if (esJefe && l && modal && !modal.classList.contains('hidden')) pintarPersonas(l); });
     if (!$('ger-desde').value) ponerPeriodo('mes');
     error('');
     modal.classList.remove('hidden');
@@ -408,7 +416,7 @@
     if (b && !b.__ger) { b.__ger = true; b.addEventListener('click', abrir); }
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', enchufar); else enchufar();
-  window.addEventListener('hac:login', function () { personasListas = null; });
+  window.addEventListener('hac:login', function () { personasListas = null; prepHecho = 0; });
 
   window.GERENCIAL = { abrir: abrir, _spec: spec, _decodificar: decodificar, _medidas: function () { return MEDIDAS.slice(); } };
 }());
