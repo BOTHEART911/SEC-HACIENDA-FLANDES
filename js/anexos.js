@@ -92,11 +92,12 @@
   function carpetasDe(uid) { return S.carpetas.filter(function (c) { return c.u === uid; }); }
   function contratosDe(uid) { return carpetasDe(uid).filter(function (c) { return c.t === 'CONTRATO'; }).sort(function (a, b) { return b.n - a.n; }); }
   function cuentasDe(ctId) { return S.carpetas.filter(function (c) { return c.t === 'CUENTA' && c.ct === ctId; }).sort(function (a, b) { return a.n - b.n; }); }
+  /* la cuenta que se llena ahora: la ÚLTIMA si está abierta; si no, la última + 1
+     (una cuenta vieja reabierta se corrige en su propia tarjeta) */
   function cuentaAbierta(ctId) {
-    var cs = cuentasDe(ctId), ab = cs.filter(function (c) { return c.s === 'ABIERTA'; })[0];
-    if (ab) return { fila: ab, n: ab.n };
-    var max = 0; cs.forEach(function (c) { max = Math.max(max, c.n); });
-    return { fila: null, n: max + 1 };
+    var cs = cuentasDe(ctId), ult = cs[cs.length - 1];
+    if (ult && ult.s === 'ABIERTA') return { fila: ult, n: ult.n };
+    return { fila: null, n: ult ? ult.n + 1 : 1 };
   }
   function evidenciasDe(cuId) {
     return S.evidencias.filter(function (e) { return e.cu === cuId && e.s !== 'ELIMINADA'; })
@@ -261,33 +262,34 @@
         '</div>';
     }
     /* cuenta que se llena ahora */
-    if (abierto) {
-      var ab = cuentaAbierta(ct.id);
-      h += tarjetaCuenta(ct, ab.fila, ab.n, true);
-    }
+    var ab = abierto ? cuentaAbierta(ct.id) : null;
+    if (abierto) h += tarjetaCuenta(ct, ab.fila, ab.n, true);
+    /* cuentas viejas REABIERTAS por un administrador: también se corrigen */
+    cs.filter(function (c) { return c.s === 'ABIERTA' && !(ab && ab.fila && ab.fila.id === c.id); }).reverse()
+      .forEach(function (c) { h += tarjetaCuenta(ct, c, c.n, true, false, true); });
     /* historial: aprobadas, de la más reciente a la más vieja */
     var aprob = cs.filter(function (c) { return c.s === 'APROBADA'; }).reverse();
     if (aprob.length) {
       h += '<h4 class="da-sub">' + ico('libro', 16) + ' Historial (aprobadas, solo lectura)</h4>';
-      var ultima = cs.length ? Math.max.apply(null, cs.map(function (c) { return c.n; })) : 0;
-      aprob.forEach(function (c) { h += tarjetaCuenta(ct, c, c.n, false, c.n === ultima); });
+      aprob.forEach(function (c) { h += tarjetaCuenta(ct, c, c.n, false); });
     }
     return h;
   }
 
-  function tarjetaCuenta(ct, fila, n, editable, esUltima) {
+  function tarjetaCuenta(ct, fila, n, editable, _no, reabierta) {
     var evs = fila ? evidenciasDe(fila.id) : (editable ? evidenciasDe('__nueva__' + ct.id) : []);
     var h = '<section class="da-cuenta' + (editable ? ' da-cuenta--abierta' : '') + '">' +
       '<header class="da-cuenta__cab">' +
         '<div class="da-cuenta__t">' + (editable ? kico('lapiz', 18) : kico('candado', 18)) +
-          ' <b>CUENTA ' + n + '</b><span class="da-estado da-estado--' + (editable ? 'ab' : 'ap') + '">' + (editable ? 'abierta' : 'aprobada') + '</span>' +
+          ' <b>CUENTA ' + n + '</b><span class="da-estado da-estado--' + (editable ? 'ab' : 'ap') + '">' + (editable ? (reabierta ? 'reabierta' : 'abierta') : 'aprobada') + '</span>' +
           (fila ? '' : '<span class="da-nota">se crea con tu primer anexo</span>') + '</div>' +
         '<div class="da-cuenta__acc">';
-    if (editable) h += '<button type="button" class="kit-btn kit-btn--marca" data-da="agregar" data-ct="' + esc(ct.id) + '">' + kico('mas', 16) + ' Agregar evidencia</button>';
+    if (editable) h += '<button type="button" class="kit-btn kit-btn--marca" data-da="agregar" data-ct="' + esc(ct.id) + '"' + (reabierta ? ' data-cu="' + esc(fila.id) + '"' : '') + '>' + kico('mas', 16) + ' Agregar evidencia</button>';
     if (evs.length && fila) h += '<button type="button" class="kit-btn kit-btn--plano" data-da="copiar-todos" data-cu="' + esc(fila.id) + '">' + kico('copiar', 16) + ' Copiar todos</button>';
     if (fila && fila.f) h += '<button type="button" class="kit-btn kit-btn--plano" data-da="ver-carpeta" data-f="' + esc(fila.f) + '">' + ico('carpeta-abierta', 16) + ' Ver archivos</button>';
     if (S.yo.admin && fila && editable) h += '<button type="button" class="kit-btn kit-btn--plano" data-da="aprobar" data-id="' + esc(fila.id) + '">' + kico('check', 16) + ' Aprobar cuenta</button>';
-    if (S.yo.admin && fila && !editable && esUltima) h += '<button type="button" class="kit-btn kit-btn--plano" data-da="reabrir" data-id="' + esc(fila.id) + '">' + kico('girar', 16) + ' Reabrir</button>';
+    /* 18/10 — cualquier cuenta aprobada se puede reabrir (con PIN, salvo DEV) */
+    if (S.yo.admin && fila && !editable) h += '<button type="button" class="kit-btn kit-btn--plano" data-da="reabrir" data-id="' + esc(fila.id) + '">' + kico('girar', 16) + ' Reabrir</button>';
     h += '</div></header>';
     if (evs.length) {
       h += '<div class="da-tabla" role="table">';
@@ -330,7 +332,7 @@
     if (a === 'persona') { sonar('menu'); SEL.uid = b.dataset.uid; SEL.contrato = ''; pintar(); raiz.scrollTo({ top: 0 }); return; }
     if (a === 'volver') { sonar('back'); SEL.uid = ''; pintar(); return; }
     if (a === 'contrato') { sonar('menu'); SEL.contrato = b.dataset.id; pintar(); return; }
-    if (a === 'agregar') return abrirForm('nuevo', null, b.dataset.ct);
+    if (a === 'agregar') return abrirForm('nuevo', null, b.dataset.ct, b.dataset.cu);
     if (a === 'editar') return abrirForm('editar', evi(b.dataset.id));
     if (a === 'eliminar') return eliminar(b, evi(b.dataset.id));
     if (a === 'copiar') return copiar([evi(b.dataset.id)]);
@@ -439,13 +441,13 @@
 
   /* ══════════════ formulario: agregar / editar / reemplazar ══════════════ */
   var ADJ = null;
-  function abrirForm(modo, ev, ctId) {
+  function abrirForm(modo, ev, ctId, cuId) {
     sonar('menu');
     var ct = contrato(modo === 'editar' ? ev.ct : ctId);
     if (!ct) return;
-    var cu = modo === 'editar' ? contrato(ev.cu) : null;
-    var nCuenta = modo === 'editar' ? (cu ? cu.n : '') : cuentaAbierta(ct.id).n;
-    FORM = { modo: modo, ev: ev, contrato: ct };
+    var cu = modo === 'editar' ? contrato(ev.cu) : (cuId ? contrato(cuId) : null);
+    var nCuenta = cu ? cu.n : cuentaAbierta(ct.id).n;
+    FORM = { modo: modo, ev: ev, contrato: ct, cuenta: (modo === 'nuevo' && cu) ? cu : null };
     $('da-f-titulo').textContent = modo === 'editar' ? 'Editar evidencia' : 'Agregar evidencia';
     $('da-f-cuenta').value = 'CONTRATO ' + tres(ct.n) + ' · CUENTA ' + nCuenta;
     var sel = $('da-f-obl');
@@ -525,12 +527,12 @@
 
     var t0 = performance.now();
     var rid = nuevoRid();
-    var modo = FORM.modo, ev0 = FORM.ev, ct = FORM.contrato;
+    var modo = FORM.modo, ev0 = FORM.ev, ct = FORM.contrato, cuFija = FORM.cuenta;
     var tmpId = 'tmp-' + rid, previo = null;
 
     /* 1) la fila aparece YA, con el avance */
     if (modo === 'nuevo') {
-      var ab = cuentaAbierta(ct.id);
+      var ab = cuFija ? { fila: cuFija } : cuentaAbierta(ct.id);
       S.evidencias.push({ id: tmpId, u: ct.u, ct: ct.id, cu: ab.fila ? ab.fila.id : '__nueva__' + ct.id, o: obl, k: '…', nm: nombre, x: ext,
                           a: '', p: arch.size, s: 'SUBIENDO', __pend: true, __txt: 'Preparando la subida…' });
     } else {
@@ -557,7 +559,7 @@
       if (!arch) return null;
       var cuerpo = modo === 'editar'
         ? { rid: rid, reemplaza: ev0.id, ext: ext, peso: arch.size }
-        : { rid: rid, contrato: ct.id, obligacion: obl, nombre: nombre, ext: ext, peso: arch.size };
+        : { rid: rid, contrato: ct.id, cuenta: cuFija ? cuFija.id : '', obligacion: obl, nombre: nombre, ext: ext, peso: arch.size };
       var t1 = performance.now();
       return post('dasubida', cuerpo).then(function (s) {
         medir('dasubida', t1);
