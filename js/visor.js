@@ -215,15 +215,16 @@
     return lista([{ url: u, titulo: op.nombre || 'Archivo', mime: op.mime }], op);
   }
 
-  /** Todos los archivos de una carpeta (HACIENDA 'visorcarpeta'). */
-  function carpeta(ref, op) {
-    op = op || {};
-    var id = idCarpeta(ref);
-    if (!id) { pestana(ref); return true; }
-    aviso('Buscando los documentos de la carpeta…', 'info', 2500);
-    return getHacienda('visorcarpeta', { id: id, primero: 1 }).then(function (r) {
-      var fs = (r && r.archivos) || [];
-      /* 18/10 — el primer archivo llega en el mismo viaje que la lista */
+  /* 18/10 — carpetas adelantadas: la vista pide la carpeta de fondo al pintarse
+     y "Ver archivos" abre con lo que ya llegó (o se cuelga del viaje en curso).
+     La firma la da la vista (lo que sabe de la cuenta): si cambió, se pide de
+     nuevo. Vida máxima 5 min. */
+  var CARP = {}, VIDA_CARP = 5 * 60 * 1000;
+  function pedirCarpeta(id, firma) {
+    var c = CARP[id];
+    if (c && c.firma === String(firma || '') && Date.now() - c.t < VIDA_CARP) return c.p;
+    var p = getHacienda('visorcarpeta', { id: id, primero: 1 }).then(function (r) {
+      /* el primer archivo llega en el mismo viaje que la lista */
       if (r && r.primero && r.primero.b64 && !MEM[r.primero.id]) {
         try {
           var v = { nombre: r.primero.nombre, mime: r.primero.mime, bytes: aBytes(r.primero.b64) };
@@ -231,6 +232,33 @@
           guardar(r.primero.id, v);
         } catch (_) {}
       }
+      if (CARP[id] && CARP[id].p === p) CARP[id].hecho = true;
+      return r;
+    });
+    CARP[id] = { p: p, t: Date.now(), firma: String(firma || '') };
+    p.then(null, function () { if (CARP[id] && CARP[id].p === p) delete CARP[id]; });
+    return p;
+  }
+  /** De fondo y en silencio (una a la vez; si ya está, no hace nada). */
+  var adelantandoCarp = false;
+  function adelantarCarpeta(ref, firma) {
+    var id = idCarpeta(ref);
+    if (!id || adelantandoCarp) return;
+    var c = CARP[id];
+    if (c && c.firma === String(firma || '') && Date.now() - c.t < VIDA_CARP) return;
+    adelantandoCarp = true;
+    pedirCarpeta(id, firma).then(null, function () {}).then(function () { adelantandoCarp = false; });
+  }
+
+  /** Todos los archivos de una carpeta (HACIENDA 'visorcarpeta'). */
+  function carpeta(ref, op) {
+    op = op || {};
+    var id = idCarpeta(ref);
+    if (!id) { pestana(ref); return true; }
+    var c = CARP[id], listo = c && c.firma === String(op.firma || '') && c.hecho;
+    if (!listo) aviso('Buscando los documentos de la carpeta…', 'info', 2500);
+    return pedirCarpeta(id, op.firma).then(function (r) {
+      var fs = (r && r.archivos) || [];
       if (!fs.length) { aviso('La carpeta no tiene archivos.', 'aviso'); return false; }
       return lista(fs.map(function (f) { return { id: f.id, titulo: f.nombre, mime: f.mime, peso: f.peso, detalle: f.ruta || f.fecha || '' }; }), op);
     }, function (e) {
@@ -270,7 +298,7 @@
   }
 
   window.VISOR = {
-    abrir: abrir, lista: lista, carpeta: carpeta, cerrar: cerrar, abierto: abierto, urlDe: urlDe, bytes: bytesDe,
+    abrir: abrir, lista: lista, carpeta: carpeta, adelantarCarpeta: adelantarCarpeta, cerrar: cerrar, abierto: abierto, urlDe: urlDe, bytes: bytesDe,
     medidas: function () { return MEDIDAS.slice(); },
     olvidar: function (id) { if (MEM[id]) { PESO -= MEM[id].bytes.length; delete MEM[id]; ORDEN = ORDEN.filter(function (x) { return x !== id; }); } },
     _id: idDrive, _tipo: tipoDe, _esCarpeta: esCarpeta,

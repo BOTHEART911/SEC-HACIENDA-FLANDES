@@ -167,7 +167,29 @@
     } else {
       if (fr) fr.style.display = 'none';
       p.innerHTML = cabecera() + panelUsuario(SEL.uid || S.yo.uid);
+      adelantarVer();
     }
+  }
+
+  /* 18/10 — "Ver archivos" sin espera: la carpeta de la primera cuenta que se
+     ve (la actual o la última aprobada) se pide de fondo, detrás de lo que se
+     está pintando, y queda lista con su primer archivo. Una sola a la vez; si
+     la persona ya salió de la vista, no se pide. */
+  var tAdel = 0;
+  function adelantarVer() {
+    clearTimeout(tAdel);
+    tAdel = setTimeout(function () {
+      var v = $('view-drive-anexos'), b = document.querySelector('#da-panel [data-da="ver-carpeta"]');
+      if (PEND > 0 || !b || !v || v.hidden || v.offsetParent === null || !raiz.VISOR || !raiz.VISOR.adelantarCarpeta) return;
+      raiz.VISOR.adelantarCarpeta(b.dataset.f, b.dataset.fi || '');
+    }, 700);
+  }
+  /** Lo que la vista sabe de la cuenta; si cambia (subir, editar, borrar), la carpeta se pide de nuevo. */
+  function firmaCuenta(cuId) {
+    var s = '';
+    S.evidencias.forEach(function (e) { if (e.cu === cuId && !e.__pend) s += e.id + ':' + (e.a || '') + ':' + e.s + ':' + e.o + '.' + e.k + ':' + e.nm + ';'; });
+    var x = 0; for (var i = 0; i < s.length; i++) x = (x * 31 + s.charCodeAt(i)) >>> 0;
+    return String(x);
   }
 
   function cabecera() {
@@ -286,7 +308,7 @@
         '<div class="da-cuenta__acc">';
     if (editable) h += '<button type="button" class="kit-btn kit-btn--marca" data-da="agregar" data-ct="' + esc(ct.id) + '"' + (reabierta ? ' data-cu="' + esc(fila.id) + '"' : '') + '>' + kico('mas', 16) + ' Agregar evidencia</button>';
     if (evs.length && fila) h += '<button type="button" class="kit-btn kit-btn--plano" data-da="copiar-todos" data-cu="' + esc(fila.id) + '">' + kico('copiar', 16) + ' Copiar todos</button>';
-    if (fila && fila.f) h += '<button type="button" class="kit-btn kit-btn--plano" data-da="ver-carpeta" data-f="' + esc(fila.f) + '">' + ico('carpeta-abierta', 16) + ' Ver archivos</button>';
+    if (fila && fila.f) h += '<button type="button" class="kit-btn kit-btn--plano" data-da="ver-carpeta" data-f="' + esc(fila.f) + '" data-fi="' + esc(firmaCuenta(fila.id)) + '">' + ico('carpeta-abierta', 16) + ' Ver archivos</button>';
     if (S.yo.admin && fila && editable) h += '<button type="button" class="kit-btn kit-btn--plano" data-da="aprobar" data-id="' + esc(fila.id) + '">' + kico('check', 16) + ' Aprobar cuenta</button>';
     /* 18/10 — cualquier cuenta aprobada se puede reabrir (con PIN, salvo DEV) */
     if (S.yo.admin && fila && !editable) h += '<button type="button" class="kit-btn kit-btn--plano" data-da="reabrir" data-id="' + esc(fila.id) + '">' + kico('girar', 16) + ' Reabrir</button>';
@@ -345,7 +367,7 @@
       raiz.VISOR.lista(todas.map(function (x) { return { id: x.a, titulo: x.o + '.' + x.k + '. ' + x.nm + '.' + x.x, mime: MIME[x.x], peso: x.p }; }), { indice: ix });
       return;
     }
-    if (a === 'ver-carpeta' || a === 'carpeta') { if (raiz.VISOR) raiz.VISOR.carpeta(b.dataset.f, {}); return; }
+    if (a === 'ver-carpeta' || a === 'carpeta') { if (raiz.VISOR) raiz.VISOR.carpeta(b.dataset.f, { firma: b.dataset.fi || '' }); return; }
     if (a === 'reconfirmar') return reconfirmar(b, evi(b.dataset.id));
     if (a === 'aprobar') return accionAdmin(b, 'daaprobar', b.dataset.id);
     if (a === 'reabrir') return accionAdmin(b, 'dareabrir', b.dataset.id);
