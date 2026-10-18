@@ -101,35 +101,6 @@
     });
   }
 
-  /* 18/10 — un archivo GRANDE (más de 1 MB) se pide en trozos EN PARALELO: cada
-     trozo es una ejecución de Apps Script distinta y la respuesta de cada una
-     pesa la cuarta parte (2,6 MB tardaban 7 s en una sola). Si el backend no
-     sabe de trozos (versión anterior) o el archivo se convierte a PDF, se pide
-     entero como antes. */
-  var TROZO = 700 * 1024, TROZOS_MAX = 6;
-  var CONVIERTE = /msword|rtf|opendocument|ms-powerpoint|presentationml|google-apps/;
-  function fuentePorTrozos(peso, mime) {
-    return function (id) {
-      if (!(peso > 1100 * 1024) || CONVIERTE.test(String(mime || ''))) return fuenteHacienda(id);
-      var n = Math.min(TROZOS_MAX, Math.ceil(peso / TROZO)), tam = Math.ceil(peso / n), pedidos = [];
-      for (var k = 0; k < n; k++) {
-        pedidos.push(getHacienda('visordoc', { id: id, desde: k * tam, hasta: Math.min(peso, (k + 1) * tam) - 1 }));
-      }
-      return Promise.all(pedidos).then(function (rs) {
-        if (rs.some(function (r) { return !r || !r.parte; })) {
-          var entero = rs.filter(function (r) { return r && r.b64 && !r.parte; })[0];
-          if (entero) return { nombre: entero.nombre, mime: entero.mime, b64: entero.b64 };
-          return fuenteHacienda(id);
-        }
-        var partes = rs.map(function (r) { return aBytes(r.b64); }), total = 0;
-        partes.forEach(function (p) { total += p.length; });
-        var out = new Uint8Array(total), pos = 0;
-        partes.forEach(function (p) { out.set(p, pos); pos += p.length; });
-        return { nombre: rs[0].nombre, mime: rs[0].mime, bytes: out };
-      });
-    };
-  }
-
   /** Pide (una sola vez) los bytes de un id con la fuente dada. */
   function bytesDe(id, fuente, nombre) {
     if (MEM[id]) return Promise.resolve(MEM[id]);
@@ -175,7 +146,7 @@
     var d = { titulo: titulo, detalle: it.detalle || '', _ref: it };
     if (typeof it.cargar === 'function') { d.cargar = it.cargar; if (it.tipo) d.tipo = it.tipo; return d; }
     if (id && !esCarpeta(url)) {
-      var f = it.fuente || fuente || (it.peso ? fuentePorTrozos(Number(it.peso), it.mime) : fuenteHacienda);
+      var f = it.fuente || fuente || fuenteHacienda;
       var t = tipoDe(it.mime, titulo);
       if (t) d.tipo = t;
       d.cargar = function () {
@@ -250,8 +221,16 @@
     var id = idCarpeta(ref);
     if (!id) { pestana(ref); return true; }
     aviso('Buscando los documentos de la carpeta…', 'info', 2500);
-    return getHacienda('visorcarpeta', { id: id }).then(function (r) {
+    return getHacienda('visorcarpeta', { id: id, primero: 1 }).then(function (r) {
       var fs = (r && r.archivos) || [];
+      /* 18/10 — el primer archivo llega en el mismo viaje que la lista */
+      if (r && r.primero && r.primero.b64 && !MEM[r.primero.id]) {
+        try {
+          var v = { nombre: r.primero.nombre, mime: r.primero.mime, bytes: aBytes(r.primero.b64) };
+          v.tipo = tipoDe(v.mime, v.nombre) || 'otro';
+          guardar(r.primero.id, v);
+        } catch (_) {}
+      }
       if (!fs.length) { aviso('La carpeta no tiene archivos.', 'aviso'); return false; }
       return lista(fs.map(function (f) { return { id: f.id, titulo: f.nombre, mime: f.mime, peso: f.peso, detalle: f.ruta || f.fecha || '' }; }), op);
     }, function (e) {
