@@ -42,7 +42,8 @@
   var LECTURAS_DE_VISTA = {
     listsolicitudes: 1, listatenciones: 1, listprocesos: 1, listpredial: 1,
     getpredial: 1, getsolicitudbyid: 1, listdriverows: 1, listmisexpedientes: 1,
-    buscarmisexpedientes: 1, descargaopciones: 1, getpredialbloque: 1
+    buscarmisexpedientes: 1, descargaopciones: 1, getpredialbloque: 1,
+    dapanel: 1, daarranque: 1   /* 18/10 — Drive anexos: leer no ciega la pantalla */
   };
 
   var ATRIBUTO = 'data-hac-busy';
