@@ -130,3 +130,9 @@
 .da-arr__q { display: flex; gap: 10px; align-items: flex-start; padding: 8px; border-bottom: 1px solid var(--k-linea); cursor: pointer; }
 .da-arr__q:last-child { border-bottom: 0; }
 .da-arr__q small { color: var(--k-apagado); }
+
+/* fila guardándose de fondo */
+.da-fila--pend .da-fila__nom small { color: var(--k-aviso); font-weight: 600; }
+.da-giro { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--k-linea); border-top-color: var(--k-marca); display: inline-block; animation: da-giro .8s linear infinite; }
+@keyframes da-giro { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .da-giro { animation: none; } }

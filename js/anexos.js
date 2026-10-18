@@ -276,7 +276,7 @@
   }
 
   function tarjetaCuenta(ct, fila, n, editable, esUltima) {
-    var evs = fila ? evidenciasDe(fila.id) : [];
+    var evs = fila ? evidenciasDe(fila.id) : (editable ? evidenciasDe('__nueva__' + ct.id) : []);
     var h = '<section class="da-cuenta' + (editable ? ' da-cuenta--abierta' : '') + '">' +
       '<header class="da-cuenta__cab">' +
         '<div class="da-cuenta__t">' + (editable ? kico('lapiz', 18) : kico('candado', 18)) +
@@ -284,7 +284,7 @@
           (fila ? '' : '<span class="da-nota">se crea con tu primer anexo</span>') + '</div>' +
         '<div class="da-cuenta__acc">';
     if (editable) h += '<button type="button" class="kit-btn kit-btn--marca" data-da="agregar" data-ct="' + esc(ct.id) + '">' + kico('mas', 16) + ' Agregar evidencia</button>';
-    if (evs.length) h += '<button type="button" class="kit-btn kit-btn--plano" data-da="copiar-todos" data-cu="' + esc(fila.id) + '">' + kico('copiar', 16) + ' Copiar todos</button>';
+    if (evs.length && fila) h += '<button type="button" class="kit-btn kit-btn--plano" data-da="copiar-todos" data-cu="' + esc(fila.id) + '">' + kico('copiar', 16) + ' Copiar todos</button>';
     if (fila && fila.f) h += '<button type="button" class="kit-btn kit-btn--plano" data-da="ver-carpeta" data-f="' + esc(fila.f) + '">' + ico('carpeta-abierta', 16) + ' Ver archivos</button>';
     if (S.yo.admin && fila && editable) h += '<button type="button" class="kit-btn kit-btn--plano" data-da="aprobar" data-id="' + esc(fila.id) + '">' + kico('check', 16) + ' Aprobar cuenta</button>';
     if (S.yo.admin && fila && !editable && esUltima) h += '<button type="button" class="kit-btn kit-btn--plano" data-da="reabrir" data-id="' + esc(fila.id) + '">' + kico('girar', 16) + ' Reabrir</button>';
@@ -293,6 +293,14 @@
       h += '<div class="da-tabla" role="table">';
       evs.forEach(function (e) {
         var subiendo = e.s === 'SUBIENDO';
+        if (e.__pend) {
+          h += '<div class="da-fila da-fila--sub da-fila--pend" role="row" data-id="' + esc(e.id) + '">' +
+            '<span class="da-fila__num">' + e.o + '.' + e.k + '.</span>' +
+            '<span class="da-fila__ico"><span class="da-giro"></span></span>' +
+            '<span class="da-fila__nom"><b>' + esc(e.nm) + '.' + esc(e.x) + '</b><small>' + esc(e.__txt || 'Guardando…') + '</small></span>' +
+            '<span class="da-fila__acc"></span></div>';
+          return;
+        }
         h += '<div class="da-fila' + (subiendo ? ' da-fila--sub' : '') + '" role="row" data-id="' + esc(e.id) + '">' +
           '<span class="da-fila__num">' + e.o + '.' + e.k + '.</span>' +
           '<span class="da-fila__ico">' + kico(/^xls/.test(e.x) ? 'hoja' : 'documento', 18) + '</span>' +
@@ -488,6 +496,19 @@
     p.querySelector('.da-prog__txt').textContent = txt || (Math.round(f * 100) + ' %');
   }
 
+  /* ── guardado SIN esperar: el formulario se cierra al primer toque y la fila
+        muestra el avance. Lo que tarda (Apps Script + Drive) va de fondo. ── */
+  var PEND = 0;
+  raiz.addEventListener('beforeunload', function (e) { if (PEND > 0) { e.preventDefault(); e.returnValue = ''; } });
+  function filaTemp(base, campos) { var o = {}; for (var k in base) o[k] = base[k]; for (var j in campos) o[j] = campos[j]; return o; }
+  function quitarFila(id) { var i = porId(S.evidencias, id); if (i >= 0) S.evidencias.splice(i, 1); }
+  function avance(id, txt) {
+    var i = porId(S.evidencias, id); if (i < 0) return;
+    S.evidencias[i].__txt = txt;
+    var el = document.querySelector('.da-fila[data-id="' + id + '"] small');
+    if (el) el.textContent = txt; else if (S) pintar();
+  }
+
   function guardarForm(btn) {
     if (!FORM) return;
     var obl = parseInt($('da-f-obl').value, 10);
@@ -499,60 +520,89 @@
     var ext = arch ? extDe(arch.name) : '';
     if (arch && EXT_OK.indexOf(ext) === -1) return aviso(ext === 'pdf' ? 'No se permiten PDF. Sube el Word o el Excel original.' : 'Solo Word o Excel (.doc, .docx, .xls, .xlsx).', 'aviso');
     if (arch && arch.size > (S.topeMB || 10) * 1048576) return aviso('El archivo pesa más de ' + (S.topeMB || 10) + ' MB.', 'aviso');
+    if (btn.__daOcupado) return;
+    btn.__daOcupado = true; setTimeout(function () { btn.__daOcupado = false; }, 800);
 
-    conBoton(btn, function (rid) {
-      var t0 = performance.now();
-      var ev = FORM.ev;
-      var paso = Promise.resolve();
-      /* 1) editar nombre u obligación (si cambiaron) */
-      if (FORM.modo === 'editar' && (obl !== ev.o || nombre !== ev.nm)) {
-        paso = paso.then(function () {
-          progreso(0, 'Guardando cambios…');
-          return post('daeditar', { rid: rid + '-e', id: ev.id, obligacion: obl, nombre: nombre }).then(function (r) { parchar(S.evidencias, [r.evidencia]); ev = r.evidencia; });
-        });
-      }
-      if (!arch) return paso.then(function () { medir('editar (total)', t0); terminarForm('Evidencia actualizada.'); });
-      /* 2) abrir la sesión de subida (un viaje corto) */
-      return paso.then(function () {
-        progreso(0, 'Preparando la subida…');
-        var cuerpo = FORM.modo === 'editar'
-          ? { rid: rid, reemplaza: ev.id, ext: ext, peso: arch.size }
-          : { rid: rid, contrato: FORM.contrato.id, obligacion: obl, nombre: nombre, ext: ext, peso: arch.size };
-        var t1 = performance.now();
-        return post('dasubida', cuerpo).then(function (s) {
-          medir('dasubida', t1);
-          parchar(S.carpetas, [s.cuenta]);
-          if (!s.reemplazo) parchar(S.evidencias, [s.evidencia]);
-          /* 3) los bytes van DIRECTO a Drive */
-          var t2 = performance.now();
-          return subirDrive(s.sesion, arch, ext, function (f) { progreso(f, 'Subiendo a Drive… ' + Math.round(f * 100) + ' %'); })
-            .then(function (meta) {
-              medir('PUT Drive', t2, peso(arch.size));
-              /* 4) el archivo YA está en Drive: se parcha la fila y se cierra el formulario.
-                    La confirmación al servidor va de fondo; si falla, la fila queda con
-                    el botón de confirmar (nunca se pierde el archivo). */
-              var ev = s.evidencia, local = {};
-              for (var k in ev) local[k] = ev[k];
-              local.s = 'ACTIVO'; local.a = meta.id || local.a; local.x = ext; local.p = arch.size;
-              parchar(S.evidencias, [local]);
-              medir('agregar (lo que espera la persona)', t0, peso(arch.size));
-              var esEditar = FORM.modo === 'editar';
-              terminarForm(esEditar ? 'Archivo reemplazado.' : 'Evidencia ' + local.o + '.' + local.k + '. guardada.');
-              var t3 = performance.now();
-              post('daconfirmar', { rid: rid + '-c', id: ev.id, archivo: meta.id || '' }).then(function (c) {
-                medir('daconfirmar (fondo)', t3);
-                parchar(S.evidencias, [c.evidencia]);
-              }, function (e) {
-                local.s = 'SUBIENDO'; parchar(S.evidencias, [local]); if (S) pintar();
-                aviso('El archivo subió, pero falta confirmarlo: toca el botón de confirmar en la fila. (' + (e && e.message || e) + ')', 'aviso', 6000);
-              });
-            });
+    var t0 = performance.now();
+    var rid = nuevoRid();
+    var modo = FORM.modo, ev0 = FORM.ev, ct = FORM.contrato;
+    var tmpId = 'tmp-' + rid, previo = null;
+
+    /* 1) la fila aparece YA, con el avance */
+    if (modo === 'nuevo') {
+      var ab = cuentaAbierta(ct.id);
+      S.evidencias.push({ id: tmpId, u: ct.u, ct: ct.id, cu: ab.fila ? ab.fila.id : '__nueva__' + ct.id, o: obl, k: '…', nm: nombre, x: ext,
+                          a: '', p: arch.size, s: 'SUBIENDO', __pend: true, __txt: 'Preparando la subida…' });
+    } else {
+      previo = filaTemp(ev0, {});
+      var i0 = porId(S.evidencias, ev0.id);
+      S.evidencias[i0] = filaTemp(ev0, { o: obl, nm: nombre, __pend: true, __txt: arch ? 'Preparando el reemplazo…' : 'Guardando cambios…' });
+      if (obl !== ev0.o) S.evidencias[i0].k = '…';
+    }
+    PEND++;
+    medir('guardar (lo que espera la persona)', t0);
+    terminarForm(modo === 'editar' ? (arch ? 'Reemplazando el archivo…' : 'Guardando cambios…') : 'Subiendo la evidencia…', true);
+
+    /* 2) de fondo: editar → abrir sesión → bytes a Drive → confirmar */
+    var idReal = modo === 'editar' ? ev0.id : tmpId;
+    var paso = Promise.resolve();
+    if (modo === 'editar' && (obl !== ev0.o || nombre !== ev0.nm)) {
+      paso = paso.then(function () {
+        return post('daeditar', { rid: rid + '-e', id: ev0.id, obligacion: obl, nombre: nombre }).then(function (r) {
+          parchar(S.evidencias, [filaTemp(r.evidencia, arch ? { __pend: true, __txt: 'Preparando el reemplazo…' } : {})]); pintar();
         });
       });
-    }).catch(function (e) { $('da-f-progreso').hidden = true; if (S) pintar(); fallo('No se pudo guardar', e); });
+    }
+    paso.then(function () {
+      if (!arch) return null;
+      var cuerpo = modo === 'editar'
+        ? { rid: rid, reemplaza: ev0.id, ext: ext, peso: arch.size }
+        : { rid: rid, contrato: ct.id, obligacion: obl, nombre: nombre, ext: ext, peso: arch.size };
+      var t1 = performance.now();
+      return post('dasubida', cuerpo).then(function (s) {
+        medir('dasubida', t1);
+        parchar(S.carpetas, [s.cuenta]);
+        if (modo === 'nuevo') { quitarFila(tmpId); idReal = s.evidencia.id; }
+        parchar(S.evidencias, [filaTemp(s.evidencia, { __pend: true, __txt: 'Subiendo a Drive… 0 %' })]);
+        pintar();
+        var t2 = performance.now();
+        return subirDrive(s.sesion, arch, ext, function (f) { avance(idReal, 'Subiendo a Drive… ' + Math.round(f * 100) + ' %'); })
+          .then(function (meta) {
+            medir('PUT Drive', t2, peso(arch.size));
+            var ev = filaTemp(s.evidencia, { s: 'ACTIVO', a: meta.id || s.evidencia.a, x: ext, p: arch.size });
+            parchar(S.evidencias, [ev]); pintar();
+            var t3 = performance.now();
+            /* la confirmación al servidor: si falla, queda el botón de confirmar (el archivo no se pierde) */
+            return post('daconfirmar', { rid: rid + '-c', id: s.evidencia.id, archivo: meta.id || '' }).then(function (c) {
+              medir('daconfirmar', t3); parchar(S.evidencias, [c.evidencia]);
+            }, function (e) {
+              parchar(S.evidencias, [filaTemp(ev, { s: 'SUBIENDO' })]);
+              aviso('El archivo subió, pero falta confirmarlo: toca el botón de confirmar en la fila.', 'aviso', 6000);
+            });
+          });
+      });
+    }).then(function () {
+      PEND--; medir('guardar (total de fondo)', t0, arch ? peso(arch.size) : '');
+      sonar('success');
+      var e = evi(idReal);
+      aviso(modo === 'editar' ? (arch ? 'Archivo reemplazado.' : 'Evidencia actualizada.') : 'Evidencia ' + (e ? e.o + '.' + e.k + '.' : '') + ' guardada.', 'ok', 2200);
+      if (S) pintar();
+    }, function (e) {
+      PEND--;
+      /* nada quedó a medias en la pantalla: se deshace lo que se mostró */
+      if (modo === 'nuevo') { quitarFila(tmpId); if (idReal !== tmpId) { var sr = evi(idReal); if (sr) { delete sr.__pend; delete sr.__txt; } } }
+      else {
+        /* si el cambio de nombre/obligación ya quedó, se deja; si no, vuelve a como estaba */
+        var ac = evi(previo.id);
+        if (ac && ac.__pend) { if (ac.k === '…' || ac.nm !== previo.nm) parchar(S.evidencias, [previo]); else { delete ac.__pend; delete ac.__txt; } }
+      }
+      if (S) pintar();
+      fallo(modo === 'editar' ? 'No se pudo guardar el cambio' : 'No se pudo subir «' + nombre + '»', e);
+    });
   }
-  function terminarForm(msg) {
-    sonar('success'); aviso(msg, 'ok', 2400);
+  function terminarForm(msg, silencio) {
+    if (!silencio) sonar('success');
+    aviso(msg, silencio ? 'info' : 'ok', 2000);
     FORM = null; if (ADJ) { try { ADJ.limpiar(); } catch (_) {} }
     raiz.showView('view-drive-anexos'); pintar();
   }
