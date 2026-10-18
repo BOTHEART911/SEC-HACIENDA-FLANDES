@@ -26,7 +26,12 @@
   var EXT_OK = ['doc', 'docx', 'xls', 'xlsx'];
   var ACEPTA = '.doc,.docx,.xls,.xlsx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,' +
                'application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+  /* 18/10 — PDF solo para el contratista con el permiso (lo activa un ADMIN con PIN o el DEV).
+     Sin permiso, nada de esto aparece: tipos, textos y selector quedan como siempre. */
+  var EXT_PDF = EXT_OK.concat('pdf');
+  var ACEPTA_PDF = ACEPTA + ',.pdf,application/pdf';
   var MIME = {
+    pdf: 'application/pdf',
     doc: 'application/msword',
     docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     xls: 'application/vnd.ms-excel',
@@ -220,6 +225,7 @@
         '<span class="da-persona__c">' + esc(u.correo || 'sin correo') + '</span>' +
         '<span class="da-persona__m">' +
           '<span class="da-chip">' + r.abiertos + ' de ' + r.contratos + ' contrato' + (r.contratos === 1 ? '' : 's') + ' abierto' + (r.abiertos === 1 ? '' : 's') + '</span>' +
+          (u.pdf ? '<span class="da-chip da-chip--pdf" title="Puede subir PDF">' + kico('pdf', 14) + ' PDF</span>' : '') +
           (r.evid ? '<span class="da-chip da-chip--ok">' + r.evid + ' anexo' + (r.evid === 1 ? '' : 's') + ' en cuenta abierta</span>' : '') +
         '</span></button>';
     });
@@ -252,6 +258,8 @@
         '<div class="da-quien__acc">' +
           '<button type="button" class="kit-btn kit-btn--plano" data-da="correo">' + kico('sobre', 16) + ' Correo</button>' +
           (u.carpeta ? '<button type="button" class="kit-btn kit-btn--plano" data-da="carpeta" data-f="' + esc(u.carpeta) + '">' + ico('carpeta', 16) + ' Carpeta</button>' : '') +
+          '<button type="button" class="kit-btn kit-btn--plano da-btn-pdf' + (u.pdf ? ' da-btn-pdf--on' : '') + '" data-da="pdf" aria-pressed="' + !!u.pdf + '" title="' + (u.pdf ? 'Tiene permiso de subir PDF: tocar para quitarlo' : 'Solo Word y Excel: tocar para permitir PDF') + '">' +
+            kico('pdf', 16) + (u.pdf ? ' PDF permitido · Quitar' : ' Permitir PDF') + '</button>' +
           '<button type="button" class="kit-btn kit-btn--marca" data-da="nuevo-contrato">' + kico('mas', 16) + ' Crear contrato</button>' +
         '</div></div>';
     }
@@ -327,7 +335,7 @@
         }
         h += '<div class="da-fila' + (subiendo ? ' da-fila--sub' : '') + '" role="row" data-id="' + esc(e.id) + '">' +
           '<span class="da-fila__num">' + e.o + '.' + e.k + '.</span>' +
-          '<span class="da-fila__ico">' + kico(/^xls/.test(e.x) ? 'hoja' : 'documento', 18) + '</span>' +
+          '<span class="da-fila__ico">' + kico(e.x === 'pdf' ? 'pdf' : (/^xls/.test(e.x) ? 'hoja' : 'documento'), 18) + '</span>' +
           '<span class="da-fila__nom"><b>' + esc(e.nm) + '.' + esc(e.x) + '</b><small>Obligación ' + e.o + (e.p ? ' · ' + peso(e.p) : '') + (subiendo ? ' · subida sin confirmar' : '') + '</small></span>' +
           '<span class="da-fila__acc">' +
             (subiendo ? '<button type="button" class="da-ib" data-da="reconfirmar" data-id="' + esc(e.id) + '" title="Confirmar la subida">' + kico('recargar', 18) + '</button>'
@@ -372,6 +380,7 @@
     if (a === 'aprobar') return accionAdmin(b, 'daaprobar', b.dataset.id);
     if (a === 'reabrir') return accionAdmin(b, 'dareabrir', b.dataset.id);
     if (a === 'nuevo-contrato') return nuevoContrato(b);
+    if (a === 'pdf') return permisoPdf(b);
     if (a === 'correo') { var u = usuario(SEL.uid); if (u) return correo(u); return; }
     if (a === 'arranque') return arranque(b);
     if (a === 'sembrar') return sembrar(b);
@@ -446,6 +455,28 @@
     }).catch(function (e) { if (e && e.cancelado) return; fallo('No se pudo crear el contrato', e); });
   }
 
+  /** ADMIN (con PIN) o DEV (sin PIN): activa o quita el permiso de PDF del contratista. */
+  function permisoPdf(btn) {
+    var u = usuario(SEL.uid); if (!u) return;
+    var activar = !u.pdf;
+    var que = (activar ? 'Permitir PDF a ' : 'Quitar el PDF a ') + u.nombre;
+    raiz.Swal.fire({ icon: 'question', title: que + '?', showCancelButton: true, confirmButtonText: 'Sí', cancelButtonText: 'No',
+      text: activar ? 'Podrá subir PDF (máx. ' + (S.topeMB || 10) + ' MB) en todos sus contratos, además de Word y Excel.'
+                    : 'Vuelve a subir solo Word y Excel. Los PDF que ya subió se quedan y se pueden ver, editar y eliminar.' })
+      .then(function (r) { if (!r.isConfirmed) throw { cancelado: true }; return pedirPin(que); })
+      .then(function (pin) {
+        return conBoton(btn, function (rid) {
+          var t0 = performance.now();
+          return post('dapdf', { rid: rid, para: u.uid, activo: activar, pin: pin }).then(function (res) {
+            medir('dapdf (total)', t0, res && res._ms != null ? 'servidor ' + res._ms + ' ms' : '');
+            if (res.pdf) u.pdf = true; else delete u.pdf;       /* parche en memoria, sin recargar */
+            sonar('success'); aviso(res.pdf ? 'PDF permitido.' : 'PDF quitado.', 'ok', 2200); pintar();
+          });
+        });
+      })
+      .catch(function (e) { if (e && e.cancelado) return; fallo('No se pudo cambiar el permiso de PDF', e); });
+  }
+
   function eliminar(btn, e) {
     if (!e) return;
     raiz.Swal.fire({ icon: 'warning', title: '¿Eliminar ' + e.o + '.' + e.k + '. ' + e.nm + '?', text: 'Se borra definitivamente de Drive. No se puede deshacer.',
@@ -476,7 +507,9 @@
     if (!ct) return;
     var cu = modo === 'editar' ? contrato(ev.cu) : (cuId ? contrato(cuId) : null);
     var nCuenta = cu ? cu.n : cuentaAbierta(ct.id).n;
-    FORM = { modo: modo, ev: ev, contrato: ct, cuenta: (modo === 'nuevo' && cu) ? cu : null };
+    var duenio = usuario(ct.u);
+    var pdf = !!(duenio && duenio.pdf);
+    FORM = { modo: modo, ev: ev, contrato: ct, cuenta: (modo === 'nuevo' && cu) ? cu : null, pdf: pdf };
     $('da-f-titulo').textContent = modo === 'editar' ? 'Editar evidencia' : 'Agregar evidencia';
     $('da-f-cuenta').value = 'CONTRATO ' + tres(ct.n) + ' · CUENTA ' + nCuenta;
     var sel = $('da-f-obl');
@@ -484,15 +517,15 @@
     sel.value = modo === 'editar' ? String(ev.o) : '';
     if (modo !== 'editar') sel.selectedIndex = -1;
     $('da-f-nombre').value = modo === 'editar' ? ev.nm : '';
-    $('da-f-adj-lbl').innerHTML = modo === 'editar' ? 'Reemplazar el archivo <span class="muted">(opcional: el actual se borra definitivamente)</span>' : 'Adjunto <span class="muted">(Word o Excel, máx. ' + (S.topeMB || 10) + ' MB)</span>';
+    $('da-f-adj-lbl').innerHTML = modo === 'editar' ? 'Reemplazar el archivo <span class="muted">(opcional: el actual se borra definitivamente)</span>' : 'Adjunto <span class="muted">(' + (pdf ? 'Word, Excel o PDF' : 'Word o Excel') + ', máx. ' + (S.topeMB || 10) + ' MB)</span>';
     $('da-f-actual').textContent = modo === 'editar' ? 'Archivo actual: ' + ev.o + '.' + ev.k + '. ' + ev.nm + '.' + ev.x : '';
     $('da-f-progreso').hidden = true;
     var zona = $('da-f-zona');
     if (ADJ) { try { ADJ.desmontar(); } catch (_) {} }
     ADJ = K.piezas && K.piezas.adjuntos ? K.piezas.adjuntos.montar(zona, {
-      acepta: ACEPTA, varios: false, maximo: 1, maximoMB: S.topeMB || 10, etiqueta: 'El adjunto',
+      acepta: pdf ? ACEPTA_PDF : ACEPTA, varios: false, maximo: 1, maximoMB: S.topeMB || 10, etiqueta: 'El adjunto',
       antes: function (f) {
-        if (/\.pdf$/i.test(f.name || '') || f.type === 'application/pdf') return 'No se permiten PDF. Sube el Word o el Excel original.';
+        if (!pdf && (/\.pdf$/i.test(f.name || '') || f.type === 'application/pdf')) return 'No se permiten PDF. Sube el Word o el Excel original.';
         return '';
       },
       alCambiar: function (l) {
@@ -547,9 +580,13 @@
     var arch = ADJ ? ADJ.archivos()[0] : null;
     if (!(obl >= 1 && obl <= (S.oblMax || 20))) return aviso('Escoge la obligación (1 a ' + (S.oblMax || 20) + ').', 'aviso');
     if (!nombre) return aviso('Escribe el nombre del adjunto.', 'aviso');
-    if (FORM.modo === 'nuevo' && !arch) return aviso('Adjunta el archivo (Word o Excel).', 'aviso');
+    var pdf = !!FORM.pdf;
+    if (FORM.modo === 'nuevo' && !arch) return aviso(pdf ? 'Adjunta el archivo (Word, Excel o PDF).' : 'Adjunta el archivo (Word o Excel).', 'aviso');
     var ext = arch ? extDe(arch.name) : '';
-    if (arch && EXT_OK.indexOf(ext) === -1) return aviso(ext === 'pdf' ? 'No se permiten PDF. Sube el Word o el Excel original.' : 'Solo Word o Excel (.doc, .docx, .xls, .xlsx).', 'aviso');
+    if (arch && (pdf ? EXT_PDF : EXT_OK).indexOf(ext) === -1) {
+      if (pdf) return aviso('Solo Word, Excel o PDF (.doc, .docx, .xls, .xlsx, .pdf).', 'aviso');
+      return aviso(ext === 'pdf' ? 'No se permiten PDF. Sube el Word o el Excel original.' : 'Solo Word o Excel (.doc, .docx, .xls, .xlsx).', 'aviso');
+    }
     if (arch && arch.size > (S.topeMB || 10) * 1048576) return aviso('El archivo pesa más de ' + (S.topeMB || 10) + ' MB.', 'aviso');
     if (btn.__daOcupado) return;
     btn.__daOcupado = true; setTimeout(function () { btn.__daOcupado = false; }, 800);

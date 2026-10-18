@@ -136,3 +136,9 @@
 .da-giro { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--k-linea); border-top-color: var(--k-marca); display: inline-block; animation: da-giro .8s linear infinite; }
 @keyframes da-giro { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .da-giro { animation: none; } }
+
+/* 18/10 — permiso de PDF por contratista (solo lo ven ADMIN/DEV) */
+.da-chip--pdf { display: inline-flex; align-items: center; gap: 4px; background: rgba(220, 38, 38, .10); border-color: transparent; color: #b91c1c; font-weight: 600; }
+:root[data-tema="oscuro"] .da-chip--pdf { background: rgba(248, 113, 113, .16); color: #fca5a5; }
+.da-btn-pdf--on { border-color: #dc2626; color: #b91c1c; }
+:root[data-tema="oscuro"] .da-btn-pdf--on { border-color: #f87171; color: #fca5a5; }
