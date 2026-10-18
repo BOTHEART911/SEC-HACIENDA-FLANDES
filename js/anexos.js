@@ -397,7 +397,7 @@
       return pedirPin('Crear el CONTRATO ' + tres(num) + ' de ' + u.nombre).then(function (pin) {
         return conBoton(btn, function (rid) {
           var t0 = performance.now();
-          return post('dacontrato', { rid: rid, usuario: u.uid, numero: num, pin: pin }).then(function (res) {
+          return post('dacontrato', { rid: rid, para: u.uid, numero: num, pin: pin }).then(function (res) {
             medir('dacontrato (total)', t0);
             parchar(S.carpetas, res.carpetas); SEL.contrato = res.carpetas[0].id; sonar('success');
             aviso('CONTRATO ' + tres(num) + ' creado.', 'ok', 2200); pintar();
@@ -528,12 +528,23 @@
           return subirDrive(s.sesion, arch, ext, function (f) { progreso(f, 'Subiendo a Drive… ' + Math.round(f * 100) + ' %'); })
             .then(function (meta) {
               medir('PUT Drive', t2, peso(arch.size));
-              progreso(1, 'Confirmando…');
-              /* 4) confirmar (corto). La fila ya se ve: si falla, queda el botón de confirmar. */
-              return post('daconfirmar', { rid: rid + '-c', id: s.evidencia.id, archivo: meta.id || '' }).then(function (c) {
+              /* 4) el archivo YA está en Drive: se parcha la fila y se cierra el formulario.
+                    La confirmación al servidor va de fondo; si falla, la fila queda con
+                    el botón de confirmar (nunca se pierde el archivo). */
+              var ev = s.evidencia, local = {};
+              for (var k in ev) local[k] = ev[k];
+              local.s = 'ACTIVO'; local.a = meta.id || local.a; local.x = ext; local.p = arch.size;
+              parchar(S.evidencias, [local]);
+              medir('agregar (lo que espera la persona)', t0, peso(arch.size));
+              var esEditar = FORM.modo === 'editar';
+              terminarForm(esEditar ? 'Archivo reemplazado.' : 'Evidencia ' + local.o + '.' + local.k + '. guardada.');
+              var t3 = performance.now();
+              post('daconfirmar', { rid: rid + '-c', id: ev.id, archivo: meta.id || '' }).then(function (c) {
+                medir('daconfirmar (fondo)', t3);
                 parchar(S.evidencias, [c.evidencia]);
-                medir('agregar (total)', t0, peso(arch.size));
-                terminarForm(FORM.modo === 'editar' ? 'Archivo reemplazado.' : 'Evidencia ' + c.evidencia.o + '.' + c.evidencia.k + '. guardada.');
+              }, function (e) {
+                local.s = 'SUBIENDO'; parchar(S.evidencias, [local]); if (S) pintar();
+                aviso('El archivo subió, pero falta confirmarlo: toca el botón de confirmar en la fila. (' + (e && e.message || e) + ')', 'aviso', 6000);
               });
             });
         });
