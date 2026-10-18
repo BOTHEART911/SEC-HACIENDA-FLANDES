@@ -337,7 +337,14 @@
     if (a === 'eliminar') return eliminar(b, evi(b.dataset.id));
     if (a === 'copiar') return copiar([evi(b.dataset.id)]);
     if (a === 'copiar-todos') return copiar(evidenciasDe(b.dataset.cu).filter(function (e) { return e.s === 'ACTIVO'; }));
-    if (a === 'ver') { var e = evi(b.dataset.id); if (e && raiz.VISOR) raiz.VISOR.lista([{ id: e.a, titulo: e.o + '.' + e.k + '. ' + e.nm + '.' + e.x, mime: MIME[e.x] }], {}); return; }
+    if (a === 'ver') {
+      /* se abren todas las evidencias de esa cuenta, empezando por la tocada (siguiente/anterior y precarga) */
+      var e = evi(b.dataset.id); if (!e || !raiz.VISOR) return;
+      var todas = evidenciasDe(e.cu).filter(function (x) { return x.s === 'ACTIVO' && x.a; });
+      var ix = Math.max(0, porId(todas, e.id));
+      raiz.VISOR.lista(todas.map(function (x) { return { id: x.a, titulo: x.o + '.' + x.k + '. ' + x.nm + '.' + x.x, mime: MIME[x.x], peso: x.p }; }), { indice: ix });
+      return;
+    }
     if (a === 'ver-carpeta' || a === 'carpeta') { if (raiz.VISOR) raiz.VISOR.carpeta(b.dataset.f, {}); return; }
     if (a === 'reconfirmar') return reconfirmar(b, evi(b.dataset.id));
     if (a === 'aprobar') return accionAdmin(b, 'daaprobar', b.dataset.id);
