@@ -374,6 +374,71 @@
     return c;
   }
 
+  /* ══════════════ 18/10 (HACIENDA) · WORD Y EXCEL EN EL VISOR ══════════════
+     Los bytes ya llegaron por el backend: se pintan aquí mismo, en memoria.
+       · .docx → docx-preview (con JSZip)        · .xlsx / .xls → SheetJS
+     Las librerías se bajan una sola vez y solo cuando hacen falta.
+     (.doc viejo llega ya convertido a PDF desde el backend.) */
+  var CDN_OFFICE = {
+    jszip: 'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js',
+    docx:  'https://cdn.jsdelivr.net/npm/docx-preview@0.3.2/dist/docx-preview.min.js',
+    xlsx:  'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'
+  };
+  var guiones = {};
+  function guion(url) {
+    if (guiones[url]) return guiones[url];
+    guiones[url] = new Promise(function (res, rej) {
+      var s = document.createElement('script');
+      s.src = url; s.async = true;
+      s.onload = function () { res(); };
+      s.onerror = function () { delete guiones[url]; rej(new Error('No se pudo cargar el lector de Office.')); };
+      document.head.appendChild(s);
+    });
+    return guiones[url];
+  }
+  function tipoOffice(d) {
+    var m = String((d._blob && d._blob.type) || '').toLowerCase(), n = String(d._nombre || d.titulo || '').toLowerCase();
+    if (/wordprocessingml/.test(m) || /\.docx$/.test(n)) return 'docx';
+    if (/spreadsheetml|ms-excel/.test(m) || /\.xlsx?$/.test(n)) return 'xlsx';
+    return '';
+  }
+  function dibujarDocx(d, lienzo) {
+    return guion(CDN_OFFICE.jszip).then(function () { return guion(CDN_OFFICE.docx); }).then(function () {
+      if (actual() !== d) return;
+      sinZoom();
+      lienzo.innerHTML = '<div class="kit-visor__office kit-visor__office--doc"></div>';
+      var caja = lienzo.firstChild;
+      return window.docx.renderAsync(d._blob, caja, null, { className: 'kvdoc', inWrapper: true, ignoreLastRenderedPageBreak: true, breakPages: true, useBase64URL: true });
+    });
+  }
+  var FILAS_TOPE = 3000;
+  function dibujarHoja(d, lienzo) {
+    return guion(CDN_OFFICE.xlsx).then(function () {
+      if (actual() !== d) return;
+      sinZoom();
+      var libro = window.XLSX.read(d._bytes, { type: 'array', cellDates: true });
+      var nombres = libro.SheetNames || [];
+      lienzo.innerHTML = '<div class="kit-visor__office kit-visor__office--xls">' +
+        (nombres.length > 1 ? '<div class="kit-visor__pestanas">' + nombres.map(function (n, k) {
+          return '<button type="button" class="kit-visor__pestana' + (k ? '' : ' sel') + '" data-h="' + k + '">' + K.esc(n) + '</button>';
+        }).join('') + '</div>' : '') + '<div class="kit-visor__tabla"></div></div>';
+      var zona = lienzo.querySelector('.kit-visor__tabla');
+      var mostrar = function (k) {
+        var hoja = libro.Sheets[nombres[k]];
+        var nota = '';
+        if (hoja && hoja['!ref']) {
+          var r = window.XLSX.utils.decode_range(hoja['!ref']);
+          if (r.e.r - r.s.r + 1 > FILAS_TOPE) { r.e.r = r.s.r + FILAS_TOPE - 1; hoja = Object.assign({}, hoja, { '!ref': window.XLSX.utils.encode_range(r) }); nota = '<p class="kit-visor__nota">Se muestran las primeras ' + FILAS_TOPE + ' filas. Descárgalo para verlo completo.</p>'; }
+        }
+        zona.innerHTML = hoja && hoja['!ref'] ? window.XLSX.utils.sheet_to_html(hoja, { editable: false }) + nota : '<p class="kit-visor__nota">Esta hoja está vacía.</p>';
+        zona.scrollTop = 0; zona.scrollLeft = 0;
+        lienzo.querySelectorAll('.kit-visor__pestana').forEach(function (b) { b.classList.toggle('sel', +b.dataset.h === k); });
+      };
+      lienzo.querySelectorAll('.kit-visor__pestana').forEach(function (b) { b.addEventListener('click', function () { mostrar(+b.dataset.h); }); });
+      mostrar(0);
+    });
+  }
+
   /** Lo que se ve de un documento que llegó con bytes. */
   function pintarBytes(d, lienzo) {
     lienzo.innerHTML = '<div class="kit-visor__cargando">Abriendo el documento…</div>';
@@ -398,6 +463,15 @@
           lienzo.appendChild(K.nodo('<p class="kit-visor__nota">¿No se ve? Toca descargar ' + K.icono('descargar', 14) + ' arriba.</p>'));
         });
       }
+      var off = tipoOffice(d);
+      if (off) {
+        return (off === 'docx' ? dibujarDocx(d, lienzo) : dibujarHoja(d, lienzo))['catch'](function (e) {
+          if (actual() !== d) return;
+          lienzo.innerHTML = '<div class="kit-visor__malo">' + K.esc((e && e.message) || 'No se pudo mostrar el archivo.') + '<br>' +
+            '<button type="button" class="kit-btn kit-btn--marca">Descargarlo</button></div>';
+          lienzo.querySelector('button').addEventListener('click', function () { accion('bajar'); });
+        });
+      }
       lienzo.innerHTML = '<div class="kit-visor__malo">Este tipo de archivo no se puede ver aquí.<br>' +
         '<button type="button" class="kit-btn kit-btn--marca">Descargarlo</button></div>';
       lienzo.querySelector('button').addEventListener('click', function () { accion('bajar'); });
@@ -417,6 +491,8 @@
     [i + 1, i - 1].forEach(function (k) {
       var v = docs[k];
       if (v && v._drv) K.drive.precargar(v._drv);
+      /* 18/10 · los que vienen por el backend también se adelantan (de a uno, detrás) */
+      else if (v && v.cargar && !v.url && !v._url && !v._pidiendo) { try { traer(v)['catch'](function () {}); } catch (e) {} }
     });
   }
 

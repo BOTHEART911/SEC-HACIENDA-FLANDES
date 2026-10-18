@@ -376,3 +376,17 @@
   .kit-visor__zoom { right: 10px; bottom: 10px; }
   .kit-visor__caja--libre { width: 100% !important; height: 100% !important; left: 0 !important; top: 0 !important; }
 }
+
+/* ── 18/10 (HACIENDA) · Word y Excel en el visor ── */
+.kit-visor__office { position: absolute; inset: 0; overflow: auto; background: #e9ecea; -webkit-overflow-scrolling: touch; }
+.kit-visor__office--doc .kvdoc-wrapper { background: #e9ecea; padding: 16px 8px; }
+.kit-visor__office--doc .kvdoc-wrapper > section.kvdoc { box-shadow: 0 2px 10px rgba(0,0,0,.15); margin: 0 auto 16px; max-width: 100%; }
+@media (max-width: 700px) { .kit-visor__office--doc .kvdoc-wrapper > section.kvdoc { padding: 24px 18px !important; width: auto !important; min-height: 0 !important; } }
+.kit-visor__office--xls { display: flex; flex-direction: column; background: #fff; }
+.kit-visor__pestanas { display: flex; gap: 6px; padding: 8px; overflow-x: auto; background: #f2f4f3; border-bottom: 1px solid #d9dfdc; flex: 0 0 auto; }
+.kit-visor__pestana { appearance: none; border: 1px solid #cdd5d1; background: #fff; color: #234; border-radius: 999px; padding: 6px 12px; font: 600 12px/1 system-ui, sans-serif; white-space: nowrap; cursor: pointer; }
+.kit-visor__pestana.sel { background: #06402B; border-color: #06402B; color: #fff; }
+.kit-visor__tabla { flex: 1 1 auto; overflow: auto; }
+.kit-visor__tabla table { border-collapse: collapse; font: 12px/1.35 system-ui, sans-serif; color: #111; }
+.kit-visor__tabla td, .kit-visor__tabla th { border: 1px solid #d5dbd8; padding: 4px 8px; white-space: nowrap; vertical-align: top; }
+.kit-visor__tabla tr:first-child td { background: #f3f6f4; font-weight: 600; position: sticky; top: 0; }
