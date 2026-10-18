@@ -40,7 +40,7 @@
         'Predial: pendientes por chat, agregar atención presencial, atenciones registradas, estadísticas e informes.',
         'Base de datos predial completa: agregar, editar todos los campos, eliminar, cambiar la actuación, asignar sustanciador y asistente, y el panel.',
         'Mi semáforo completo: agregar asignaciones, tomar la decisión (finalizar o pedir evidencia), eliminar y el panel del equipo.',
-        'Drive anexos de todo el equipo.',
+        'Drive anexos de todo el equipo: crear el CONTRATO de cada contratista, aprobar una cuenta o el contrato completo y reabrir la última cuenta aprobada, con el PIN de seguridad (al desarrollador no se le pide).',
         'Configuración → Usuarios y roles: crear personas (la app les manda el PIN por WhatsApp), editar, dar roles, desactivar y generar un PIN nuevo. Puede crear otro administrador.'
       ]
     },
@@ -101,6 +101,15 @@
         'En el computador puedes escribir el PIN con el teclado.',
         'Si fallas el PIN 5 veces, tu usuario se bloquea unos minutos.',
         'La sesión queda abierta. Para salir usa <b>Cerrar sesión</b> o <b>Cambiar de usuario</b> (menú de tu foto o al final del inicio).'
+      ]
+    },
+    {
+      t: 'Drive anexos (evidencias de mi contrato)', ic: 'clip', items: [
+        'Tus anexos se suben <b>desde la app</b>, no en Drive: <b>Agregar evidencia</b> → obligación (1 a 20), el archivo (Word o Excel, máx. 10 MB; PDF no) y su nombre.',
+        'La cuenta es automática: la última aprobada + 1. El archivo queda como «1.1. MATRIZ DE DESARROLLO.xlsx» (obligación.número).',
+        'Mientras la cuenta está abierta puedes editar, reemplazar el archivo (el viejo se borra) o eliminar. <b>Copiar</b> deja el texto listo para pegarlo en el campo de Evidencia de tu cuenta.',
+        'Cuando un administrador aprueba la cuenta, queda sellada: la ves como historial y ya no se puede cambiar. En Drive solo puedes ver tu cuenta abierta.',
+        'Si no tienes un CONTRATO abierto, pídele a un administrador que lo cree.'
       ]
     },
     {

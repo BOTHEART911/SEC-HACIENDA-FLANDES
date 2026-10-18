@@ -141,6 +141,7 @@
     'view-panel': 'Panel del semáforo',
     'view-drive-anexos': 'Drive anexos',
     'view-drive-editar': 'Correo de edición',
+    'view-da-form': 'Evidencia',
     'view-asignaciones': 'Mi semáforo',
     'view-agregar-asignacion': 'Nueva asignación',
     'view-ver-asignacion': 'Detalle de la asignación',

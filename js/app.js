@@ -617,6 +617,8 @@ function renderDriveGrid_(list){
 
 /* El buscador solo tiene sentido cuando se ven varias tarjetas. */
 function applyDriveFilter_(){
+  /* 18/10 — con el panel de evidencias (js/anexos.js) el buscador es suyo */
+  if (window.DA && window.DA.estado && window.DA.estado()) return;
   const wrapFiltro = document.getElementById('drive-filter-row');
   const varias = DRIVE_DATA.length > 1;
   if (wrapFiltro) wrapFiltro.style.display = varias ? '' : 'none';
@@ -640,12 +642,21 @@ function applyDriveFilter_(){
    usuarios y el front se quedaba con una tarjeta. ADMIN y DEV reciben
    las de todo el equipo; cualquier otro, la suya. */
 async function loadDriveData_(){
+  /* 18/10 — con el panel de evidencias, refrescar (EN VIVO o tirar hacia abajo) es volver a pedir 'dapanel' */
+  if (window.DA && window.DA.estado && window.DA.estado()) { window.DA.olvidar(); return window.DA.abrir(); }
   const list = await apiGet('listDriveRows', { uid: uidActual_() });
   DRIVE_DATA = Array.isArray(list) ? list : [];
   applyDriveFilter_();
 }
 
+/* 18/10 — js/anexos.js decide (panel de evidencias o tarjetas de siempre)
+   con UN viaje ('dapanel'); estas tres quedan para el modo de siempre. */
+window.__daPintarViejo = function(lista){ DRIVE_DATA = Array.isArray(lista) ? lista : []; applyDriveFilter_(); };
+window.__daCargarViejo = function(){ return loadDriveData_(); };
+window.__daEditarCorreo = function(row){ openDriveEdit_(row); };
+
 async function openDriveAnexosView_(){
+  if(currentUser && canSeeDriveAnexos_() && window.DA && window.DA.abrir) return window.DA.abrir();
   if(!currentUser){
     Swal.fire({ icon:'warning', title:'Sesión inválida' });
     return;
@@ -1602,6 +1613,9 @@ document.getElementById('btn-drive-guardar')?.addEventListener('click', async ()
     });
 
     Swal.fire({ icon:'success', title:'Guardado', timer:1600, showConfirmButton:false });
+
+    /* 18/10 — panel de evidencias: se parcha el correo en memoria */
+    if (DRIVE_EDIT_TARGET.__uid && window.DA && window.DA.correoNuevo && window.DA.correoNuevo(DRIVE_EDIT_TARGET.__uid, newEmail)) { DRIVE_EDIT_TARGET = null; return; }
 
     /* FASE 2 — la lista nueva viene en la misma respuesta */
     if (rDr && Array.isArray(rDr.lista)) { DRIVE_DATA = rDr.lista; applyDriveFilter_(); }

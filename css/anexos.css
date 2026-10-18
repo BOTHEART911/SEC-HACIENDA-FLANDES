@@ -1,0 +1,132 @@
+/* ============================================================
+   SEC-HACIENDA-FLANDES · DRIVE ANEXOS = EVIDENCIAS (18/10/2026)
+   Pareja de js/anexos.js. Solo tokens del kit: el modo oscuro sale solo.
+   ============================================================ */
+.da-panel { display: flex; flex-direction: column; gap: 14px; }
+
+.da-banda {
+  display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: var(--k-r-md);
+  font: 600 .84rem/1.3 var(--k-fuente);
+}
+.da-banda--prueba { background: var(--k-aviso-fondo); color: var(--k-aviso); }
+:root[data-tema="oscuro"] .da-banda--prueba { background: rgba(180, 83, 9, .22); color: #fbbf77; }
+.da-dev { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* ── lista de contratistas (administradores) ── */
+.da-rejilla { display: grid; grid-template-columns: 1fr; gap: 12px; }
+@media (min-width: 760px)  { .da-rejilla { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1120px) { .da-rejilla { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.da-persona {
+  appearance: none; text-align: left; cursor: pointer; display: flex; flex-direction: column; gap: 4px;
+  padding: 14px 16px; border-radius: var(--k-r-lg); border: 1px solid var(--k-linea);
+  background: var(--k-papel); color: var(--k-tinta); box-shadow: var(--k-sombra-1);
+  border-left: 5px solid var(--k-ok); transition: transform .12s ease, box-shadow .16s ease;
+}
+.da-persona:hover { box-shadow: var(--k-sombra-2); }
+.da-persona:active { transform: scale(.99); }
+.da-persona--sin { border-left-color: var(--k-aviso); }
+.da-persona[hidden] { display: none; }
+.da-persona__n { font: 700 .95rem/1.25 var(--k-fuente-titulo); }
+.da-persona__c { font-size: .8rem; color: var(--k-apagado); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.da-persona__m { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.da-chip {
+  display: inline-flex; align-items: center; padding: 4px 10px; border-radius: var(--k-r-pill);
+  background: var(--k-papel-2); border: 1px solid var(--k-linea); font: 600 .72rem/1.2 var(--k-fuente); color: var(--k-tinta-2);
+}
+.da-chip--ok { background: var(--k-ok-fondo); border-color: transparent; color: var(--k-ok); }
+:root[data-tema="oscuro"] .da-chip--ok { background: rgba(22, 163, 74, .18); color: #6ee7a0; }
+
+/* ── cabecera de un contratista ── */
+.da-quien {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 12px 14px;
+  border-radius: var(--k-r-lg); background: var(--k-papel); border: 1px solid var(--k-linea);
+}
+.da-quien__t { display: flex; flex-direction: column; min-width: 0; flex: 1 1 220px; }
+.da-quien__t b { font: 700 1rem/1.25 var(--k-fuente-titulo); }
+.da-quien__t span { font-size: .8rem; color: var(--k-apagado); }
+.da-quien__acc { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.da-contratos { margin: 0; }
+.da-pastilla--sellada { opacity: .78; }
+.da-ctacc { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+
+.da-estado {
+  display: inline-flex; align-items: center; padding: 4px 10px; border-radius: var(--k-r-pill);
+  font: 700 .7rem/1.2 var(--k-fuente); text-transform: uppercase; letter-spacing: .03em;
+}
+.da-estado--ab { background: var(--k-ok-fondo); color: var(--k-ok); }
+.da-estado--ap { background: var(--k-papel-2); color: var(--k-apagado); border: 1px solid var(--k-linea); }
+:root[data-tema="oscuro"] .da-estado--ab { background: rgba(22, 163, 74, .18); color: #6ee7a0; }
+
+.da-vacio {
+  display: flex; align-items: center; gap: 14px; padding: 16px; border-radius: var(--k-r-lg);
+  background: var(--k-aviso-fondo); color: var(--k-aviso);
+}
+:root[data-tema="oscuro"] .da-vacio { background: rgba(180, 83, 9, .18); color: #fbbf77; }
+.da-vacio p { margin: 0; line-height: 1.45; }
+
+.da-sub { display: flex; align-items: center; gap: 8px; margin: 6px 0 0; font: 700 .9rem/1.2 var(--k-fuente-titulo); color: var(--k-tinta-2); }
+
+/* ── tarjeta de una cuenta ── */
+.da-cuenta {
+  border-radius: var(--k-r-lg); background: var(--k-papel); border: 1px solid var(--k-linea);
+  box-shadow: var(--k-sombra-1); overflow: hidden;
+}
+.da-cuenta--abierta { border-color: color-mix(in srgb, var(--k-ok) 45%, var(--k-linea)); }
+.da-cuenta__cab {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 12px 14px; background: var(--k-papel-2); border-bottom: 1px solid var(--k-linea);
+}
+.da-cuenta__t { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: var(--k-tinta); }
+.da-cuenta__t b { font: 700 1rem/1 var(--k-fuente-titulo); }
+.da-nota { font-size: .76rem; color: var(--k-apagado); }
+.da-cuenta__acc { display: flex; flex-wrap: wrap; gap: 8px; }
+.da-cuenta__acc .kit-btn { padding: 9px 14px; font-size: .84rem; }
+
+.da-tabla { display: flex; flex-direction: column; }
+.da-fila {
+  display: grid; grid-template-columns: auto auto minmax(0, 1fr); grid-template-areas: "num ico nom" "acc acc acc";
+  align-items: center; gap: 6px 10px; padding: 10px 14px; border-bottom: 1px solid var(--k-linea);
+}
+.da-fila:last-child { border-bottom: 0; }
+@media (min-width: 680px) {
+  .da-fila { grid-template-columns: auto auto minmax(0, 1fr) auto; grid-template-areas: "num ico nom acc"; }
+}
+.da-fila--sub { background: var(--k-aviso-fondo); }
+:root[data-tema="oscuro"] .da-fila--sub { background: rgba(180, 83, 9, .14); }
+.da-fila__num { grid-area: num; font: 700 .9rem/1 var(--k-fuente-titulo); color: var(--k-marca); min-width: 34px; }
+:root[data-tema="oscuro"] .da-fila__num { color: var(--k-marca-clara); }
+.da-fila__ico { grid-area: ico; color: var(--k-apagado); display: inline-flex; }
+.da-fila__nom { grid-area: nom; display: flex; flex-direction: column; min-width: 0; }
+.da-fila__nom b { font: 600 .88rem/1.3 var(--k-fuente); color: var(--k-tinta); overflow-wrap: anywhere; }
+.da-fila__nom small { font-size: .74rem; color: var(--k-apagado); }
+.da-fila__acc { grid-area: acc; display: flex; gap: 6px; justify-content: flex-end; }
+.da-ib {
+  appearance: none; width: 38px; height: 38px; display: inline-grid; place-items: center; cursor: pointer;
+  border-radius: 12px; border: 1px solid var(--k-linea); background: var(--k-papel); color: var(--k-tinta-2);
+  transition: background .15s ease, color .15s ease, transform .1s ease;
+}
+.da-ib:hover { background: rgba(var(--k-marca-rgb), .08); color: var(--k-marca); }
+:root[data-tema="oscuro"] .da-ib:hover { color: var(--k-marca-clara); }
+.da-ib:active { transform: scale(.94); }
+.da-ib--malo:hover { background: var(--k-malo-fondo); color: var(--k-malo); }
+.da-nada { margin: 0; padding: 14px; font-size: .86rem; color: var(--k-apagado); }
+
+/* botón ocupado (escudo desde el primer toque) */
+.da-ocupado { opacity: .6; pointer-events: none; }
+
+/* ── formulario ── */
+#view-da-form #da-f-cuenta { background: var(--k-papel-2); font-weight: 700; }
+.da-prog { display: flex; flex-direction: column; gap: 6px; margin-top: 14px; }
+.da-prog[hidden] { display: none; }
+.da-prog__riel { height: 10px; border-radius: 6px; background: var(--k-papel-2); border: 1px solid var(--k-linea); overflow: hidden; }
+.da-prog__barra { height: 100%; width: 0; background: var(--k-marca); transition: width .2s ease; }
+:root[data-tema="oscuro"] .da-prog__barra { background: var(--k-marca-clara); }
+.da-prog__txt { font: 600 .8rem/1.2 var(--k-fuente); color: var(--k-tinta-2); }
+
+/* ── arranque (DEV) ── */
+.da-arr { text-align: left; font-size: .88rem; }
+.da-arr__lista { max-height: 46vh; overflow: auto; border: 1px solid var(--k-linea); border-radius: 12px; padding: 6px; }
+.da-arr__q { display: flex; gap: 10px; align-items: flex-start; padding: 8px; border-bottom: 1px solid var(--k-linea); cursor: pointer; }
+.da-arr__q:last-child { border-bottom: 0; }
+.da-arr__q small { color: var(--k-apagado); }

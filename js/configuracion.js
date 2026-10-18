@@ -569,7 +569,7 @@
     /* FASE 2 — agrupado por lo que es (carpetas, WhatsApp, Firebase…) y con
        la explicación de dónde se usa cada llave a la vista. */
     var GRUPOS = [
-      { t: 'Carpetas y archivos de Drive', ic: 'carpeta', pre: ['drive.', 'media.'] },
+      { t: 'Carpetas y archivos de Drive', ic: 'carpeta', pre: ['drive.', 'media.', 'anexos.'] },
       { t: 'WhatsApp (BuilderBot)', ic: 'whatsapp', pre: ['bb.', 'wa.'] },
       /* FASE 3 — Semáforo y Seguimientos de las 7 a.m. (antes eran dos
          proyectos aparte con todo escrito en el código) */

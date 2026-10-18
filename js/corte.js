@@ -36,7 +36,7 @@
   /* Lecturas atadas a la vista que las pidió. */
   var CORTABLES = {
     listsolicitudes: 1, listatenciones: 1, listprocesos: 1, listpredial: 1,
-    getpredial: 1, getpredialbloque: 1, getsolicitudbyid: 1, listdriverows: 1,
+    getpredial: 1, getpredialbloque: 1, getsolicitudbyid: 1, listdriverows: 1, dapanel: 1, daarranque: 1,
     listmisexpedientes: 1, buscarmisexpedientes: 1, buscarcontacto: 1,
     vozestado: 1, descargaopciones: 1, bitpendientes: 1
   };
@@ -52,7 +52,7 @@
     'view-agregar-asignacion': 'procesos',
     'view-bd-predial': 'predial', 'view-bdp-detalle': 'predial',
     'view-bdp-form': 'predial', 'view-bdp-panel': 'predial',
-    'view-drive-anexos': 'drive', 'view-drive-editar': 'drive',
+    'view-drive-anexos': 'drive', 'view-drive-editar': 'drive', 'view-da-form': 'drive',
     'view-atenciones': 'atenciones', 'view-estadisticas': 'estadisticas'
   };
 
