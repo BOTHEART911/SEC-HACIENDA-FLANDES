@@ -257,7 +257,6 @@
         '<div class="da-quien__t"><b>' + esc(u.nombre) + '</b><span>' + esc(u.correo || 'sin correo') + '</span></div>' +
         '<div class="da-quien__acc">' +
           '<button type="button" class="kit-btn kit-btn--plano" data-da="correo">' + kico('sobre', 16) + ' Correo</button>' +
-          (u.carpeta ? '<button type="button" class="kit-btn kit-btn--plano" data-da="carpeta" data-f="' + esc(u.carpeta) + '">' + ico('carpeta', 16) + ' Carpeta</button>' : '') +
           '<button type="button" class="kit-btn kit-btn--plano da-btn-pdf' + (u.pdf ? ' da-btn-pdf--on' : '') + '" data-da="pdf" aria-pressed="' + !!u.pdf + '" title="' + (u.pdf ? 'Tiene permiso de subir PDF: tocar para quitarlo' : 'Solo Word y Excel: tocar para permitir PDF') + '">' +
             kico('pdf', 16) + (u.pdf ? ' PDF permitido · Quitar' : ' Permitir PDF') + '</button>' +
           '<button type="button" class="kit-btn kit-btn--marca" data-da="nuevo-contrato">' + kico('mas', 16) + ' Crear contrato</button>' +
@@ -375,7 +374,7 @@
       raiz.VISOR.lista(todas.map(function (x) { return { id: x.a, titulo: x.o + '.' + x.k + '. ' + x.nm + '.' + x.x, mime: MIME[x.x], peso: x.p }; }), { indice: ix });
       return;
     }
-    if (a === 'ver-carpeta' || a === 'carpeta') { if (raiz.VISOR) raiz.VISOR.carpeta(b.dataset.f, { firma: b.dataset.fi || '' }); return; }
+    if (a === 'ver-carpeta') {   /* 19/10: sin botón Carpeta (la raíz solo tiene subcarpetas: siempre salía vacío) */ if (raiz.VISOR) raiz.VISOR.carpeta(b.dataset.f, { firma: b.dataset.fi || '' }); return; }
     if (a === 'reconfirmar') return reconfirmar(b, evi(b.dataset.id));
     if (a === 'aprobar') return accionAdmin(b, 'daaprobar', b.dataset.id);
     if (a === 'reabrir') return accionAdmin(b, 'dareabrir', b.dataset.id);
