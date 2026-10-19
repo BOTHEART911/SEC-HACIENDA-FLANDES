@@ -74,6 +74,7 @@ var APP_SHELL = [
   './kit/avisos.js',
   './js/iconos-hacienda.js',
   './js/guia.js',
+  './css/guia.css',
   './js/hacienda.js',
   './css/hacienda.css',
   './css/ica.css',

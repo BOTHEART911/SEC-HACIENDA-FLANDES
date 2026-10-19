@@ -737,28 +737,7 @@ html.hf-en-puerta .container { padding-top: 0 !important; }
 .cfg-modal { background: var(--k-velo) !important; backdrop-filter: blur(3px); }
 
 /* ══════════════ 13) GUÍA RÁPIDA ══════════════ */
-.hf-guia-cab {
-  display: flex; gap: 16px; align-items: flex-start; padding: 20px; border-radius: 22px; color: #fff;
-  background: radial-gradient(120% 90% at 12% 0%, var(--k-marca-clara) 0%, var(--k-marca) 46%, var(--k-marca-2) 100%);
-}
-:root[data-tema="oscuro"] .hf-guia-cab { background: radial-gradient(120% 90% at 12% 0%, #1f7a55 0%, #0f3d2b 50%, #0a241a 100%); }
-.hf-guia-cab__ico { flex: 0 0 auto; width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; background: rgba(255, 255, 255, .16); }
-.hf-guia-cab__t { margin: 0 !important; color: #fff !important; font: 700 1.35rem/1.2 var(--k-fuente-titulo) !important; text-align: left !important; }
-.hf-guia-cab__p { margin: 6px 0 0; color: rgba(255, 255, 255, .88); font-size: .92rem; line-height: 1.5; }
-.hf-roles { gap: 12px; }
-.hf-rol { display: flex; flex-direction: column; gap: 10px; padding: 16px; border-radius: 18px; background: var(--k-papel); border: 1px solid var(--k-linea); box-shadow: var(--k-sombra-1); }
-.hf-rol--mio { border-color: var(--k-marca); box-shadow: 0 0 0 2px rgba(var(--k-marca-rgb), .25), var(--k-sombra-1); }
-.hf-rol__cab { display: flex; align-items: center; gap: 12px; }
-.hf-rol__ico { flex: 0 0 auto; width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; background: rgba(var(--k-marca-rgb), .1); color: var(--k-marca); }
-:root[data-tema="oscuro"] .hf-rol__ico { color: var(--k-marca-clara); }
-.hf-rol--mio .hf-rol__ico { background: var(--k-marca); color: #fff; }
-.hf-rol__t { display: block; font: 700 1rem/1.2 var(--k-fuente-titulo); color: var(--k-tinta); }
-.hf-rol__id { display: block; margin-top: 2px; font: 600 .72rem/1 var(--k-fuente); letter-spacing: .8px; color: var(--k-apagado); }
-.hf-rol--mio .hf-rol__id { color: var(--k-marca); }
-.hf-rol__p { margin: 0; font-size: .88rem; color: var(--k-tinta-2); }
-.hf-rol__l { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; font-size: .86rem; line-height: 1.45; color: var(--k-tinta-2); }
-.hf-rol__l li::marker { color: var(--k-marca); }
-.hf-guia-sec .grupo__t { margin-bottom: 10px; }
+/* 18/10/2026 — la guía gráfica vive en css/guia.css */
 .grupo { padding: 16px; border-radius: 18px; border: 1px solid var(--k-linea); background: var(--k-papel); }
 
 /* ══════════════ 14) PIE CON LA FIRMA ══════════════ */
