@@ -127,19 +127,7 @@
     if (S && S.__uid === uidActual()) { pintar(); return Promise.resolve(); }
     $('da-panel').innerHTML = '';
     $('da-panel').hidden = true;
-    var t0 = performance.now();
-    return raiz.apiGet('dapanel', { uid: uidActual() }).then(function (r) {
-      medir('dapanel', t0, (r && r.modo) || '');
-      if (!r || r.modo === 'VIEJO') return viejo(r && r.lista);
-      S = {
-        __uid: uidActual(), modo: r.modo, yo: r.yo, usuarios: r.usuarios || [],
-        carpetas: rehidratar(r.carpetas), evidencias: rehidratar(r.evidencias),
-        topeMB: r.topeMB || 10, oblMax: r.oblMax || 20
-      };
-      if (!S.yo.admin) SEL.uid = S.yo.uid;
-      else if (SEL.uid && !usuario(SEL.uid)) SEL.uid = '';
-      pintar();
-    }, function (e) {
+    return cargar('dapanel').then(null, function (e) {
       if (e && e.message === '__HAC_CANCELADA__') return;
       /* backend anterior sin la ruta: las tarjetas de siempre */
       if (/acci[oó]n no v[aá]lida/i.test(String(e && e.message))) return viejo(null);
@@ -147,6 +135,54 @@
     });
   }
   function uidActual() { try { return raiz.uidActual_(); } catch (_) { return ''; } }
+
+  /** UN viaje a 'dapanel'. La caché del servidor va por versión de hoja (cada
+      escritura la sube), así que lo que vuelve es siempre lo último guardado.
+      Se conserva el contratista y el contrato que se estaban viendo. */
+  var VUELO = null;
+  function cargar(etiqueta) {
+    if (VUELO) return VUELO;                       /* un solo viaje a la vez: se hereda */
+    var uid0 = uidActual(), t0 = performance.now();
+    VUELO = raiz.apiGet('dapanel', { uid: uid0 }).then(function (r) {
+      VUELO = null;
+      medir(etiqueta, t0, ((r && r.modo) || '') + (r && r._ms != null ? ' · servidor ' + r._ms + ' ms' : ''));
+      if (uid0 !== uidActual()) return;           /* respuesta de una sesión vieja: no pisa la nueva */
+      if (!r || r.modo === 'VIEJO') return viejo(r && r.lista);
+      S = {
+        __uid: uid0, modo: r.modo, yo: r.yo, usuarios: r.usuarios || [],
+        carpetas: rehidratar(r.carpetas), evidencias: rehidratar(r.evidencias),
+        topeMB: r.topeMB || 10, oblMax: r.oblMax || 20
+      };
+      if (!S.yo.admin) SEL.uid = S.yo.uid;
+      else if (SEL.uid && !usuario(SEL.uid)) SEL.uid = '';
+      pintar();
+    }, function (e) { VUELO = null; throw e; });
+    return VUELO;
+  }
+
+  /* 20/10 — ACTUALIZAR: trae lo nuevo (lo que subieron los contratistas, lo que
+     aprobó o reabrió un administrador) sin cerrar la app. Lo que está pintado
+     se queda mientras llega; el botón queda ocupado (nada de doble toque). */
+  function actualizar(btn, callado) {
+    if (!S) return abrir();
+    if (PEND > 0) return callado ? Promise.resolve() : aviso('Espera a que termine la subida en curso y vuelve a actualizar.', 'aviso', 3500);
+    if (btn && btn.__daOcupado) return VUELO || Promise.resolve();
+    var botones = [].slice.call(document.querySelectorAll('#da-panel [data-da="actualizar"]'));
+    botones.forEach(function (b) { b.__daOcupado = true; b.disabled = true; b.classList.add('da-actualizando'); b.setAttribute('aria-busy', 'true'); });
+    var filtro = String(($('drive-filter') || {}).value || '');
+    var fin = function () {
+      botones.forEach(function (b) { b.__daOcupado = false; b.disabled = false; b.classList.remove('da-actualizando'); b.removeAttribute('aria-busy'); });
+    };
+    return cargar('dapanel (actualizar)').then(function () {
+      fin();
+      var f = $('drive-filter'); if (f && filtro) { f.value = filtro; if (S && S.yo.admin && !SEL.uid) filtrarAdmin(); }
+      if (!callado) { sonar('success'); aviso('Drive anexos al día.', 'ok', 1600); }
+    }, function (e) {
+      fin();
+      if (e && e.message === '__HAC_CANCELADA__') return;
+      if (!callado) fallo('No se pudo actualizar', e);
+    });
+  }
 
   /** Modo de siempre: tarjetas con el enlace a la carpeta. */
   function viejo(lista) {
@@ -200,13 +236,15 @@
   function cabecera() {
     var h = '';
     if (S.modo === 'PRUEBA') h += '<div class="da-banda da-banda--prueba">' + kico('herramienta', 16) + ' MODO PRUEBA · hojas y carpetas de prueba (solo tú lo ves)</div>';
+    h += '<div class="da-dev">' +
+      '<button type="button" class="kit-btn kit-btn--plano da-btn-act" data-da="actualizar" title="Traer lo último guardado (sin cerrar la app)">' +
+        '<span class="da-btn-act__ico">' + kico('recargar', 16) + '</span><span class="da-btn-act__t"> Actualizar</span></button>';
     if (S.yo.dev) {
-      h += '<div class="da-dev">' +
-        '<button type="button" class="kit-btn kit-btn--plano" data-da="arranque">' + kico('cohete', 16) + ' Arranque</button>' +
-        (S.modo === 'PRUEBA' ? '<button type="button" class="kit-btn kit-btn--plano" data-da="sembrar">' + kico('herramienta', 16) + ' Sembrar prueba</button>' : '') +
-        '</div>';
+      h += '<button type="button" class="kit-btn kit-btn--plano" data-da="arranque" title="Solo DEV: registra en la app las carpetas de Drive que falten y quita permisos de editor. No cierra ni aprueba cuentas.">' +
+          kico('cohete', 16) + ' Arranque de carpetas (DEV)</button>' +
+        (S.modo === 'PRUEBA' ? '<button type="button" class="kit-btn kit-btn--plano" data-da="sembrar">' + kico('herramienta', 16) + ' Sembrar prueba</button>' : '');
     }
-    return h;
+    return h + '</div>';
   }
 
   /* ── administradores: lista de contratistas ── */
@@ -381,6 +419,7 @@
     if (a === 'nuevo-contrato') return nuevoContrato(b);
     if (a === 'pdf') return permisoPdf(b);
     if (a === 'correo') { var u = usuario(SEL.uid); if (u) return correo(u); return; }
+    if (a === 'actualizar') { sonar('menu'); return actualizar(b); }
     if (a === 'arranque') return arranque(b);
     if (a === 'sembrar') return sembrar(b);
   });
@@ -692,10 +731,16 @@
       return post('dasembrar', { rid: rid }).then(function (r) { aviso('Sembrado: ' + (r.hechos || []).join(', '), 'ok', 4000); });
     }).catch(function (e) { fallo('No se pudo sembrar', e); });
   }
+  /* 20/10 — Cancelar deja la vista tal cual: no pide nada al servidor ni repinta.
+     Mientras se lee la vista previa el botón queda ocupado (sin esqueletos). */
   function arranque(btn) {
+    if (btn.__daOcupado) return;
+    btn.__daOcupado = true; btn.disabled = true; btn.classList.add('da-ocupado');
+    var libre = function () { btn.__daOcupado = false; btn.disabled = false; btn.classList.remove('da-ocupado'); };
     var t0 = performance.now();
     raiz.apiGet('daarranque', {}).then(function (v) {
       medir('daarranque (vista)', t0);
+      libre();
       var filas = (v.quitar || []).map(function (q, i) {
         return '<label class="da-arr__q"><input type="checkbox" data-k="' + esc(q.clave) + '"' + (q.madre ? '' : ' checked') + '> ' +
           '<span><b>' + esc(q.correo) + '</b> · ' + esc(q.rol) + '<br><small>' + esc(q.nombre) + '</small></span></label>';
@@ -703,25 +748,28 @@
       var cuentas = 0, contratos = 0;
       (v.usuarios || []).forEach(function (u) { contratos += u.contratos.length; u.contratos.forEach(function (c) { cuentas += c.cuentas.length; }); });
       return raiz.Swal.fire({
-        title: 'Arranque' + (v.modo === 'PRUEBA' ? ' (PRUEBA)' : ''), width: 720, showCancelButton: true,
-        confirmButtonText: 'Ejecutar arranque', cancelButtonText: 'Cerrar',
-        html: '<div class="da-arr"><p>' + (v.usuarios || []).length + ' contratistas · ' + contratos + ' contratos (quedan ABIERTOS) · ' + cuentas + ' cuentas (quedan APROBADAS).</p>' +
-          '<p><b>Permisos que se quitarían</b> (desmarca lo que no):</p><div class="da-arr__lista">' + (filas || '<p>Ninguno.</p>') + '</div></div>',
+        title: 'Arranque de carpetas' + (v.modo === 'PRUEBA' ? ' (PRUEBA)' : ''), width: 720, showCancelButton: true, reverseButtons: true,
+        confirmButtonText: 'Sí, registrar y quitar permisos', cancelButtonText: 'Cancelar (no cambia nada)',
+        html: '<div class="da-arr">' +
+          '<p class="da-arr__que"><b>Qué hace:</b> registra en la app las carpetas CONTRATO y CUENTA que ya están en Drive y aún no estén registradas, ' +
+          'y quita a los correos marcados el permiso de <b>editor</b>. <b>No</b> cierra, aprueba ni reabre cuentas de la app.</p>' +
+          '<p>En Drive: ' + (v.usuarios || []).length + ' contratistas · ' + contratos + ' contratos (los nuevos quedan ABIERTOS) · ' + cuentas + ' cuentas (las no registradas entran como historial).</p>' +
+          '<p><b>Permisos de editor que se quitarían</b> (desmarca lo que no):</p><div class="da-arr__lista">' + (filas || '<p>Ninguno.</p>') + '</div></div>',
         preConfirm: function () {
           return [].map.call(document.querySelectorAll('.da-arr__q input:checked'), function (i) { return i.dataset.k; });
         }
       });
     }).then(function (r) {
-      if (!r || !r.isConfirmed) return;
+      if (!r || !r.isConfirmed) return;           /* Cancelar: nada que pedir ni repintar */
       return conBoton(btn, function (rid) {
         return post('daarranque', { rid: rid, quitar: r.value }).then(function (res) {
           raiz.Swal.fire({ icon: res.errores && res.errores.length ? 'warning' : 'success', title: 'Arranque hecho',
             html: res.registradas + ' carpetas registradas · ' + res.permisosQuitados + ' permisos quitados · modo ' + res.modo +
               (res.errores && res.errores.length ? '<br><small>' + res.errores.map(esc).join('<br>') + '</small>' : '') });
-          S = null; return abrir();
+          return cargar('dapanel (tras arranque)');
         });
       });
-    }).catch(function (e) { if (e && e.message === '__HAC_CANCELADA__') return; fallo('Arranque', e); });
+    }).catch(function (e) { libre(); if (e && e.message === '__HAC_CANCELADA__') return; fallo('Arranque', e); });
   }
 
   /* ══════════════ enganches ══════════════ */
@@ -738,5 +786,5 @@
   /* la sesión cambia: lo de memoria era de otra persona */
   raiz.addEventListener('hac:sesionVencida', function () { S = null; SEL = { uid: '', contrato: '' }; });
 
-  raiz.DA = { abrir: abrir, correoNuevo: correoNuevo, estado: function () { return S; }, medidas: function () { return MED.slice(); }, olvidar: function () { S = null; } };
+  raiz.DA = { abrir: abrir, actualizar: function (callado) { return actualizar(null, callado !== false); }, correoNuevo: correoNuevo, estado: function () { return S; }, medidas: function () { return MED.slice(); }, olvidar: function () { S = null; } };
 })(window);

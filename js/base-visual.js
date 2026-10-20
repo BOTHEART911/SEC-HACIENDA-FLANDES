@@ -158,7 +158,7 @@
 
   function esqueleto_(sel, n, rejilla) {
     var wrap = document.querySelector(sel);
-    if (!wrap) return;
+    if (!wrap || wrap.hidden || wrap.closest('[hidden]')) return;   /* 20/10: nada de esqueletos en un contenedor oculto */
     marcarEsqueleto_();
     var html = '';
     for (var i = 0; i < n; i++) {

@@ -118,7 +118,9 @@
 
   function rellenar_(spec) {
     var el = document.querySelector(spec.sel);
-    if (!el || !vacio_(el)) return false;
+    /* 20/10 — un contenedor oculto (p. ej. #drive-grid con el panel de anexos) no se rellena:
+       las tarjetas grises quedaban ahí y tapaban la vista */
+    if (!el || el.hidden || el.closest('[hidden]') || !vacio_(el)) return false;
     el.innerHTML = spec.rejilla ? tarjetas_(spec.n) : '<div class="sk-wrap">' + tarjetas_(spec.n) + '</div>';
     return true;
   }

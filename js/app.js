@@ -643,7 +643,8 @@ function applyDriveFilter_(){
    las de todo el equipo; cualquier otro, la suya. */
 async function loadDriveData_(){
   /* 18/10 — con el panel de evidencias, refrescar (EN VIVO o tirar hacia abajo) es volver a pedir 'dapanel' */
-  if (window.DA && window.DA.estado && window.DA.estado()) { window.DA.olvidar(); return window.DA.abrir(); }
+  /* 20/10 — sin borrar lo pintado: se refresca en sitio, conservando contratista y contrato */
+  if (window.DA && window.DA.estado && window.DA.estado()) return window.DA.actualizar(true);
   const list = await apiGet('listDriveRows', { uid: uidActual_() });
   DRIVE_DATA = Array.isArray(list) ? list : [];
   applyDriveFilter_();

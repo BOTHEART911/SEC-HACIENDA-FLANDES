@@ -142,3 +142,14 @@
 :root[data-tema="oscuro"] .da-chip--pdf { background: rgba(248, 113, 113, .16); color: #fca5a5; }
 .da-btn-pdf--on { border-color: #dc2626; color: #b91c1c; }
 :root[data-tema="oscuro"] .da-btn-pdf--on { border-color: #f87171; color: #fca5a5; }
+
+/* 20/10 — #drive-grid.hf-rejilla trae display:grid !important y le ganaba a [hidden]:
+   el contenedor de las tarjetas viejas seguía visible encima del panel (esqueletos grises). */
+#drive-grid[hidden], #drive-grid.hf-rejilla[hidden] { display: none !important; }
+
+/* 20/10 — ACTUALIZAR: el ícono gira mientras llega el panel; la vista sigue a la vista */
+.da-btn-act.da-actualizando { opacity: .75; pointer-events: none; }
+.da-btn-act__ico { display: inline-flex; }
+.da-btn-act.da-actualizando .da-btn-act__ico { animation: da-giro .8s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .da-btn-act.da-actualizando .da-btn-act__ico { animation: none; } }
+.da-arr__que { background: var(--k-papel-2); border: 1px solid var(--k-linea); border-radius: var(--k-r-md); padding: 10px 12px; text-align: left; font-size: .86rem; }
