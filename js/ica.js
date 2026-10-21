@@ -619,7 +619,10 @@
   /* ══════════════ alta / edición ══════════════ */
   function abrirForm(r) {
     var nuevo = !r;
-    var d = r ? Object.assign({}, r) : { nat: 'NATURAL', dep: 'TOLIMA', mun: 'FLANDES', vig: '', pl: (S.cfg && S.cfg.plazo) || 15, ipl: (S.cfg && S.cfg.insDias) || 15, un: (S.cfg && S.cfg.unidad) || 'HABILES' };
+    /* 21/10 — oficio SHM automático: el siguiente de la columna (lista ya en memoria, cero viajes) */
+    var ofSug = nuevo && S.lista ? ofSiguiente(S.lista.map(function (x) { return x.of; })) : '';
+    var ofServidor = nuevo && !S.lista;      /* la lista aún no llega: el servidor pone el siguiente al guardar */
+    var d = r ? Object.assign({}, r) : { of: ofSug, nat: 'NATURAL', dep: 'TOLIMA', mun: 'FLANDES', vig: '', pl: (S.cfg && S.cfg.plazo) || 15, ipl: (S.cfg && S.cfg.insDias) || 15, un: (S.cfg && S.cfg.unidad) || 'HABILES' };
     var anios = []; for (var y = ANIO0; y <= anioActual(); y++) anios.push(y);
     var vigSel = {}; String(d.vig || '').split(/[,\s]+/).forEach(function (x) { if (x) vigSel[x] = 1; });
     var opForm = {
@@ -632,7 +635,8 @@
           '<button type="button" data-nat="JURIDICA">' + ico('base-datos', 18) + ' Persona jurídica</button>' +
         '</div>' +
         '<div class="ica-rej2">' +
-          campo('of', 'Número de oficio SHM', '<input name="of" inputmode="numeric" placeholder="Ej.: 00125" value="' + esc(d.of || '') + '">', 'Se guarda tal cual, con los ceros a la izquierda.') +
+          campo('of', 'Número de oficio SHM', '<input name="of" inputmode="numeric" placeholder="' + (ofServidor ? 'Se asigna solo al guardar' : 'Ej.: 00125') + '" value="' + esc(d.of || '') + '">',
+            nuevo ? '<span data-ofayuda>Automático: el siguiente después del último registrado. Puedes cambiarlo.</span>' : 'Se guarda tal cual, con los ceros a la izquierda.') +
           campo('ide', 'Número de identificación <span class="ica-tipo" data-tipo></span>', '<input name="ide" inputmode="numeric" placeholder="Solo números" value="' + esc(d.ide || '') + '">', '<span data-dv></span>') +
           campo('nom', '<span data-nomt>Nombres y apellidos</span>', '<input name="nom" value="' + esc(d.nom || '') + '">') +
           campo('rep', 'Representante legal <span data-repopc class="ica-opc">(opcional)</span>', '<input name="rep" value="' + esc(d.rep || '') + '">') +
@@ -689,7 +693,10 @@
     });
     ponerNat(nat);
     fotoInicial = fotoForm();
-    setTimeout(function () { try { f.of.focus(); } catch (e) {} }, 60);
+    setTimeout(function () { try { (ofSug ? f.ide : f.of).focus(); } catch (e) {} }, 60);
+    if (nuevo) f.of.addEventListener('input', function () {
+      var a = m.q('[data-ofayuda]'); if (a) a.textContent = f.of.value.trim() === ofSug ? 'Automático: el siguiente después del último registrado. Puedes cambiarlo.' : 'Escrito a mano. Se guarda tal cual, con los ceros a la izquierda.';
+    });
 
     m.q('[data-guardar]').addEventListener('click', function () {
       var btn = this;
@@ -701,7 +708,9 @@
         vig: Array.prototype.map.call(m.querySelectorAll('.ica-anio-btn.on'), function (b) { return b.getAttribute('data-anio'); }).join(', '),
         pl: f.pl.value, ipl: f.ipl.value, un: (r && r.un) || (S.cfg && S.cfg.unidad) || 'HABILES'
       };
-      var falta = validar(datos, r);
+      /* si dejó el sugerido, el servidor le asigna el siguiente libre si otra persona lo tomó a la vez */
+      if (nuevo && ((ofSug && datos.of === ofSug) || (ofServidor && !datos.of))) datos.ofAuto = 1;
+      var falta = validar(datos, r).filter(function (x) { return !(datos.ofAuto && x === 'número de oficio'); });
       var err = m.q('[data-err]');
       if (falta.length) { err.hidden = false; err.innerHTML = 'Revisa: ' + falta.map(esc).join(' · '); sonar('error'); return; }
       err.hidden = true;
@@ -718,7 +727,9 @@
           guardando(p, nuevo ? 'Guardando contribuyente' : 'Guardando cambios').then(function (res) {
             var fila = nuevo ? res.filas[0] : res.fila;
             parchar(fila); ocupado(m, btn, false); m.cerrar(true);
-            sonar('success'); aviso(nuevo ? 'Contribuyente agregado.' : 'Cambios guardados.', 'ok');
+            sonar('success');
+            if (nuevo && res.ofCambio) aviso('El oficio ' + res.ofCambio.de + ' lo acababa de tomar otra persona: este contribuyente quedó con el oficio ' + res.ofCambio.a + '.', 'info');
+            else aviso(nuevo ? 'Contribuyente agregado.' : 'Cambios guardados.', 'ok');
             if (activa()) pintarTodo();
           }, function (e) {
             ocupado(m, btn, false);
@@ -727,6 +738,19 @@
           });
         });
     });
+  }
+  /** Siguiente oficio: el mayor + 1, mismo prefijo y ceros ('000012' → '000013'). Igual que ICA_ofSiguiente_. */
+  function ofSiguiente(lista) {
+    var mejor = null, usado = {};
+    (lista || []).forEach(function (of) {
+      of = String(of || '').trim(); usado[of] = 1;
+      var x = of.match(/^(.*?)(\d+)$/); if (!x) return;
+      var n = Number(x[2]); if (!mejor || n > mejor.n) mejor = { pre: x[1], n: n, ancho: x[2].length };
+    });
+    if (!mejor) mejor = { pre: '', n: 0, ancho: 6 };
+    var n = mejor.n, sig;
+    do { n++; sig = mejor.pre + (String(n).length >= mejor.ancho ? String(n) : (new Array(mejor.ancho + 1).join('0') + n).slice(-mejor.ancho)); } while (usado[sig]);
+    return sig;
   }
   function unidadTxt(u) { return String(u).toUpperCase() === 'CALENDARIO' ? 'días calendario' : 'días hábiles'; }
   function campo(n, t, input, ayuda) {
@@ -1392,9 +1416,8 @@
           '<button type="button" class="kit-btn" data-plant="' + esc(c.plantillaReq || '') + '"' + (c.plantillaReq ? '' : ' disabled') + '>' + ico('documento') + ' Ir a plantilla del requerimiento</button>' +
           '<button type="button" class="kit-btn" data-plant="' + esc(c.plantillaIns || '') + '"' + (c.plantillaIns ? '' : ' disabled') + '>' + ico('documento') + ' Ir a plantilla del 2.º requerimiento</button>' +
           (c.esDev ? '<label class="kit-btn ica-subir">' + ico('firma') + (c.hayFirma ? ' Cambiar firma de la Secretaria ✓' : ' Subir firma de la Secretaria') + '<input type="file" accept="image/png,image/jpeg" hidden data-firma></label>' : '') +
-          /* 21/10 — visto bueno (Diego García) para el correo de NOTIFICACIÓN ELECTRÓNICA de BD Predial */
-          (c.esDev ? '<label class="kit-btn ica-subir">' + ico('firma') + (c.hayFirmaVb ? ' Cambiar firma de visto bueno ✓' : ' Subir firma de visto bueno (Diego García)') + '<input type="file" accept="image/png,image/jpeg" hidden data-firmavb></label>' : '') +
         '</div>' +
+        vbHtml(c) +
         '<p class="ica-nota">Marcadores que puedes usar en asuntos y cuerpos: <code>' + esc(MARCADORES) + '</code></p>' +
         GRUPOS.filter(function (g) { return porG[g[0]]; }).map(function (g) {
           return '<details class="ica-cfg-g"' + (g[0] === 'correo' ? ' open' : '') + '><summary>' + ico(g[2], 18) + ' ' + esc(g[1]) + '</summary>' +
@@ -1414,16 +1437,16 @@
     var fi = m.q('[data-firma]');
     if (fi) fi.addEventListener('change', function () {
       var file = fi.files[0]; fi.value = ''; if (!file) return;
-      if (file.size > 3 * 1024 * 1024) { aviso('La imagen de la firma debe pesar menos de 3 MB.', 'aviso'); return; }
-      guardando(leerB64(file).then(function (b64) { return llamar('firma', { archivo: { nombre: file.name, mime: file.type, b64: b64 } }, { post: true, rid: nuevoRid() }); }), 'Guardando la firma')
-        .then(function (cfg) { S.cfg = cfg; aviso('Firma guardada. Sale en los próximos documentos.', 'ok'); m.cerrar(); abrirConfig(); }, function (e) { aviso(e.message, 'aviso'); });
+      subirFirma(m, file, 'firma', {}, 'Firma de la Secretaria', 128, 60, 'Firma guardada. Sale en los próximos documentos.');
     });
-    var fv = m.q('[data-firmavb]');
-    if (fv) fv.addEventListener('change', function () {
-      var file = fv.files[0]; fv.value = ''; if (!file) return;
-      if (file.size > 3 * 1024 * 1024) { aviso('La imagen de la firma debe pesar menos de 3 MB.', 'aviso'); return; }
-      guardando(leerB64(file).then(function (b64) { return llamar('firmavb', { archivo: { nombre: file.name, mime: file.type, b64: b64 } }, { post: true, rid: nuevoRid() }); }), 'Guardando la firma de visto bueno')
-        .then(function (cfg) { S.cfg = cfg; aviso('Firma de visto bueno guardada. Sale en las próximas notificaciones de predial.', 'ok'); m.cerrar(); abrirConfig(); }, function (e) { aviso(e.message, 'aviso'); });
+    /* 21/10 — firmas de visto bueno (Proyectó / Revisó / Revisó): cada persona sube la suya */
+    m.querySelectorAll('[data-vb]').forEach(function (inp) {
+      inp.addEventListener('change', function () {
+        var file = inp.files[0], slot = inp.getAttribute('data-vb'); inp.value = ''; if (!file) return;
+        var x = (c.vb || []).filter(function (v) { return v.s === slot; })[0] || {};
+        subirFirma(m, file, 'firmavb', { slot: slot }, x.rol + ' · ' + x.nombre, VB_CAJA.w, VB_CAJA.h,
+          'Firma de visto bueno guardada. Sale pequeña en la casilla «' + x.rol + '» de los próximos requerimientos' + (slot === 'rev2' ? ' y en las notificaciones de predial.' : '.'));
+      });
     });
     m.q('[data-guardar]').addEventListener('click', function () {
       var btn = this, cambios = {}, n = 0;
@@ -1435,6 +1458,77 @@
         S.cfg = cfg; ocupado(m, btn, false); m.cerrar(); sonar('success'); aviso('Configuración guardada.', 'ok'); if (activa()) pintarTodo();
       }, function (e) { ocupado(m, btn, false); if (e.codigo !== 'RED') btn.__rid = null; var er = m.q('[data-err]'); er.hidden = false; er.textContent = e.message; });
     });
+  }
+
+  /* ══════════════ firmas (21/10) ══════════════ */
+  /* Caja de la firma de visto bueno en el documento (puntos), igual que ICA_VB_CAJA del backend. */
+  var VB_CAJA = { w: 96, h: 30 };
+  function vbHtml(c) {
+    var vb = c.vb || [];
+    if (!vb.length) return '';
+    return '<div class="ica-vb"><div class="ica-vb__t">' + ico('firma', 18) + ' Firmas de visto bueno <small>Van pequeñas en la tabla del pie de los documentos (1.º y 2.º requerimiento), encima del nombre de cada persona.</small></div>' +
+      '<div class="ica-vb__rej">' + vb.map(function (v) {
+        var est = v.vigente ? '<span class="ica-vb__ok">' + ico('check', 14) + ' Cargada</span>' :
+          v.hay ? '<span class="ica-vb__warn">La firma guardada es de ' + esc(titulo(v.de || '')) + ': no se usa hasta que ' + esc(titulo(v.nombre)) + ' suba la suya</span>' :
+          '<span class="ica-vb__no">Sin firma: la casilla sale solo con el nombre</span>';
+        return '<div class="ica-vb__it"><b>' + esc(v.rol) + '</b><span class="ica-vb__n">' + esc(titulo(v.nombre) || '—') + '</span><small>' + esc(v.cargo || '') + '</small>' + est +
+          (v.puedo ? '<label class="kit-btn ica-subir ica-vb__btn">' + ico('firma') + (v.vigente ? ' Cambiar ' : ' Subir ') + (v.mia ? 'mi firma' : 'la firma') +
+            '<input type="file" accept="image/png,image/jpeg" hidden data-vb="' + esc(v.s) + '"></label>' : '') + '</div>';
+      }).join('') + '</div></div>';
+  }
+
+  /** Limpia la foto de la firma antes de subirla: recorta el blanco sobrante, fondo
+   *  transparente y tamaño moderado (PNG). Así sale pequeña y nítida sin deformarse. */
+  function limpiarFirma(file) {
+    return new Promise(function (res, rej) {
+      if (!/^image\/(png|jpe?g)$/i.test(file.type)) { rej(new Error('La firma debe ser una imagen PNG o JPG.')); return; }
+      if (file.size > 8 * 1024 * 1024) { rej(new Error('La imagen pesa más de 8 MB.')); return; }
+      var url = URL.createObjectURL(file), img = new Image();
+      img.onerror = function () { URL.revokeObjectURL(url); rej(new Error('No se pudo abrir la imagen.')); };
+      img.onload = function () {
+        URL.revokeObjectURL(url);
+        var k = Math.min(1, 1600 / Math.max(img.width, img.height));
+        var W = Math.max(1, Math.round(img.width * k)), H = Math.max(1, Math.round(img.height * k));
+        var cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+        var cx = cv.getContext('2d'); cx.drawImage(img, 0, 0, W, H);
+        var px = cx.getImageData(0, 0, W, H), d = px.data;
+        var x0 = W, y0 = H, x1 = -1, y1 = -1, x, y, i, l;
+        for (y = 0; y < H; y++) for (x = 0; x < W; x++) {
+          i = (y * W + x) * 4; l = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+          if (d[i + 3] > 40 && l < 170) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+        }
+        if (x1 < 0) { rej(new Error('No se ve trazo en la imagen. Usa una foto o escaneo de la firma en tinta oscura sobre fondo claro.')); return; }
+        /* fondo claro → transparente (con borde suave) */
+        for (i = 0; i < d.length; i += 4) {
+          l = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+          if (l >= 225) d[i + 3] = 0; else if (l > 170) d[i + 3] = Math.round(d[i + 3] * (225 - l) / 55);
+        }
+        cx.putImageData(px, 0, 0);
+        var mg = Math.round(Math.max(x1 - x0, y1 - y0) * 0.03) + 2;
+        x0 = Math.max(0, x0 - mg); y0 = Math.max(0, y0 - mg); x1 = Math.min(W - 1, x1 + mg); y1 = Math.min(H - 1, y1 + mg);
+        var w = x1 - x0 + 1, h = y1 - y0 + 1, k2 = Math.min(1, 700 / w, 300 / h);
+        var out = document.createElement('canvas'); out.width = Math.max(1, Math.round(w * k2)); out.height = Math.max(1, Math.round(h * k2));
+        out.getContext('2d').drawImage(cv, x0, y0, w, h, 0, 0, out.width, out.height);
+        var du = out.toDataURL('image/png');
+        res({ nombre: String(file.name || 'firma').replace(/\.[^.]+$/, '') + '.png', mime: 'image/png', b64: du.split(',')[1], url: du, w: out.width, h: out.height });
+      };
+      img.src = url;
+    });
+  }
+  /** Muestra cómo queda (al tamaño real del documento) y sube. Un viaje, con rid. */
+  function subirFirma(m, file, accion, extra, titulo2, cajaW, cajaH, ok) {
+    limpiarFirma(file).then(function (f) {
+      var k = Math.min(cajaW / f.w, cajaH / f.h), pw = Math.round(f.w * k * 4 / 3), ph = Math.round(f.h * k * 4 / 3);
+      return confirmar('Revisa la firma', '<p><b>' + esc(titulo2) + '</b></p>' +
+        '<div class="ica-vb__prev"><img src="' + f.url + '" width="' + pw + '" height="' + ph + '" alt="Firma"><span>Así se verá en el documento (tamaño real).</span></div>' +
+        '<p class="ica-nota">Se recortó el blanco sobrante y el fondo quedó transparente. Si no se ve bien, usa una foto más nítida, con tinta oscura sobre papel blanco.</p>', 'Guardar firma')
+        .then(function (si) {
+          if (!si) return;
+          var rid = nuevoRid();
+          return guardando(llamar(accion, Object.assign({ archivo: { nombre: f.nombre, mime: f.mime, b64: f.b64 } }, extra), { post: true, rid: rid }), 'Guardando la firma')
+            .then(function (cfg) { S.cfg = cfg; sonar('success'); aviso(ok, 'ok'); m.cerrar(); abrirConfig(); });
+        });
+    }).catch(function (e) { aviso(e.message, 'aviso'); sonar('error'); });
   }
 
   /* ══════════════ insights (capa 11) ══════════════ */
@@ -1515,6 +1609,7 @@
 
   window.ICA = {
     abrir: abrir, cargar: cargar, olvidar: olvidar, insight: insight, puede: puede, festivosCambiaron: festivosCambiaron,
-    _S: S, _seg: seg, _dv: dvNit, _nitOk: nitOk, _habiles: habilesHasta, _validar: validar, _identTxt: identTxt
+    _S: S, _seg: seg, _dv: dvNit, _nitOk: nitOk, _habiles: habilesHasta, _validar: validar, _identTxt: identTxt,
+    _form: abrirForm, _config: abrirConfig, _limpiarFirma: limpiarFirma, _ofSiguiente: ofSiguiente
   };
 }());

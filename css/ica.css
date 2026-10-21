@@ -234,3 +234,22 @@ div.ica-doc { cursor: default; }
 .ica-resp__adj { margin: 0; display: flex; gap: 6px; align-items: center; font-size: .8rem; color: var(--k-tinta); }
 .ica-resp__acc { display: flex; flex-wrap: wrap; gap: 8px; }
 .ica-btn--resp { color: var(--k-ok, #2e7d4f) !important; }
+
+/* 21/10 — firmas de visto bueno (Configuración) */
+.ica-vb { margin: 14px 0 6px; padding: 12px; border: 1px solid var(--k-linea); border-radius: 14px; background: var(--k-papel); }
+.ica-vb__t { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-weight: 700; color: var(--k-tinta); }
+.ica-vb__t small { flex-basis: 100%; font-weight: 400; font-size: .8rem; color: var(--k-apagado); }
+.ica-vb__rej { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-top: 10px; }
+.ica-vb__it { display: flex; flex-direction: column; gap: 3px; padding: 10px 12px; border-radius: 12px; background: var(--k-papel-2); min-width: 0; }
+.ica-vb__it > b { font-size: .72rem; letter-spacing: .5px; text-transform: uppercase; color: var(--k-apagado); }
+.ica-vb__n { font-weight: 700; color: var(--k-tinta); overflow-wrap: anywhere; }
+.ica-vb__it small { color: var(--k-tinta-2); font-size: .78rem; }
+.ica-vb__ok, .ica-vb__warn, .ica-vb__no { font-size: .78rem; display: inline-flex; align-items: center; gap: 4px; }
+.ica-vb__ok { color: var(--k-ok); font-weight: 600; }
+.ica-vb__warn { color: var(--k-aviso); }
+.ica-vb__no { color: var(--k-apagado); }
+.ica-vb__btn { margin-top: 6px; align-self: flex-start; }
+.ica-vb__prev { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px; margin: 8px 0;
+  border-radius: 12px; background: #fff; border: 1px dashed var(--k-linea); }
+.ica-vb__prev img { display: block; max-width: 100%; height: auto; }
+.ica-vb__prev span { font-size: .78rem; color: #5b6660; }
