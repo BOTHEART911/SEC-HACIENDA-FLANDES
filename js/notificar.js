@@ -507,7 +507,118 @@
     });
   }
 
+  /* ══════════════ configuración del correo (ADMIN y DEV) ══════════════ */
+  function roles() { try { var p = window.IDN && window.IDN.perfil && window.IDN.perfil(); return (p && p.roles) || []; } catch (_) { return []; } }
+  function puedeConfig() { var r = roles(); return r.indexOf('ADMIN') !== -1 || r.indexOf('DEV') !== -1; }
+  var VARS_AS = ['numFactura', 'fichaCatastral', 'nombre', 'documento'];
+  var VARS_CU = ['dia', 'mes', 'ano', 'nombre', 'documento', 'fichaCatastral', 'numFactura', 'firmaSecretaria', 'firmaVistoBueno'];
+  var EJEMPLO = { numFactura: anio() + '117639', fichaCatastral: '010000930011000', nombre: 'NOMBRE DEL CONTRIBUYENTE', documento: '12345678',
+    dia: String(hoyBogota().getDate()), mes: MESES[hoyBogota().getMonth()], ano: anio() };
+
+  /** Vista previa: misma regla que el servidor (**negrita**, • lista, enlaces, firmas). */
+  function previa(tpl) {
+    var out = [], lista = null, par = [];
+    var cp = function () { if (par.length) { out.push('<p>' + par.join('<br>') + '</p>'); par = []; } };
+    var cl = function () { if (lista) { out.push('<ul>' + lista.join('') + '</ul>'); lista = null; } };
+    var linea = function (t) {
+      var h = esc(t).replace(/\{\{\s*(\w+)\s*\}\}/g, function (m, k) { return EJEMPLO[k] != null ? '<mark>' + esc(EJEMPLO[k]) + '</mark>' : '<span class="ntf-cfg__malo">' + m + '</span>'; });
+      return h.replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>').replace(/(https?:\/\/[^\s<]+)/g, '<a>$1</a>');
+    };
+    String(tpl || '').replace(/\r\n?/g, '\n').split('\n').forEach(function (l) {
+      var t = l.trim(), fm = /^\{\{\s*(firmaSecretaria|firmaVistoBueno)\s*\}\}$/.exec(t);
+      if (fm) { cp(); cl(); out.push('<div class="ntf-cfg__firma">' + ico('firma', 16) + (fm[1] === 'firmaSecretaria' ? ' Firma de la Secretaria' : ' Firma de visto bueno') + '</div>'); return; }
+      if (!t) { cp(); cl(); return; }
+      if (/^[•\-*]\s+/.test(t) && !/^\*\*/.test(t)) { cp(); (lista = lista || []).push('<li>' + linea(t.replace(/^[•\-*]\s+/, '')) + '</li>'); return; }
+      cl(); par.push(linea(l));
+    });
+    cp(); cl();
+    return out.join('');
+  }
+
+  function abrirConfig() {
+    if (!puedeConfig()) { aviso('Solo ADMIN y DEV cambian el correo de notificación.', 'aviso'); return; }
+    var m = modal({
+      titulo: 'Correo de notificación', icono: 'engranaje',
+      sucio: function () { return !!m.__sucio; },
+      cuerpo: '<p class="ntf-ayuda">Lo que recibe el contribuyente al notificar la factura. Toca una variable para ponerla donde está el cursor. <b>**texto**</b> sale en negrita y las líneas que empiezan por • salen como lista.</p>' +
+        '<div class="ntf-cfg" data-zona><div class="sk sk-line w95 ntf-esq"></div><div class="sk sk-line w80"></div><div class="sk sk-line w60"></div></div>',
+      pie: '<button type="button" class="kit-btn" data-cerrar>Cancelar</button>' +
+           '<button type="button" class="kit-btn kit-btn--marca" data-guardar disabled>' + ico('check', 18) + ' Guardar</button>'
+    });
+    m.querySelector('.hf-modal__hoja').classList.add('hf-modal__hoja--ancha');
+    var zona = m.q('[data-zona]'), btn = m.q('[data-guardar]'), orig = {};
+    function chips(vars, para) {
+      return '<div class="ntf-cfg__vars">' + vars.map(function (v) { return '<button type="button" class="ntf-cfg__var" data-para="' + para + '" data-v="{{' + v + '}}">{{' + v + '}}</button>'; }).join('') + '</div>';
+    }
+    function pintar(d) {
+      var pl = {}; (d.plantillas || []).forEach(function (x) { pl[x.clave] = x; });
+      var as = pl['notif.asunto'] || {}, cu = pl['notif.cuerpo'] || {};
+      orig = { as: as.texto || '', cu: cu.texto || '' };
+      zona.innerHTML =
+        '<label class="ntf-lab" for="ntf-cfg-as">Asunto' + (as.esDefecto === false ? ' <em class="ntf-cfg__tag">editado</em>' : '') + '</label>' + chips(VARS_AS, 'as') +
+        '<input id="ntf-cfg-as" data-campo="as" autocomplete="off">' +
+        '<div class="ntf-cfg__restaurar"><button type="button" class="kit-btn" data-rest="notif.asunto">' + ico('devolver', 16) + ' Restaurar asunto original</button></div>' +
+        '<label class="ntf-lab" for="ntf-cfg-cu">Cuerpo del correo' + (cu.esDefecto === false ? ' <em class="ntf-cfg__tag">editado</em>' : '') + '</label>' + chips(VARS_CU, 'cu') +
+        '<div class="ntf-cfg__dos"><textarea id="ntf-cfg-cu" data-campo="cu" rows="20"></textarea><div class="ntf-cfg__previa" data-previa aria-label="Vista previa"></div></div>' +
+        '<div class="ntf-cfg__restaurar"><button type="button" class="kit-btn" data-rest="notif.cuerpo">' + ico('devolver', 16) + ' Restaurar cuerpo original</button></div>';
+      m.q('[data-campo=as]').value = orig.as;
+      m.q('[data-campo=cu]').value = orig.cu;
+      refrescar();
+    }
+    function refrescar() {
+      var a = m.q('[data-campo=as]'), c = m.q('[data-campo=cu]');
+      if (!a) return;
+      m.q('[data-previa]').innerHTML = '<div class="ntf-cfg__asunto"><small>Asunto</small>' + previa(a.value).replace(/<\/?p>/g, '') + '</div>' + previa(c.value);
+      m.__sucio = a.value !== orig.as || c.value !== orig.cu;
+      btn.disabled = !m.__sucio || !a.value.trim() || !c.value.trim();
+    }
+    zona.addEventListener('input', refrescar);
+    zona.addEventListener('click', function (e) {
+      var ch = e.target.closest('[data-v]');
+      if (ch) {
+        var el = m.q('[data-campo=' + ch.getAttribute('data-para') + ']'), v = ch.getAttribute('data-v');
+        var i = el.selectionStart != null ? el.selectionStart : el.value.length, f = el.selectionEnd != null ? el.selectionEnd : i;
+        el.value = el.value.slice(0, i) + v + el.value.slice(f); el.focus(); el.selectionStart = el.selectionEnd = i + v.length;
+        refrescar(); return;
+      }
+      var r = e.target.closest('[data-rest]');
+      if (r && !r.disabled) {
+        confirmar('Restaurar el texto original', '<p>Se vuelve al texto de fábrica y se guarda de una vez.</p>', 'Restaurar').then(function (ok) {
+          if (!ok) return;
+          r.disabled = true;
+          guardando(llamar(urlHAC(), 'cfgrestaurar', { clave: r.getAttribute('data-rest') }, { post: true, rid: nuevoRid() }), 'Restaurando').then(function (res) {
+            var campo = r.getAttribute('data-rest') === 'notif.asunto' ? 'as' : 'cu';
+            orig[campo] = (res && res.texto) || ''; m.q('[data-campo=' + campo + ']').value = orig[campo];
+            r.disabled = false; refrescar(); sonar('success'); aviso('Texto original restaurado.', 'ok');
+          }, function (er) { r.disabled = false; aviso(er.message, 'aviso', 6000); });
+        });
+      }
+    });
+    btn.addEventListener('click', function () {
+      if (btn.disabled || m.__ocupado) return;
+      var cambios = {}, a = m.q('[data-campo=as]').value.trim(), c = m.q('[data-campo=cu]').value.trim();
+      if (a !== orig.as) cambios['notif.asunto'] = a;
+      if (c !== orig.cu) cambios['notif.cuerpo'] = c;
+      m.__ocupado = true; btn.disabled = true;
+      var rid = btn.__rid || (btn.__rid = nuevoRid());
+      guardando(llamar(urlHAC(), 'cfgguardar', { cambios: cambios }, { post: true, rid: rid }), 'Guardando el correo').then(function () {
+        m.__ocupado = false; m.__sucio = false; btn.__rid = null; sonar('success');
+        aviso('Correo de notificación guardado. Sale así desde el próximo envío.', 'ok', 5000);
+        m.cerrar(true);
+      }, function (er) {
+        m.__ocupado = false; if (er.codigo !== 'RED') btn.__rid = null; refrescar(); aviso(er.message, 'aviso', 7000);
+      });
+    });
+    llamar(urlHAC(), 'cfgtodo', {}).then(pintar, function (e) {
+      if (!cancelada(e)) zona.innerHTML = '<p class="ntf-ayuda ntf-ayuda--mal">No se pudo cargar el correo: ' + esc(e.message) + '</p>';
+    });
+  }
+  document.addEventListener('click', function (e) {
+    if (e.target.closest && e.target.closest('#btn-bdp-correo')) { sonar('menu'); abrirConfig(); }
+  });
+
   window.NOTIF = {
+    puedeConfig: puedeConfig, abrirConfig: abrirConfig,
     PLAZO: PLAZO, OPC: OPC,
     estado: estado, tarjeta: tarjeta, boton: boton, abrir: abrir, detalle: detalle,
     pasa: pasa, clave: clave, contar: contar, respuestas: respuestas,

@@ -94,3 +94,30 @@
   .ntf-fac input { flex-basis: calc(100% - 80px); }
   .ntf-validar { width: 100%; justify-content: center; padding: 10px 14px; }
 }
+
+/* ── configuración del correo (ADMIN y DEV, desde BD Predial) ── */
+.ntf-cfg { display: flex; flex-direction: column; gap: 4px; }
+.ntf-cfg input, .ntf-cfg textarea { width: 100%; box-sizing: border-box; margin: 0 !important; }
+.ntf-cfg textarea { font: .86rem/1.5 var(--k-fuente) !important; resize: vertical; min-height: 320px; }
+.ntf-cfg__vars { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 6px; }
+.ntf-cfg__var { appearance: none; width: auto !important; margin: 0 !important; flex: 0 0 auto; box-shadow: none !important; border: 1px solid var(--k-linea); background: var(--k-papel-2); color: var(--k-marca); border-radius: 999px;
+  padding: 4px 10px; font: 600 .74rem/1.2 var(--k-fuente); cursor: pointer; }
+:root[data-tema="oscuro"] .ntf-cfg__var { color: var(--k-marca-clara); }
+.ntf-cfg__var:hover { background: rgba(var(--k-marca-rgb), .1); }
+.ntf-cfg__tag { font-style: normal; font-size: .7rem; padding: 2px 8px; border-radius: 999px; background: rgba(var(--k-marca-rgb), .1); color: var(--k-marca); margin-left: 6px; }
+.ntf-cfg__restaurar { display: flex; justify-content: flex-end; margin: 6px 0 4px; }
+.ntf-cfg__restaurar .kit-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; font-size: .8rem; }
+.ntf-cfg__dos { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; align-items: stretch; }
+.ntf-cfg__previa { border: 1px solid var(--k-linea); border-radius: 14px; padding: 14px; background: var(--k-papel); color: var(--k-tinta);
+  font-size: .84rem; line-height: 1.55; max-height: 460px; overflow: auto; overflow-wrap: anywhere; }
+.ntf-cfg__previa p { margin: 0 0 10px; }
+.ntf-cfg__previa ul { margin: 0 0 10px 18px; padding: 0; }
+.ntf-cfg__previa a { color: var(--k-marca); text-decoration: underline; }
+.ntf-cfg__previa mark { background: rgba(var(--k-marca-rgb), .12); color: inherit; border-radius: 4px; padding: 0 2px; }
+.ntf-cfg__asunto { padding: 8px 10px; border-radius: 10px; background: var(--k-papel-2); margin-bottom: 12px; font-weight: 600; }
+.ntf-cfg__asunto small { display: block; font-size: .7rem; color: var(--k-apagado); text-transform: uppercase; letter-spacing: .4px; }
+.ntf-cfg__firma { display: inline-flex; gap: 6px; align-items: center; padding: 6px 10px; margin: 2px 0 6px; border: 1px dashed var(--k-linea); border-radius: 10px; color: var(--k-apagado); font-size: .8rem; }
+.ntf-cfg__malo { color: var(--k-malo); font-weight: 700; }
+@media (max-width: 760px) { .ntf-cfg__dos { grid-template-columns: 1fr; } .ntf-cfg textarea { min-height: 260px; } }
+
+.ntf-modal .hf-modal__hoja.hf-modal__hoja--ancha { width: min(1000px, 100%); }

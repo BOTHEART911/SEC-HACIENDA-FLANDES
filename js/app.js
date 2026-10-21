@@ -6399,6 +6399,9 @@ async function abrirBDPredial_() {
   const btnAgregar = document.getElementById('btn-bdp-agregar');
   if (btnPanel)   btnPanel.style.display   = canVerPanelPredial_()  ? '' : 'none';
   if (btnAgregar) btnAgregar.style.display = canAgregarPredial_()   ? '' : 'none';
+  /* 21/10 — asunto y cuerpo del correo de notificación: ADMIN y DEV */
+  const btnCorreo = document.getElementById('btn-bdp-correo');
+  if (btnCorreo) btnCorreo.style.display = (window.NOTIF && window.NOTIF.puedeConfig()) ? '' : 'none';
 
  /* Pastilla "Solo las mías" para sustanciadores */
   const miasWrap = document.getElementById('bdp-pills-mias-wrap');
