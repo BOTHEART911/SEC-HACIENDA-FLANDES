@@ -79,6 +79,8 @@ var APP_SHELL = [
   './css/hacienda.css',
   './css/ica.css',
   './js/ica.js',
+  './js/notificar.js',
+  './css/notificar.css',
   './js/gerencial.js',
   './css/gerencial.css',
   './kit/gerencial.js',

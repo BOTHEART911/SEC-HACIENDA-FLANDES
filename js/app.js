@@ -6330,6 +6330,7 @@ let __bdpFilterSustanciador = 'ALL';
 let __bdpFilterEstado    = 'ALL';
 let __bdpFilterMias      = false;
 let __bdpFilterSolexp    = 'ALL';   /* 17/09 — SOLICITUD EXPEDIENTE */
+let __bdpFilterNotif     = 'ALL';   /* 21/10 — NOTIFICACIÓN ELECTRÓNICA */
 let __bdpSelected        = null;
 
 /* ── Formatear valor en pesos ─────────────────────────── */
@@ -6384,6 +6385,9 @@ async function abrirBDPredial_() {
   document.querySelector('#bdp-pills-estado    [data-estado="ALL"]')?.classList.add('active');
   document.querySelectorAll('#bdp-pills-solexp .proc-status-pill').forEach(b => b.classList.remove('active'));
   document.querySelector('#bdp-pills-solexp [data-solexp="ALL"]')?.classList.add('active');
+  document.querySelectorAll('#bdp-pills-notif .proc-status-pill').forEach(b => b.classList.remove('active'));
+  document.querySelector('#bdp-pills-notif [data-notif="ALL"]')?.classList.add('active');
+  __bdpFilterNotif = 'ALL';
   document.getElementById('bdp-pill-mias')?.classList.remove('active');
 
   /* Reset filtro de texto */
@@ -6435,7 +6439,7 @@ async function loadBDPredial_() {
     /* 29/09 — carga única POR SESIÓN: los 2,5 MB se bajan una vez; volver a
        la vista pinta de memoria. El EN VIVO la marca sucia si otro cambia
        PREDIAL; los guardados propios ya parchean la fila en memoria. */
-    if (listaVigente_('predial', __bdpListCache)) { applyBDPredialFilters_(); return; }
+    if (listaVigente_('predial', __bdpListCache)) { applyBDPredialFilters_(); if (window.NOTIF) window.NOTIF.cargarResumen(); return; }
     if (!window.__HAC_VIVO && listaDeEsteUsuario_(__bdpListCache)) applyBDPredialFilters_();
     const data = await apiGet('listpredial', { uid: uidActual_() });
     const rows = marcarLista_(Array.isArray(data) ? data : []);
@@ -6446,6 +6450,8 @@ async function loadBDPredial_() {
 
     __bdpListCache = rows;
     applyBDPredialFilters_();
+    /* 21/10 — quién respondió la notificación: de fondo, detrás de la lista */
+    if (window.NOTIF) window.NOTIF.cargarResumen();
   } catch (e) {
     Swal.fire({ icon: 'error', title: 'Error', text: String(e.message || e) });
   }
@@ -6463,7 +6469,8 @@ function bdpBlob_(r) {
     r.direccion_predio, r.correo_electronico, r.nit_cedula,
     r.debe_desde, r.deuda_hasta, r.valor_deuda, r.clasificacion,
     r.no_exp_fisico, r.actuacion, r.sustanciador, r.asistente,
-    r.bitacora, r.estado_proceso, r.asignador
+    r.bitacora, r.estado_proceso, r.asignador,
+    (window.NOTIF ? window.NOTIF.blob(r) : '')   /* 21/10 — factura notificada */
   ].join(' '));
 }
 function bdpAplicarFila_(fila, idBorrado) {
@@ -6491,6 +6498,7 @@ window.bdpAplicarFila_ = bdpAplicarFila_;
 /* ── Aplicar todos los filtros (OPTIMIZADO) ───────────── */
 function applyBDPredialFilters_() {
   bdpContarSolexp_();
+  if (window.NOTIF) window.NOTIF.contar(__bdpListCache);
   bdpSincronizarFiltros_();
   let filtered = __bdpListCache;
 
@@ -6517,6 +6525,10 @@ function applyBDPredialFilters_() {
   /* 17/09 — SOLICITUD EXPEDIENTE (columna AP) */
   if (__bdpFilterSolexp !== 'ALL') {
     filtered = filtered.filter(r => solexpEstado_(r, 'view-bd-predial') === __bdpFilterSolexp);
+  }
+  /* 21/10 — NOTIFICACIÓN ELECTRÓNICA (columna AR + respuestas de fondo) */
+  if (__bdpFilterNotif !== 'ALL' && window.NOTIF) {
+    filtered = filtered.filter(r => window.NOTIF.pasa(r, __bdpFilterNotif));
   }
   if (__bdpFilterMias && currentUser) {
     const miNombre = normalizeText_(currentUser.nombre || '');
@@ -6551,7 +6563,8 @@ const BDP_FILTROS = [
   { id: 'actuacion',    origen: 'bdp-pills-actuacion',    titulo: 'ACTUACIÓN',      todas: 'Todas' },
   { id: 'sustanciador', origen: 'bdp-pills-sustanciador', titulo: 'SUSTANCIADOR',   todas: 'Todos' },
   { id: 'estado',       origen: 'bdp-pills-estado',       titulo: 'ESTADO PROCESO', todas: 'Todos' },
-  { id: 'solexp',       origen: 'bdp-pills-solexp',       titulo: 'SOLICITUD EXP.', todas: 'Todas' }
+  { id: 'solexp',       origen: 'bdp-pills-solexp',       titulo: 'SOLICITUD EXP.', todas: 'Todas' },
+  { id: 'notif',        origen: 'bdp-pills-notif',        titulo: 'NOTIFICACIÓN',   todas: 'Todas' }
 ];
 
 function bdpPastillas_(cfg) {
@@ -6674,6 +6687,17 @@ function bdpContarSolexp_() {
   });
 }
 
+/* 21/10 — filtro NOTIFICACIÓN (js/notificar.js cuenta y decide) */
+document.querySelectorAll('#bdp-pills-notif .proc-status-pill').forEach(btn => {
+  btn.addEventListener('click', () => {
+    playSoundOnce(SOUNDS.menu);
+    document.querySelectorAll('#bdp-pills-notif .proc-status-pill').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    __bdpFilterNotif = btn.dataset.notif || 'ALL';
+    applyBDPredialFilters_();
+  });
+});
+
 document.querySelectorAll('#bdp-pills-solexp .proc-status-pill').forEach(btn => {
   btn.addEventListener('click', () => {
     playSoundOnce(SOUNDS.menu);
@@ -6762,6 +6786,8 @@ function bdpCardHTML_(row, idx, puedeEliminar, puedeDecision) {
     acciones +=
       '<button type="button" class="bdp-icon-btn" data-bdp-act="editar" title="Editar expediente">' +
       '<img src="img/editar.webp" alt="Editar"></button>';
+    /* 21/10 — NOTIFICAR la factura por correo (js/notificar.js) */
+    if (window.NOTIF) acciones += window.NOTIF.boton(row);
   }
   if (puedeDecision) {
     acciones +=
@@ -6823,6 +6849,7 @@ function bdpCardHTML_(row, idx, puedeEliminar, puedeDecision) {
           '<span class="bdp-estado est-'    + estadoProc.replace(/\s+/g,'-') + '">' + escapeHtml_(estadoProc) + '</span>' +
         '</div>' +
       '</div>' +
+      (window.NOTIF ? window.NOTIF.tarjeta(row) : '') +
       '<div class="bdp-actions">' + acciones + '</div>' +
     '</div>'
   );
@@ -6858,6 +6885,7 @@ document.getElementById('btn-bd-predial')?.addEventListener('click', () => {
 /* ── REGRESAR ─────────────────────────────────────────── */
 document.getElementById('btn-bdp-back')?.addEventListener('click', () => {
   playSoundOnce(SOUNDS.back);
+  if (window.NOTIF) window.NOTIF.cortarFondo();   /* 21/10 — la lectura de fondo se descarta */
   showView('view-inicio');
 });
 
@@ -7046,6 +7074,13 @@ document.getElementById('bdp-list')?.addEventListener('click', async (e) => {
     if (!(await bdpFilaCompleta_(row))) return;
     __bdpSelected = row;
     abrirBDPDecision_(row);
+    return;
+  }
+  if (act === 'notificar') {
+    /* 21/10 — la tarjeta ya trae correo, nombre, ficha y documento */
+    playSoundOnce(SOUNDS.menu);
+    if (window.NOTIF) window.NOTIF.abrir(row);
+    else Swal.fire({ icon: 'warning', title: 'No se pudo abrir', text: 'Falta js/notificar.js. Recarga la app.' });
     return;
   }
   if (act === 'solexp') {
@@ -8399,6 +8434,8 @@ function abrirBDPDetalle_(row) {
     ['Publicación web',row.publicacion_web]
   ]);
   if (notif) body.appendChild(notif);
+  /* 21/10 — NOTIFICACIÓN ELECTRÓNICA: envíos, reloj y respuestas (de fondo) */
+  if (window.NOTIF) window.NOTIF.detalle(row, body);
 
   /* Sección: Coactivo */
   const coac = bdpDetSection_(ICO_('aviso',18) + ' Coactivo', [
@@ -8856,6 +8893,7 @@ function bdppRenderResumen_() {
       if (key === 'ACUERDO DE PAGO')                 return '#15803d';
       if (key === 'COBRO PERSUASIVO/LIQUIDACION')    return '#0284c7';
       if (key === 'COBRO COACTIVO')                  return '#7c3aed';
+      if (key === 'RECONSIDERACION')                 return '#b45309';
       return '#9ca3af'; // NINGUNO y otros
     });
 

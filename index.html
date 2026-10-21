@@ -61,6 +61,7 @@
   <link rel="stylesheet" href="css/anexos.css">     <!-- 18/10: Drive anexos = evidencias -->
   <!-- 04/10/2026: Industria y Comercio · Requerimientos -->
   <link rel="stylesheet" href="css/ica.css">
+  <link rel="stylesheet" href="css/notificar.css">   <!-- 21/10: notificación electrónica -->
   <link rel="stylesheet" href="css/gerencial.css">
   <link rel="stylesheet" href="css/guia.css">         <!-- 18/10: guía gráfica por roles -->
 
@@ -941,6 +942,7 @@
             <button type="button" class="proc-status-pill" data-estado="COBRO PERSUASIVO/LIQUIDACION">COBRO PERSUASIVO/LIQUIDACIÓN</button>
             <button type="button" class="proc-status-pill" data-estado="COBRO COACTIVO">COBRO COACTIVO</button>
             <button type="button" class="proc-status-pill" data-estado="AL DIA">AL DIA</button>
+            <button type="button" class="proc-status-pill" data-estado="RECONSIDERACION">RECONSIDERACIÓN</button>
           </div>
           <div class="bdp-pills-label">SOLICITUD EXP.</div>
           <div id="bdp-pills-solexp" class="proc-status-filter">
@@ -948,6 +950,18 @@
             <button type="button" class="proc-status-pill" data-solexp="PENDIENTE">Pendientes de respuesta</button>
             <button type="button" class="proc-status-pill" data-solexp="RESPONDIDA">Respondidas</button>
             <button type="button" class="proc-status-pill" data-solexp="NINGUNA">Sin solicitud</button>
+          </div>
+          <!-- 21/10 — NOTIFICACIÓN ELECTRÓNICA (js/notificar.js pone los conteos) -->
+          <div class="bdp-pills-label">NOTIFICACIÓN</div>
+          <div id="bdp-pills-notif" class="proc-status-filter">
+            <button type="button" class="proc-status-pill active" data-notif="ALL">Todas</button>
+            <button type="button" class="proc-status-pill" data-notif="SIN">Sin notificar</button>
+            <button type="button" class="proc-status-pill" data-notif="NOTIFICADO">Notificados</button>
+            <button type="button" class="proc-status-pill" data-notif="VIGENTE">Plazo corriendo</button>
+            <button type="button" class="proc-status-pill" data-notif="PORVENCER">Plazo por vencer (≤ 10 días)</button>
+            <button type="button" class="proc-status-pill" data-notif="VENCIDO">Plazo vencido</button>
+            <button type="button" class="proc-status-pill" data-notif="RESPONDIO">Respondieron</button>
+            <button type="button" class="proc-status-pill" data-notif="RECONSIDERACION">En reconsideración</button>
           </div>
         </div>
         <!-- pastillas rápidas (Solo las mías, Mi trabajo, No aperturados) -->
@@ -1048,6 +1062,7 @@
             <option value="COBRO PERSUASIVO/LIQUIDACION">COBRO PERSUASIVO/LIQUIDACION</option>
             <option value="COBRO COACTIVO">COBRO COACTIVO</option>
             <option value="AL DIA">AL DÍA</option>
+            <option value="RECONSIDERACION">RECONSIDERACIÓN</option>
           </select>
 
           <div id="bdp-extra-fields">
@@ -1517,6 +1532,7 @@
 <script src="js/no-aperturados.js"></script>
 <script src="js/form-ancho.js"></script>
 <script src="js/solicitud-exp.js"></script>
+<script src="js/notificar.js"></script>   <!-- 21/10: notificación electrónica de la factura (BD Predial) -->
 <script src="js/bitacora-export.js"></script>
 <script src="js/mi-trabajo.js"></script>
 <script src="js/ica-municipios.js" defer></script>  <!-- 04/10: catálogo DIVIPOLA (estático) -->

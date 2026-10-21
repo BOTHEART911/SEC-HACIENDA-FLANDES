@@ -1392,6 +1392,8 @@
           '<button type="button" class="kit-btn" data-plant="' + esc(c.plantillaReq || '') + '"' + (c.plantillaReq ? '' : ' disabled') + '>' + ico('documento') + ' Ir a plantilla del requerimiento</button>' +
           '<button type="button" class="kit-btn" data-plant="' + esc(c.plantillaIns || '') + '"' + (c.plantillaIns ? '' : ' disabled') + '>' + ico('documento') + ' Ir a plantilla del 2.º requerimiento</button>' +
           (c.esDev ? '<label class="kit-btn ica-subir">' + ico('firma') + (c.hayFirma ? ' Cambiar firma de la Secretaria ✓' : ' Subir firma de la Secretaria') + '<input type="file" accept="image/png,image/jpeg" hidden data-firma></label>' : '') +
+          /* 21/10 — visto bueno (Diego García) para el correo de NOTIFICACIÓN ELECTRÓNICA de BD Predial */
+          (c.esDev ? '<label class="kit-btn ica-subir">' + ico('firma') + (c.hayFirmaVb ? ' Cambiar firma de visto bueno ✓' : ' Subir firma de visto bueno (Diego García)') + '<input type="file" accept="image/png,image/jpeg" hidden data-firmavb></label>' : '') +
         '</div>' +
         '<p class="ica-nota">Marcadores que puedes usar en asuntos y cuerpos: <code>' + esc(MARCADORES) + '</code></p>' +
         GRUPOS.filter(function (g) { return porG[g[0]]; }).map(function (g) {
@@ -1415,6 +1417,13 @@
       if (file.size > 3 * 1024 * 1024) { aviso('La imagen de la firma debe pesar menos de 3 MB.', 'aviso'); return; }
       guardando(leerB64(file).then(function (b64) { return llamar('firma', { archivo: { nombre: file.name, mime: file.type, b64: b64 } }, { post: true, rid: nuevoRid() }); }), 'Guardando la firma')
         .then(function (cfg) { S.cfg = cfg; aviso('Firma guardada. Sale en los próximos documentos.', 'ok'); m.cerrar(); abrirConfig(); }, function (e) { aviso(e.message, 'aviso'); });
+    });
+    var fv = m.q('[data-firmavb]');
+    if (fv) fv.addEventListener('change', function () {
+      var file = fv.files[0]; fv.value = ''; if (!file) return;
+      if (file.size > 3 * 1024 * 1024) { aviso('La imagen de la firma debe pesar menos de 3 MB.', 'aviso'); return; }
+      guardando(leerB64(file).then(function (b64) { return llamar('firmavb', { archivo: { nombre: file.name, mime: file.type, b64: b64 } }, { post: true, rid: nuevoRid() }); }), 'Guardando la firma de visto bueno')
+        .then(function (cfg) { S.cfg = cfg; aviso('Firma de visto bueno guardada. Sale en las próximas notificaciones de predial.', 'ok'); m.cerrar(); abrirConfig(); }, function (e) { aviso(e.message, 'aviso'); });
     });
     m.q('[data-guardar]').addEventListener('click', function () {
       var btn = this, cambios = {}, n = 0;

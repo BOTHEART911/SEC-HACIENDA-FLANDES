@@ -171,6 +171,28 @@
         ];
       }
     },
+    /* 21/10 — NOTIFICACIÓN ELECTRÓNICA de la factura predial */
+    {
+      id: 'notificar', ic: 'sobre', t: 'Notificar la factura por correo',
+      si: function (c) { return !!c.ver.bdPredial && !c.al.predialSoloExpediente; },
+      r: 'Desde la tarjeta envías la factura del predial al correo del contribuyente, desde cobro coactivo y con la firma de la Secretaria.',
+      b: function (c) {
+        var tips = [
+          ['sobre', 'Botón **Notificar** (sobre) en la tarjeta: escribe los **6 dígitos** de la factura (se guarda con el año delante) y adjunta, arrastra o pega (Ctrl+V) el **PDF**.'],
+          ['buscar', '**Validar** revisa que esa factura no se haya enviado antes; si ya salió, no deja enviar.'],
+          ['reloj', 'Al enviar: aviso **Notificado**, CITACIÓN y ELECTRÓNICA en SI y el reloj **Plazo**: 60 días corridos desde el día siguiente.'],
+          ['balanza', 'Estado del proceso **RECONSIDERACIÓN**: detiene el reloj y lo quita.'],
+          ['responder', 'Si el contribuyente responde, la tarjeta dice **Respondió** y el detalle muestra el texto y los adjuntos.'],
+          ['filtro', 'Filtro **NOTIFICACIÓN** y Consultar → **Notificaciones y plazos**.']
+        ];
+        if (c.admin) tips.push(['engranaje', 'El asunto y el cuerpo del correo se cambian en **Configuración → Plantillas**.']);
+        return [
+          { k: 'flujo', p: [['documento', 'Factura', '6 dígitos + PDF'], ['buscar', 'Validar', 'Que no se repita'], ['enviar', 'Enviar', 'Desde cobro coactivo'], ['reloj', 'Plazo', '60 días']] },
+          { k: 'leyenda', p: [['#6b7280', 'Más de 15 días'], ['#e39b2d', '15 días o menos'], ['#d64541', '5 días o menos / vencido'], ['#b45309', 'Reconsideración']] },
+          { k: 'tips', p: tips }
+        ];
+      }
+    },
     {
       id: 'semaforo', ic: 'semaforo', t: 'Mi semáforo',
       si: function (c) { return !!c.ver.semaforo; },

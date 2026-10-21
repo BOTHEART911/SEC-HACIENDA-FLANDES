@@ -319,6 +319,18 @@
       if (P.segVencidos) extra.push('Hoy hay ' + n(P.segVencidos) + ' seguimientos de predial con la fecha vencida en la cartera ' + (todos ? 'asignada.' : 'a su cargo.'));
     }
 
+    /* 21/10 — Notificación electrónica de la factura predial (por quien la envió) */
+    var notRegs = regs.filter(function (r) { return r.tipo === 'Notificación electrónica de factura'; });
+    if (notRegs.length || P.notificados) {
+      secciones.push({ titulo: 'Predial · notificación electrónica', intro: 'Facturas del Impuesto Predial notificadas por correo desde cobro coactivo en el periodo (por quien las envió), y el reloj de 60 días de la cartera ' + (todos ? 'asignada' : 'a su cargo') + ' hoy.',
+        kpis: [{ etiqueta: 'Facturas notificadas', valor: n(notRegs.length), tono: 'ok' },
+               { etiqueta: 'Expedientes notificados hoy', valor: n(P.notificados), nota: n(P.plazoVigente) + ' con el plazo corriendo', tono: 'info' },
+               { etiqueta: 'Plazo vencido', valor: n(P.plazoVencido), tono: P.plazoVencido ? 'aviso' : 'ok' },
+               { etiqueta: 'En reconsideración', valor: n(P.reconsideracion), tono: 'info' }],
+        graficas: [{ titulo: 'Reloj de 60 días (hoy)', tipo: 'proporcion', datos: [{ etiqueta: 'Plazo corriendo', valor: P.plazoVigente || 0, tono: 'ok' }, { etiqueta: 'Plazo vencido', valor: P.plazoVencido || 0, tono: 'malo' }, { etiqueta: 'Reconsideración', valor: P.reconsideracion || 0, tono: 'aviso' }].filter(function (x) { return x.valor; }) }] });
+      if (P.plazoVencido) extra.push(n(P.plazoVencido) + ' expedientes notificados ya tienen el plazo de 60 días vencido.');
+    }
+
     /* Asignaciones */
     var A = d.proc || {}, procRegs = regs.filter(function (r) { return r.categoria === 'Asignaciones'; });
     if (procRegs.length || A.recibidas || A.abiertas) {

@@ -124,7 +124,7 @@
           '<button class="cfg-tab panel-tab activa active" data-tab="usuarios">' + ICOS('equipo') + 'Usuarios y roles</button>' +
           /* 05/10/2026 — festivos editables (ADMIN y DEV): la misma lista que usa ICA */
           '<button class="cfg-tab panel-tab" data-tab="festivos">' + ICOS('calendario') + 'Festivos</button>' +
-          '<button class="cfg-tab panel-tab cfg-tab-dev" data-tab="plantillas" style="display:none;">' + ICOS('chat') + 'Plantillas de mensajes</button>' +
+          '<button class="cfg-tab panel-tab cfg-tab-plant" data-tab="plantillas" style="display:none;">' + ICOS('chat') + 'Plantillas de mensajes</button>' +
           '<button class="cfg-tab panel-tab cfg-tab-dev" data-tab="avanzado" style="display:none;">' + ICOS('llave') + 'IDs y ajustes</button>' +
         '</div>' +
 
@@ -141,7 +141,7 @@
         '</div>' +
 
         '<div id="cfg-panel-plantillas" class="cfg-panel hidden">' +
-          '<p class="hf-intro">Los mensajes que la app manda por WhatsApp. Toca una variable para insertarla donde tengas el cursor. Solo el desarrollador los ve y los cambia.</p>' +
+          '<p class="hf-intro" id="cfg-plant-intro">Los mensajes que la app manda por WhatsApp y por correo. Toca una variable para insertarla donde tengas el cursor.</p>' +
           '<div id="cfg-plantillas" class="cfg-acordeon"></div>' +
         '</div>' +
 
@@ -220,7 +220,15 @@
       estado.sucias = {};
 
       document.querySelectorAll('.cfg-tab-dev').forEach(function (t) { t.style.display = estado.esDev ? '' : 'none'; });
-      if (!estado.esDev && estado.pestana !== 'usuarios' && estado.pestana !== 'festivos') pestana_('usuarios');
+      /* 21/10 — ADMIN también ve la pestaña: solo con las plantillas que le tocan
+         (las del correo de NOTIFICACIÓN ELECTRÓNICA); DEV las ve todas. */
+      document.querySelectorAll('.cfg-tab-plant').forEach(function (t) { t.style.display = (estado.esDev || estado.plantillas.length) ? '' : 'none'; });
+      var intro = el_('cfg-plant-intro');
+      if (intro) intro.textContent = estado.esDev
+        ? 'Los mensajes que la app manda por WhatsApp y por correo. Toca una variable para insertarla donde tengas el cursor. Las de Notificación electrónica también las cambian los ADMIN.'
+        : 'El correo de la NOTIFICACIÓN ELECTRÓNICA de la factura predial (asunto y cuerpo). Toca una variable para insertarla donde tengas el cursor. **texto** sale en negrita y las líneas que empiezan por • salen como lista.';
+      if (!estado.esDev && estado.pestana === 'avanzado') pestana_('usuarios');
+      if (!estado.esDev && !estado.plantillas.length && estado.pestana === 'plantillas') pestana_('usuarios');
       FES.datos = (todo && todo.festivos) || null;
       FES.borrador = null;
 
@@ -472,7 +480,8 @@
 
     cont.innerHTML = estado.plantillas.map(function (p, i) {
       var vars = (p.vars || []).map(function (v) {
-        return '<button type="button" class="cfg-var" data-clave="' + esc_(p.clave) + '" data-var="' + esc_(v) + '">{' + esc_(v) + '}</button>';
+        var vt = p.llaves ? '{{' + v + '}}' : '{' + v + '}';
+        return '<button type="button" class="cfg-var" data-clave="' + esc_(p.clave) + '" data-var="' + esc_(vt) + '">' + esc_(vt) + '</button>';
       }).join('');
       return '' +
         '<div class="cfg-acc" data-clave="' + esc_(p.clave) + '">' +
@@ -484,7 +493,7 @@
           '<div class="cfg-acc-b">' +
             '<p class="hf-intro">' + esc_(p.donde) + '</p>' +
             '<div class="cfg-vars">' + vars + '</div>' +
-            '<textarea class="cfg-txt" id="cfg-txt-' + i + '" rows="10">' + esc_(p.texto) + '</textarea>' +
+            '<textarea class="cfg-txt" id="cfg-txt-' + i + '" rows="' + (p.clave === 'notif.asunto' ? 3 : (p.clave === 'notif.cuerpo' ? 22 : 10)) + '">' + esc_(p.texto) + '</textarea>' +
             '<div class="cfg-acc-pie">' +
               '<button type="button" class="kit-btn kit-btn--marca cfg-guardar" data-clave="' + esc_(p.clave) + '">' + ICOS('check') + 'Guardar</button>' +
               '<button type="button" class="kit-btn cfg-restaurar" data-clave="' + esc_(p.clave) + '">' + ICOS('devolver') + 'Restaurar original</button>' +
@@ -513,7 +522,7 @@
       b.addEventListener('click', function () {
         var caja = b.closest('.cfg-acc');
         var t = caja.querySelector('.cfg-txt');
-        var texto = '{' + b.dataset.var + '}';
+        var texto = b.dataset.var;   /* 21/10 — ya trae sus llaves ({x} o {{x}}) */
         var ini = t.selectionStart || 0, fin = t.selectionEnd || 0;
         t.value = t.value.substring(0, ini) + texto + t.value.substring(fin);
         t.focus();

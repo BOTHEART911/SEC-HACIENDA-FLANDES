@@ -556,6 +556,7 @@
         { id: 'expfisico', et: 'Sin expediente físico', ic: '📁' },
         { id: 'archivo',   et: 'Sin archivar en Drive', ic: '🗄️' },
         { id: 'correo',    et: 'Sin correo',         ic: '📧' },
+        { id: 'notif',     et: 'Notificaciones y plazos', ic: '📮' },
         { id: 'aldia',     et: 'Al día y sin deuda', ic: '🟢' },
         { id: 'mias',      et: 'Las mías',           ic: '🙋' },
         { id: 'bitrev',    et: 'Bitácoras por revisar', ic: '🗒️' },
@@ -1697,6 +1698,46 @@
           '📧 Sin correo no hay notificación electrónica: toca citación y notificación personal.'
         ) + pieFiltro,
           num(conC) + ' expedientes tienen correo y ' + num(sinC.length) + ' no, lo que representa ' + pesosCorto(carteraDe(sinC)) + ' de cartera.');
+      }
+      /* 21/10 — NOTIFICACIÓN ELECTRÓNICA de la factura (js/notificar.js) */
+      case 'notif': {
+        var NT = window.NOTIF;
+        if (!NT) return rep(titulo, 'El módulo de notificación no cargó. Recarga la app.', 'El módulo de notificación no cargó.');
+        var noti = [], vig = [], porV = [], venc = [], recon = [], resp = [], sinCorreo = 0, hoyN = 0;
+        var hoyIso = (function () { try { return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Bogota' }).format(new Date()); } catch (e) { return ''; } })();
+        lista.forEach(function (r) {
+          var st = NT.estado(r);
+          if (!st.notificado) { if (!txt(r.correo_electronico)) sinCorreo++; return; }
+          noti.push(r);
+          if (st.ultima && st.ultima.f === hoyIso) hoyN++;
+          var k = NT.clave(r);
+          if (k.RECONSIDERACION) recon.push(r);
+          if (k.VIGENTE) vig.push(r);
+          if (k.PORVENCER) porV.push({ r: r, d: st.dias });
+          if (k.VENCIDO) venc.push(r);
+          if (k.RESPONDIO) resp.push(r);
+        });
+        porV.sort(function (a, c) { return a.d - c.d; });
+        var sinNot = n - noti.length;
+        return rep(titulo, unir(
+          b(noti.length) + ' de ' + b(n) + ' expedientes ya tienen la factura notificada por correo (' + bp(noti.length, n) + ').',
+          bloque('El reloj de 60 días', [
+            '- Plazo corriendo: ' + b(vig.length) + ' — **' + pesosCorto(carteraDe(vig)) + '**',
+            '- Por vencer (10 días o menos): ' + b(porV.length),
+            '- Plazo vencido: ' + b(venc.length) + ' — **' + pesosCorto(carteraDe(venc)) + '**',
+            '- En reconsideración (reloj detenido): ' + b(recon.length),
+            '- Respondieron el correo: ' + b(resp.length),
+            hoyN ? '- Notificados hoy: ' + b(hoyN) : null
+          ].filter(Boolean)),
+          porV.length ? bloque('Los que vencen primero', porV.slice(0, 8).map(function (x) {
+            return '- ' + txt(x.r.nombres) + (txt(x.r.no_exp_fisico) ? ' (' + txt(x.r.no_exp_fisico) + ')' : '') + ' — ' + b(x.d) + (x.d === 1 ? ' día' : ' días');
+          })) : null,
+          bloque('Lo que falta', [
+            '- Sin notificar: ' + b(sinNot) + (sinCorreo ? ' (de ellos ' + b(sinCorreo) + ' sin correo: no se pueden notificar por correo)' : '')
+          ]),
+          venc.length ? '⚠️ Los de plazo vencido ya cumplieron los dos meses del recurso de reconsideración.' : '✅ Ningún plazo se ha vencido en lo que estás viendo.'
+        ) + pieFiltro,
+          num(noti.length) + ' expedientes notificados: ' + num(vig.length) + ' con el plazo corriendo, ' + num(porV.length) + ' por vencer y ' + num(venc.length) + ' vencidos.');
       }
       case 'aldia': {
         var alDia2 = lista.filter(function (r) { return llano(r.estado_proceso) === 'AL DIA'; });
