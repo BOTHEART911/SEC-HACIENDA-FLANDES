@@ -121,3 +121,50 @@
 @media (max-width: 760px) { .ntf-cfg__dos { grid-template-columns: 1fr; } .ntf-cfg textarea { min-height: 260px; } }
 
 .ntf-modal .hf-modal__hoja.hf-modal__hoja--ancha { width: min(1000px, 100%); }
+
+/* ============================================================
+   22/10/2026 — varios propietarios, rebotes e informes
+   ============================================================ */
+/* rebote: chip rojo con latido en la tarjeta y en el detalle */
+.ntf-chip--reb { background: var(--k-malo); color: #fff; animation: ntf-latido 1.6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .ntf-chip--reb { animation: none; } }
+.ntf-det__envios .ntf-chip--reb { animation: none; margin-left: 4px; }
+
+/* modal: lista de contribuyentes y caja de reenvío */
+.ntf-para__props { grid-column: 1 / -1; }
+.ntf-para__props ul { margin: 2px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 3px; }
+.ntf-para__props li { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+.ntf-para__props li span { font-size: .78rem; color: var(--k-apagado); }
+.ntf-reb { margin-top: 10px; padding: 12px 14px; border-radius: 14px; border: 1px solid color-mix(in srgb, var(--k-malo) 40%, transparent);
+  background: var(--k-malo-fondo); color: var(--k-tinta); display: flex; flex-direction: column; gap: 8px; }
+.ntf-reb__tit { display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--k-malo); }
+.ntf-reb p { margin: 0; font-size: .84rem; line-height: 1.45; color: var(--k-tinta-2); }
+.ntf-reb .kit-btn { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; }
+.ntf-o { margin-top: 12px !important; }
+
+/* informe de notificaciones */
+.ntf-inf__fechas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 10px; }
+.ntf-inf__fechas label { display: flex; flex-direction: column; gap: 4px; font-size: .78rem; color: var(--k-apagado); margin: 0 !important; }
+.ntf-inf__fechas input { margin: 0 !important; }
+.ntf-inf__cuenta { margin: 10px 0 4px; font-size: .86rem; color: var(--k-tinta-2); }
+.ntf-inf__btns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 6px; }
+.ntf-inf__btns .kit-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+@media (max-width: 520px) { .ntf-inf__btns { grid-template-columns: 1fr; } .ntf-inf__fechas { grid-template-columns: 1fr; } }
+
+/* varios propietarios (js/propietarios.js) */
+.bdp-props { display: flex; flex-direction: column; gap: 10px; }
+.bdp-props:empty { display: none; }
+.bdp-prop { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 10px 12px; border-radius: 14px;
+  border: 1px solid var(--k-linea); background: var(--k-papel-2); }
+.bdp-prop__tit { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.bdp-prop__tit span { display: inline-flex; align-items: center; gap: 6px; font-size: .84rem; color: var(--k-tinta); }
+.bdp-prop__tit small { color: var(--k-apagado); font-size: .74rem; font-weight: 400; }
+.bdp-prop input { margin: 0 !important; min-width: 0; }
+.bdp-prop input.bdp-prop--mal { border-color: var(--k-malo) !important; }
+.bdp-prop-mas { justify-self: start; align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; margin: 8px 0 4px; }
+@media (max-width: 640px) { .bdp-prop { grid-template-columns: 1fr; } }
+/* la tarjeta: un propietario por línea */
+.bdp-nombres .bdp-copy, .bdp-id-nit .bdp-copy { white-space: pre-line; }
+.bdp-props-n { display: inline-flex; align-items: center; gap: 3px; padding: 1px 7px; border-radius: 999px; font-size: .7rem; vertical-align: 2px;
+  background: rgba(var(--k-marca-rgb), .1); color: var(--k-marca); }
+:root[data-tema="oscuro"] .bdp-props-n { color: var(--k-marca-clara); }

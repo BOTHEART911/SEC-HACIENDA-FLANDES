@@ -326,8 +326,11 @@
         kpis: [{ etiqueta: 'Facturas notificadas', valor: n(notRegs.length), tono: 'ok' },
                { etiqueta: 'Expedientes notificados hoy', valor: n(P.notificados), nota: n(P.plazoVigente) + ' con el plazo corriendo', tono: 'info' },
                { etiqueta: 'Plazo vencido', valor: n(P.plazoVencido), tono: P.plazoVencido ? 'aviso' : 'ok' },
-               { etiqueta: 'En reconsideración', valor: n(P.reconsideracion), tono: 'info' }],
+               { etiqueta: 'En reconsideración', valor: n(P.reconsideracion), tono: 'info' },
+               /* 22/10 — el último envío rebotó (corregir correo y reenviar) */
+               { etiqueta: 'Rebotes por corregir', valor: n(P.rebotes || 0), tono: P.rebotes ? 'malo' : 'ok' }],
         graficas: [{ titulo: 'Reloj de 60 días (hoy)', tipo: 'proporcion', datos: [{ etiqueta: 'Plazo corriendo', valor: P.plazoVigente || 0, tono: 'ok' }, { etiqueta: 'Plazo vencido', valor: P.plazoVencido || 0, tono: 'malo' }, { etiqueta: 'Reconsideración', valor: P.reconsideracion || 0, tono: 'aviso' }].filter(function (x) { return x.valor; }) }] });
+      if (P.rebotes) extra.push(n(P.rebotes) + (P.rebotes === 1 ? ' notificación rebotó' : ' notificaciones rebotaron') + ': corregir el correo en Editar y reenviar desde Notificar.');
       if (P.plazoVencido) extra.push(n(P.plazoVencido) + ' expedientes notificados ya tienen el plazo de 60 días vencido.');
     }
 

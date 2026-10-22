@@ -18,6 +18,18 @@
      coactivo). La tarjeta se entera de fondo (notifresumen, un viaje por
      sesión de vista, en cola detrás de lo de primer plano) y el detalle
      las trae al abrirse (cabecera primero, respuestas después).
+
+   22/10/2026
+   · VARIOS PROPIETARIOS (js/propietarios.js): un solo correo con un solo
+     PDF a todos; propietarios en Para, filas con solo correo en CC.
+   · Al enviar: ESTADO = COBRO PERSUASIVO/LIQUIDACION, ACTUACIÓN =
+     LIQUIDACION OFICIAL y una línea en la BITÁCORA con el asunto (servidor).
+   · Reloj: con 10 días o menos, rojo con latido.
+   · REBOTES: chip rojo "Rebote" y pastilla de filtro; el modal ofrece
+     REENVIAR la misma factura (PDF guardado) tras corregir el correo; el
+     plazo vuelve a contar desde el reenvío.
+   · INFORMES de las notificaciones: Excel, PDF y gerencial (botón
+     "Informe de notificaciones"), armados con lo que ya está en memoria.
    ============================================================ */
 (function () {
   'use strict';
@@ -80,6 +92,10 @@
     var ult = o.e[o.e.length - 1];
     var d = isoADate(ult.f);
     var out = { notificado: true, ultima: ult, envios: o.e, rec: o.rec || '' };
+    /* 22/10 — rebote del último envío: lo que ya quedó en AR o lo que ICA acaba de ver */
+    var rbIca = (RES.rb && RES.rb[String(row.id_predial || '')]) || null;
+    out.reb = (Array.isArray(ult.reb) && ult.reb.length) ? ult.reb.slice() : (rbIca && !ult.re ? rbIca.slice() : []);
+    out.rebote = out.reb.length > 0;
     if (!d) return out;
     var vence = new Date(d.getTime() + PLAZO * 864e5);
     var hoy = hoyBogota();
@@ -88,12 +104,13 @@
     out.vence = vence;
     out.dias = dias;
     out.vencido = dias <= 0;
-    out.clase = out.rec ? 'rec' : (out.vencido ? 'vencido' : (dias <= 5 ? 'malo' : (dias <= 15 ? 'aviso' : 'ok')));
+    /* 22/10 — con 10 días o menos: rojo con latido (css/notificar.css) */
+    out.clase = out.rec ? 'rec' : (out.vencido ? 'vencido' : (dias <= 10 ? 'malo' : (dias <= 15 ? 'aviso' : 'ok')));
     return out;
   }
 
   /* ══════════════ respuestas (de fondo, desde ICA) ══════════════ */
-  var RES = { mapa: {}, cargado: false, pidiendo: null, ctrl: null };
+  var RES = { mapa: {}, rb: {}, cargado: false, pidiendo: null, ctrl: null };
   function respuestas(id) { return RES.mapa[String(id || '')] || null; }
 
   /* ══════════════ red: ICA ══════════════ */
@@ -156,6 +173,7 @@
     var arrancar = function () {
       return llamar(urlICA(), 'notifresumen', {}, { signal: RES.ctrl && RES.ctrl.signal }).then(function (d) {
         RES.mapa = (d && d.m) || {};
+        RES.rb = (d && d.rb) || {};
         RES.cargado = true;
         repintar();
       }, function (e) { if (!cancelada(e)) { try { console.warn('notifresumen', e.message); } catch (_) {} } })
@@ -186,6 +204,7 @@
       '<span class="ntf-chip ntf-chip--ok" title="Factura ' + esc(st.ultima.fac) + ' · ' + esc(dmy(st.ultima.f)) + (st.ultima.por ? ' · ' + esc(st.ultima.por) : '') + '">' + ico('sobre', 14) + ' Notificado</span>';
     if (st.rec) h += '<span class="ntf-chip ntf-chip--rec" title="Reloj detenido por el recurso de reconsideración">' + ico('balanza', 14) + ' Reconsideración</span>';
     else if (st.dias != null) h += '<span class="ntf-reloj ntf-reloj--' + st.clase + '" title="Vence el ' + esc(st.vence ? st.vence.toLocaleDateString('es-CO') : '') + '">' + ico('reloj', 14) + ' ' + esc(relojTexto(st)) + '</span>';
+    if (st.rebote) h += '<span class="ntf-chip ntf-chip--reb" title="Rebotó: ' + esc(st.reb.join(', ')) + ' · corrige el correo en Editar y reenvía">' + ico('aviso', 14) + ' Rebote</span>';
     if (rs && rs[0] > 0) h += '<span class="ntf-chip ntf-chip--resp" title="Última respuesta: ' + esc(dmy(rs[1])) + '">' + ico('responder', 14) + ' Respondió' + (rs[0] > 1 ? ' (' + rs[0] + ')' : '') + '</span>';
     return h + '</div>';
   }
@@ -202,7 +221,7 @@
   var OPC = [
     ['ALL', 'Todas'], ['SIN', 'Sin notificar'], ['NOTIFICADO', 'Notificados'],
     ['VIGENTE', 'Plazo corriendo'], ['PORVENCER', 'Plazo por vencer (≤ 10 días)'],
-    ['VENCIDO', 'Plazo vencido'], ['RESPONDIO', 'Respondieron'], ['RECONSIDERACION', 'En reconsideración']
+    ['VENCIDO', 'Plazo vencido'], ['RESPONDIO', 'Respondieron'], ['REBOTE', 'Rebotes'], ['RECONSIDERACION', 'En reconsideración']
   ];
   function clave(row) {
     var st = estado(row);
@@ -214,6 +233,7 @@
       k.VENCIDO = !st.rec && !!st.vencido;
       var rs = respuestas(row.id_predial);
       k.RESPONDIO = !!(rs && rs[0] > 0);
+      k.REBOTE = !!st.rebote;
     }
     return k;
   }
@@ -283,23 +303,58 @@
   function fichaLimpia(v) { try { return typeof bdpCleanFicha_ === 'function' ? bdpCleanFicha_(v) : String(v || ''); } catch (_) { return String(v || ''); } }
   function correoOk(c) { return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(c || '').trim()); }
 
+  /** Para / CC / omitidos de una fila (misma regla que ICA: propietario = Para, solo correo = CC). */
+  function destinos(row) {
+    var ps = (window.PROP && window.PROP.lista) ? window.PROP.lista(row)
+      : [{ nombre: row.nombres || '', doc: row.nit_cedula || '', correo: String(row.correo_electronico || '').trim().toLowerCase(), tipo: 'prop' }];
+    var to = [], cc = [], malos = [];
+    ps.forEach(function (x) {
+      String(x.correo || '').split(/[\s,;\/]+/).forEach(function (c) {
+        c = c.trim().toLowerCase(); if (!c) return;
+        if (!correoOk(c)) { malos.push(c); return; }
+        if (to.indexOf(c) !== -1 || cc.indexOf(c) !== -1) return;
+        (x.tipo === 'copia' ? cc : to).push(c);
+      });
+    });
+    if (!to.length && cc.length) to.push(cc.shift());
+    return { to: to, cc: cc, malos: malos, props: ps.filter(function (x) { return x.tipo !== 'copia'; }), todos: ps };
+  }
+  function listaPara(ds) {
+    return '<b>' + esc(ds.to.join(', ')) + '</b>' + (ds.cc.length ? '<br><small>CC: ' + esc(ds.cc.join(', ')) + '</small>' : '');
+  }
+
   function abrir(row) {
     if (!row) return;
-    var correo = String(row.correo_electronico || '').trim();
     var st = estado(row);
-    var previo = st.notificado
+    var ds = destinos(row);
+    var hayCorreo = ds.to.length > 0;
+    var props = ds.props.length ? ds.props : [{ nombre: row.nombres || '', doc: row.nit_cedula || '' }];
+    var quienes = props.map(function (x) {
+      return '<li><b>' + esc(x.nombre || '—') + '</b> <span>NIT/CC ' + esc(x.doc || '—') + '</span></li>';
+    }).join('');
+    var previo = st.notificado && !st.rebote
       ? '<div class="ntf-previo">' + ico('info', 16) + ' Este expediente ya fue notificado con la factura <b>' + esc(st.ultima.fac) + '</b> el ' + esc(largo(st.ultima.f)) + '. Un envío nuevo vuelve a contar el plazo desde mañana.</div>'
+      : '';
+    /* 22/10 — REBOTE: reenviar la MISMA factura (el PDF ya está guardado) tras corregir el correo */
+    var reb = st.rebote
+      ? '<div class="ntf-reb">' +
+          '<div class="ntf-reb__tit">' + ico('aviso', 18) + ' El correo de la factura <b>' + esc(st.ultima.fac) + '</b> rebotó</div>' +
+          '<p>No lo recibió: <b>' + esc(st.reb.join(', ')) + '</b>. Corrige el correo en <b>Editar</b> y reenvía: el plazo de ' + PLAZO + ' días vuelve a contar desde el reenvío.</p>' +
+          '<button type="button" class="kit-btn kit-btn--marca" data-reenviar' + (hayCorreo ? '' : ' disabled') + '>' + ico('enviar', 18) + ' Reenviar la factura ' + esc(st.ultima.fac) + '</button>' +
+        '</div>'
       : '';
     var m = modal({
       titulo: 'Notificación', icono: 'sobre',
       sucio: function () { return !!(pdf || m.q('[name=fac]').value.trim()); },
       cuerpo:
         '<div class="ntf-para">' +
-          '<div><small>Contribuyente</small><b>' + esc(row.nombres || '—') + '</b></div>' +
-          '<div><small>NIT / CC</small><b>' + esc(row.nit_cedula || '—') + '</b></div>' +
+          '<div class="ntf-para__props"><small>' + (props.length > 1 ? 'Contribuyentes (' + props.length + ')' : 'Contribuyente') + '</small><ul>' + quienes + '</ul></div>' +
           '<div><small>Ficha catastral</small><b>' + esc(fichaLimpia(row.ficha_catastral) || '—') + '</b></div>' +
-          '<div class="ntf-para__correo"><small>Se envía a</small><b>' + (correo ? esc(correo) : '<span class="ntf-mal">Sin correo electrónico</span>') + '</b></div>' +
-        '</div>' + previo +
+          '<div><small>Expediente físico</small><b>' + esc(row.no_exp_fisico || '—') + '</b></div>' +
+          '<div class="ntf-para__correo"><small>Se envía a</small>' + (hayCorreo ? listaPara(ds) : '<span class="ntf-mal">Sin correo electrónico válido</span>') +
+            (ds.malos.length ? '<br><small class="ntf-mal">No se envía a (correo no válido): ' + esc(ds.malos.join(', ')) + '</small>' : '') + '</div>' +
+        '</div>' + reb + previo +
+        (st.rebote ? '<p class="ntf-ayuda ntf-o">O notifica <b>otra factura</b>:</p>' : '') +
         '<label class="ntf-lab" for="ntf-fac">N.° de factura <span class="hf-oblig">*</span></label>' +
         '<div class="ntf-fac">' +
           '<span class="ntf-fac__anio" title="Se antepone el año actual">' + anio() + '</span>' +
@@ -309,7 +364,7 @@
         '<p class="ntf-ayuda" id="ntf-fac-ayuda" data-facmsg>Escribe los 6 dígitos de la factura. Se guarda como ' + anio() + '######.</p>' +
         '<label class="ntf-lab">Factura Impuesto Predial (PDF) <span class="hf-oblig">*</span></label>' +
         '<div class="ntf-drop" data-drop tabindex="0" role="button" aria-label="Adjuntar la factura en PDF">' +
-          ico('pdf', 28) + '<b>Adjunta, arrastra o pega (Ctrl+V) la factura en PDF</b><small>Máximo ' + MAX_MB + ' MB</small>' +
+          ico('pdf', 28) + '<b>Adjunta, arrastra o pega (Ctrl+V) la factura en PDF</b><small>Máximo ' + MAX_MB + ' MB · un solo PDF para todos los destinatarios</small>' +
         '</div>' +
         '<input type="file" accept="application/pdf,.pdf" hidden data-file>' +
         '<div class="ntf-archivo" data-archivo hidden></div>',
@@ -321,10 +376,12 @@
     var validada = null;     /* número de 6 que ya pasó Validar */
     var inp = m.q('[name=fac]'), msg = m.q('[data-facmsg]'), btnEnviar = m.q('[data-enviar]'), btnVal = m.q('[data-validar]');
     var drop = m.q('[data-drop]'), finp = m.q('[data-file]'), caja = m.q('[data-archivo]');
+    var btnRe = m.q('[data-reenviar]');
 
     function listo() {
-      var ok = /^\d{6}$/.test(inp.value) && !!pdf && correoOk(correo) && validada !== false;
+      var ok = /^\d{6}$/.test(inp.value) && !!pdf && hayCorreo && validada !== false;
       btnEnviar.disabled = !ok || !!m.__ocupado;
+      if (btnRe) btnRe.disabled = !hayCorreo || !!m.__ocupado;
     }
     function ponerMsg(t, clase) { msg.innerHTML = t; msg.className = 'ntf-ayuda' + (clase ? ' ntf-ayuda--' + clase : ''); }
     inp.addEventListener('input', function () {
@@ -392,51 +449,70 @@
       }
     });
 
+    /** UN viaje a ICA (envía + constancia en HACIENDA). Reintento solo con el mismo rid. */
+    function despachar(boton, datos, textoOk) {
+      var rid = boton.__rid || (boton.__rid = nuevoRid());
+      var t0 = Date.now();
+      return guardando(llamar(urlICA(), 'notificar', datos, { post: true, rid: rid }), datos.reenvio ? 'Reenviando la notificación' : 'Enviando la notificación').then(function (d) {
+        m.__ocupado = false;
+        sonar('success');
+        try { window.__ntfMed.push({ ruta: (datos.reenvio ? 'reenviar' : 'notificar') + '(total)', ms: Date.now() - t0, srv: d && d.ms }); } catch (_) {}
+        if (d && d.fila) { try { bdpAplicarFila_(d.fila); } catch (_) {} }
+        else if (d && d.ntf) { row.notificacion = d.ntf; row.notif_citacion = 'SI'; row.notif_electr = 'SI'; repintar(); }
+        if (RES.rb) delete RES.rb[String(row.id_predial)];
+        var dest = (d && d.para) || ds.to.join(', ');
+        if (d && d.registroPendiente) {
+          /* el correo ya salió: solo falta la constancia en BD Predial. Se repite con el MISMO rid (no reenvía). */
+          aviso('El correo salió. Dejando la constancia en BD Predial…', 'info', 4000);
+          esperar(1500).then(function () { return llamar(urlICA(), 'notifreintentar', { rid: rid }, { post: true, rid: rid + '-r' }); }).then(function (x) {
+            if (x && x.fila) { try { bdpAplicarFila_(x.fila); } catch (_) {} }
+            aviso('Notificación enviada a ' + dest + ' y registrada.', 'ok', 5000);
+          }, function (e2) {
+            aviso('El correo salió a ' + dest + ', pero la constancia en BD Predial no quedó (' + e2.message + '). Recarga BD Predial; si no aparece "Notificado", avísale a soporte.', 'aviso', 12000);
+          });
+        }
+        else aviso(textoOk.replace('{para}', dest + (d && d.cc ? ' (CC: ' + d.cc + ')' : '')), 'ok', 6000);
+        document.removeEventListener('paste', pegar);
+        m.cerrar(true);
+      }, function (e) {
+        m.__ocupado = false; m.classList.remove('ntf-modal--ocupado');
+        if (e.codigo !== 'RED') boton.__rid = null;
+        if (e.codigo === 'FACTURA_REPETIDA') { validada = false; inp.classList.add('ntf-in--mal'); ponerMsg(esc(e.message), 'mal'); }
+        sonar('error');
+        aviso(e.message, 'aviso', 7000);
+        listo();
+      });
+    }
+
     btnEnviar.addEventListener('click', function () {
       if (btnEnviar.disabled || m.__ocupado) return;
       var seis = inp.value;
       /* escudo desde el primer toque: nada de doble envío */
-      m.__ocupado = true; btnEnviar.disabled = true; m.classList.add('ntf-modal--ocupado');
+      m.__ocupado = true; btnEnviar.disabled = true; if (btnRe) btnRe.disabled = true; m.classList.add('ntf-modal--ocupado');
       confirmar('¿Enviar la notificación?',
-        '<p>Se enviará desde <b>cobrocoactivo@flandes-tolima.gov.co</b> a <b>' + esc(correo) + '</b> la <b>Factura No. ' + esc(anio() + seis) + '</b> de <b>' + esc(row.nombres || '') + '</b>, con el PDF adjunto.</p><p>El envío no se puede deshacer.</p>',
+        '<p>Se enviará desde <b>cobrocoactivo@flandes-tolima.gov.co</b> la <b>Factura No. ' + esc(anio() + seis) + '</b> de <b>' + esc(props.map(function (x) { return x.nombre; }).join(' / ')) + '</b>, con el PDF adjunto, a:</p><p>' + listaPara(ds) + '</p>' +
+        '<p>Quedará ESTADO <b>COBRO PERSUASIVO/LIQUIDACION</b>, ACTUACIÓN <b>LIQUIDACION OFICIAL</b> y la constancia en la bitácora. El envío no se puede deshacer.</p>',
         'Sí, enviar').then(function (ok) {
         if (!ok) { m.__ocupado = false; m.classList.remove('ntf-modal--ocupado'); listo(); return; }
-        var rid = btnEnviar.__rid || (btnEnviar.__rid = nuevoRid());
-        var t0 = Date.now();
-        guardando(llamar(urlICA(), 'notificar', {
-          id_predial: row.id_predial, fila: row.rowIndex || '', factura: seis,
-          pdf: { nombre: pdf.nombre, b64: pdf.b64 }
-        }, { post: true, rid: rid }), 'Enviando la notificación').then(function (d) {
-          m.__ocupado = false;
-          sonar('success');
-          try { window.__ntfMed.push({ ruta: 'notificar(total)', ms: Date.now() - t0 }); } catch (_) {}
-          if (d && d.fila) { try { bdpAplicarFila_(d.fila); } catch (_) {} }
-          else if (d && d.ntf) { row.notificacion = d.ntf; row.notif_citacion = 'SI'; row.notif_electr = 'SI'; repintar(); }
-          if (d && d.registroPendiente) {
-            /* el correo ya salió: solo falta la constancia en BD Predial. Se repite con el MISMO rid (no reenvía). */
-            aviso('El correo salió. Dejando la constancia en BD Predial…', 'info', 4000);
-            esperar(1500).then(function () { return llamar(urlICA(), 'notifreintentar', { rid: rid }, { post: true, rid: rid + '-r' }); }).then(function (x) {
-              if (x && x.fila) { try { bdpAplicarFila_(x.fila); } catch (_) {} }
-              aviso('Notificación enviada a ' + correo + ' y registrada.', 'ok', 5000);
-            }, function (e2) {
-              aviso('El correo salió a ' + correo + ', pero la constancia en BD Predial no quedó (' + e2.message + '). Recarga BD Predial; si no aparece "Notificado", avísale a soporte.', 'aviso', 12000);
-            });
-          }
-          else aviso('Notificación enviada a ' + correo + '. Plazo de ' + PLAZO + ' días desde mañana.', 'ok', 5000);
-          document.removeEventListener('paste', pegar);
-          m.cerrar(true);
-        }, function (e) {
-          m.__ocupado = false; m.classList.remove('ntf-modal--ocupado');
-          if (e.codigo !== 'RED') btnEnviar.__rid = null;
-          if (e.codigo === 'FACTURA_REPETIDA') { validada = false; inp.classList.add('ntf-in--mal'); ponerMsg(esc(e.message), 'mal'); }
-          sonar('error');
-          aviso(e.message, 'aviso', 7000);
-          listo();
-        });
+        despachar(btnEnviar, { id_predial: row.id_predial, fila: row.rowIndex || '', factura: seis, pdf: { nombre: pdf.nombre, b64: pdf.b64 } },
+          'Notificación enviada a {para}. Plazo de ' + PLAZO + ' días desde mañana.');
       });
     });
 
-    if (!correoOk(correo)) {
+    if (btnRe) btnRe.addEventListener('click', function () {
+      if (btnRe.disabled || m.__ocupado) return;
+      m.__ocupado = true; btnRe.disabled = true; btnEnviar.disabled = true; m.classList.add('ntf-modal--ocupado');
+      var fac = String(st.ultima.fac || '');
+      confirmar('¿Reenviar la notificación?',
+        '<p>Se reenvía la <b>Factura No. ' + esc(fac) + '</b> (el mismo PDF) a:</p><p>' + listaPara(ds) + '</p>' +
+        '<p>El plazo de ' + PLAZO + ' días vuelve a contar desde mañana.</p>', 'Sí, reenviar').then(function (ok) {
+        if (!ok) { m.__ocupado = false; m.classList.remove('ntf-modal--ocupado'); listo(); return; }
+        despachar(btnRe, { id_predial: row.id_predial, fila: row.rowIndex || '', factura: fac.slice(-6), reenvio: 1 },
+          'Notificación reenviada a {para}. El plazo vuelve a contar desde mañana.');
+      });
+    });
+
+    if (!hayCorreo) {
       ponerMsg(ico('aviso', 15) + ' Este expediente no tiene un correo electrónico válido. Corrígelo en Editar antes de notificar.', 'mal');
       inp.disabled = true; btnVal.disabled = true;
     } else setTimeout(function () { try { inp.focus(); } catch (_) {} }, 60);
@@ -451,9 +527,11 @@
     var w = document.createElement('div');
     w.className = 'bdp-det-section ntf-det';
     var env = st.envios.slice().reverse().map(function (x) {
-      return '<li><b>Factura ' + esc(x.fac) + '</b> · ' + esc(dmy(x.f)) + (x.h ? ' ' + esc(x.h) : '') + (x.por ? ' · ' + esc(x.por) : '') + '</li>';
+      return '<li><b>' + (x.re ? 'Reenvío · ' : '') + 'Factura ' + esc(x.fac) + '</b> · ' + esc(dmy(x.f)) + (x.h ? ' ' + esc(x.h) : '') + (x.por ? ' · ' + esc(x.por) : '') +
+        (Array.isArray(x.reb) && x.reb.length ? ' <span class="ntf-chip ntf-chip--reb">' + ico('aviso', 12) + ' Rebotó: ' + esc(x.reb.join(', ')) + '</span>' : '') + '</li>';
     }).join('');
-    var estadoTxt = st.rec ? 'Reloj detenido: recurso de RECONSIDERACIÓN desde el ' + esc(largo(st.rec)) + '.'
+    var estadoTxt = st.rebote ? 'El correo rebotó (' + esc(st.reb.join(', ')) + '): corrige el correo en Editar y reenvía desde Notificar. ' : '';
+    estadoTxt += st.rec ? 'Reloj detenido: recurso de RECONSIDERACIÓN desde el ' + esc(largo(st.rec)) + '.'
       : (st.vencido ? 'El plazo de ' + PLAZO + ' días venció el ' + esc(st.vence.toLocaleDateString('es-CO')) + '.'
         : 'Le quedan <b>' + st.dias + '</b> ' + (st.dias === 1 ? 'día' : 'días') + ' (vence el ' + esc(st.vence.toLocaleDateString('es-CO')) + ').');
     w.innerHTML =
@@ -510,10 +588,13 @@
   /* ══════════════ configuración del correo (ADMIN y DEV) ══════════════ */
   function roles() { try { var p = window.IDN && window.IDN.perfil && window.IDN.perfil(); return (p && p.roles) || []; } catch (_) { return []; } }
   function puedeConfig() { var r = roles(); return r.indexOf('ADMIN') !== -1 || r.indexOf('DEV') !== -1; }
-  var VARS_AS = ['numFactura', 'fichaCatastral', 'nombre', 'documento'];
-  var VARS_CU = ['dia', 'mes', 'ano', 'nombre', 'documento', 'fichaCatastral', 'numFactura', 'firmaSecretaria', 'firmaVistoBueno'];
-  var EJEMPLO = { numFactura: anio() + '117639', fichaCatastral: '010000930011000', nombre: 'NOMBRE DEL CONTRIBUYENTE', documento: '12345678',
+  var VARS_AS = ['numFactura', 'fichaCatastral', 'nombre', 'documento', 'exp'];
+  var VARS_CU = ['dia', 'mes', 'ano', 'contribuyentes', 'nombre', 'documento', 'fichaCatastral', 'exp', 'numFactura', 'firmaSecretaria', 'firmaVistoBueno'];
+  var EJEMPLO = { numFactura: anio() + '117639', fichaCatastral: '010000930011000', nombre: 'NOMBRE DEL CONTRIBUYENTE', documento: '12345678', exp: 'A-0001',
     dia: String(hoyBogota().getDate()), mes: MESES[hoyBogota().getMonth()], ano: anio() };
+  /* 22/10 — {{contribuyentes}} en su propia línea: el bloque que arma ICA (con un propietario de ejemplo) */
+  var BLOQUE_EJ = ['Señor(a)', 'Contribuyente:', '**NOMBRE DEL CONTRIBUYENTE** - NIT/CC No. 12345678',
+    'Ficha Catastral No. 010000930011000', 'Expediente Físico: A-0001', 'Municipio: Flandes, Tolima.'];
 
   /** Vista previa: misma regla que el servidor (**negrita**, • lista, enlaces, firmas). */
   function previa(tpl) {
@@ -524,7 +605,9 @@
       var h = esc(t).replace(/\{\{\s*(\w+)\s*\}\}/g, function (m, k) { return EJEMPLO[k] != null ? '<mark>' + esc(EJEMPLO[k]) + '</mark>' : '<span class="ntf-cfg__malo">' + m + '</span>'; });
       return h.replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>').replace(/(https?:\/\/[^\s<]+)/g, '<a>$1</a>');
     };
-    String(tpl || '').replace(/\r\n?/g, '\n').split('\n').forEach(function (l) {
+    String(tpl || '').replace(/\r\n?/g, '\n').split('\n').map(function (l) {
+      return /^\s*\{\{\s*contribuyentes\s*\}\}\s*$/.test(l) ? BLOQUE_EJ.join('\n') : l;
+    }).join('\n').split('\n').forEach(function (l) {
       var t = l.trim(), fm = /^\{\{\s*(firmaSecretaria|firmaVistoBueno)\s*\}\}$/.exec(t);
       if (fm) { cp(); cl(); out.push('<div class="ntf-cfg__firma">' + ico('firma', 16) + (fm[1] === 'firmaSecretaria' ? ' Firma de la Secretaria' : ' Firma de visto bueno') + '</div>'); return; }
       if (!t) { cp(); cl(); return; }
@@ -540,7 +623,9 @@
     var m = modal({
       titulo: 'Correo de notificación', icono: 'engranaje',
       sucio: function () { return !!m.__sucio; },
-      cuerpo: '<p class="ntf-ayuda">Lo que recibe el contribuyente al notificar la factura. Toca una variable para ponerla donde está el cursor. <b>**texto**</b> sale en negrita y las líneas que empiezan por • salen como lista.</p>' +
+      cuerpo: '<p class="ntf-ayuda">Lo que recibe el contribuyente al notificar la factura. Toca una variable para ponerla donde está el cursor. <b>**texto**</b> sale en negrita y las líneas que empiezan por • salen como lista. ' +
+        '<b>{{contribuyentes}}</b> (sola en su línea) arma Señor(a)/Contribuyente o Señor(es)(as)/Contribuyentes con cada propietario, la ficha, el expediente y el municipio. ' +
+        'Con varios propietarios, <b>{{nombre}} {{documento}}</b> sale con todos: «A 123 / B 456». <b>{{exp}}</b> = expediente físico.</p>' +
         '<div class="ntf-cfg" data-zona><div class="sk sk-line w95 ntf-esq"></div><div class="sk sk-line w80"></div><div class="sk sk-line w60"></div></div>',
       pie: '<button type="button" class="kit-btn" data-cerrar>Cancelar</button>' +
            '<button type="button" class="kit-btn kit-btn--marca" data-guardar disabled>' + ico('check', 18) + ' Guardar</button>'
@@ -617,8 +702,166 @@
     if (e.target.closest && e.target.closest('#btn-bdp-correo')) { sonar('menu'); abrirConfig(); }
   });
 
+  /* ══════════════ INFORMES DE NOTIFICACIONES (22/10) ══════════════
+     Excel, PDF y gerencial con lo que BD Predial ya tiene en memoria
+     (la lista que el servidor dejó ver + las respuestas de fondo): cero
+     viajes. Una fila por ENVÍO (el reenvío tras un rebote cuenta aparte). */
+  function listaVista() { try { return (typeof __bdpListCache !== 'undefined' && Array.isArray(__bdpListCache)) ? __bdpListCache : []; } catch (_) { return []; } }
+  function una(v) { return String(v == null ? '' : v).split(/\n+/).map(function (x) { return x.trim(); }).filter(Boolean).join(' / '); }
+  function plazoTxt(st) {
+    if (st.rebote) return 'Rebotó';
+    if (st.rec) return 'Reconsideración';
+    if (st.vencido) return 'Plazo vencido';
+    if (st.dias != null) return st.dias <= 10 ? 'Por vencer (' + st.dias + ' d)' : 'Corriendo (' + st.dias + ' d)';
+    return '';
+  }
+  function filasInforme(desde, hasta) {
+    var out = [];
+    listaVista().forEach(function (row) {
+      var st = estado(row);
+      if (!st.notificado) return;
+      var rs = respuestas(row.id_predial) || [0, ''];
+      st.envios.forEach(function (x, k) {
+        var f = String(x.f || '');
+        if (desde && f < desde) return;
+        if (hasta && f > hasta) return;
+        var ult = k === st.envios.length - 1;
+        var reb = Array.isArray(x.reb) ? x.reb : (ult && st.rebote ? st.reb : []);
+        out.push({
+          id: row.id_predial, exp: row.no_exp_fisico || '', contribuyentes: una(row.nombres), documentos: una(row.nit_cedula),
+          ficha: fichaLimpia(row.ficha_catastral), factura: x.fac, tipo: x.re ? 'Reenvío' : 'Envío', fechaIso: f, fecha: dmy(f), hora: x.h || '',
+          por: x.por || '', correos: una(row.correo_electronico).replace(/ \/ /g, ', '), rebote: reb.join(', '),
+          vence: ult && st.vence ? st.vence.toLocaleDateString('es-CO') : '', plazo: ult ? plazoTxt(st) : 'Reemplazado por un envío posterior',
+          respuestas: ult ? (rs[0] || 0) : '', estado: row.estado_proceso || '', actuacion: row.actuacion || '', sustanciador: row.sustanciador || '',
+          __t: !ult ? 'info' : (st.rebote || st.vencido ? 'malo' : (st.rec ? 'info' : (rs[0] > 0 ? 'ok' : (st.dias <= 10 ? 'aviso' : 'ok'))))
+        });
+      });
+    });
+    out.sort(function (a, b) { return (b.fechaIso + b.hora) < (a.fechaIso + a.hora) ? -1 : 1; });
+    return out;
+  }
+  var COLS = [
+    { campo: 'exp', titulo: 'Exp. físico' }, { campo: 'id', titulo: 'ID' }, { campo: 'contribuyentes', titulo: 'Contribuyente(s)' },
+    { campo: 'documentos', titulo: 'NIT / CC' }, { campo: 'ficha', titulo: 'Ficha catastral' }, { campo: 'factura', titulo: 'Factura' },
+    { campo: 'tipo', titulo: 'Tipo' }, { campo: 'fecha', titulo: 'Fecha' }, { campo: 'hora', titulo: 'Hora' }, { campo: 'por', titulo: 'Notificó' },
+    { campo: 'correos', titulo: 'Correos' }, { campo: 'rebote', titulo: 'Rebotó' }, { campo: 'plazo', titulo: 'Plazo' }, { campo: 'vence', titulo: 'Vence' },
+    { campo: 'respuestas', titulo: 'Respuestas' }, { campo: 'estado', titulo: 'Estado del proceso' }, { campo: 'actuacion', titulo: 'Actuación' },
+    { campo: 'sustanciador', titulo: 'Sustanciador' }
+  ];
+  function cifrasInf(fs) {
+    var ult = fs.filter(function (f) { return f.plazo !== 'Reemplazado por un envío posterior'; });
+    var c = { envios: fs.length, reenvios: fs.filter(function (f) { return f.tipo === 'Reenvío'; }).length, expedientes: ult.length,
+      corriendo: 0, porVencer: 0, vencidos: 0, rebotes: 0, rec: 0, respondieron: 0 };
+    ult.forEach(function (f) {
+      if (f.plazo === 'Rebotó') c.rebotes++;
+      else if (f.plazo === 'Reconsideración') c.rec++;
+      else if (f.plazo === 'Plazo vencido') c.vencidos++;
+      else if (/^Por vencer/.test(f.plazo)) c.porVencer++;
+      else c.corriendo++;
+      if (f.respuestas > 0) c.respondieron++;
+    });
+    return c;
+  }
+  function porCampo(fs, k) {
+    var m = {}; fs.forEach(function (f) { var v = f[k] || '—'; m[v] = (m[v] || 0) + 1; });
+    return Object.keys(m).map(function (x) { return { etiqueta: x, valor: m[x] }; }).sort(function (a, b) { return b.valor - a.valor; });
+  }
+  function specGer(fs, desde, hasta) {
+    var c = cifrasInf(fs), N = K.numero || function (v) { return String(v); };
+    var hoyIso = new Date().toISOString().slice(0, 10);
+    var fechas = fs.map(function (f) { return f.fechaIso; }).filter(Boolean).sort();
+    var perfil = {}; try { perfil = (window.IDN && window.IDN.perfil && window.IDN.perfil()) || {}; } catch (_) {}
+    var meses = {}; fs.forEach(function (f) { var k = f.fechaIso.slice(0, 7); meses[k] = (meses[k] || 0) + 1; });
+    var hall = [];
+    if (c.rebotes) hall.push(c.rebotes + (c.rebotes === 1 ? ' notificación rebotó' : ' notificaciones rebotaron') + ': corregir el correo y reenviar (el plazo vuelve a contar desde el reenvío).');
+    if (c.porVencer) hall.push(c.porVencer + (c.porVencer === 1 ? ' expediente tiene' : ' expedientes tienen') + ' 10 días o menos de plazo.');
+    if (c.vencidos) hall.push(c.vencidos + (c.vencidos === 1 ? ' expediente tiene' : ' expedientes tienen') + ' el plazo de ' + PLAZO + ' días vencido.');
+    return {
+      app: 'Sec. Hacienda · BD Predial', ecosistema: 'FLANDES-CORE · Secretaría de Hacienda',
+      persona: 'Notificaciones electrónicas de la factura predial', rol: perfil.nombre ? 'Generado por ' + perfil.nombre : '',
+      desde: desde || fechas[0] || hoyIso, hasta: hasta || hoyIso, nombre: 'Informe gerencial notificaciones predial',
+      palabra: ['notificación', 'notificaciones'],
+      etiquetas: { tipo: 'Plazo', categoria: 'Notificó', sujeto: 'Contribuyente' },
+      tonos: { ok: 'Al día / respondieron', malo: 'Vencidos o rebotes', aviso: 'Por vencer', info: 'Otros' },
+      registros: fs.map(function (f) { return { fecha: f.fechaIso, hora: f.hora, tipo: f.tipo + ' · ' + f.plazo, tono: f.__t, categoria: f.por || '—', sujeto: f.contribuyentes, ref: 'Exp. ' + f.exp + ' · Fac. ' + f.factura }; }),
+      kpis: [
+        { etiqueta: 'Notificaciones', valor: N(c.envios), nota: c.reenvios ? c.reenvios + ' reenvíos' : '', tono: 'info' },
+        { etiqueta: 'Expedientes notificados', valor: N(c.expedientes), tono: 'info' },
+        { etiqueta: 'Plazo corriendo', valor: N(c.corriendo), tono: 'ok' },
+        { etiqueta: 'Por vencer (≤ 10 días)', valor: N(c.porVencer), tono: c.porVencer ? 'aviso' : 'ok' },
+        { etiqueta: 'Plazo vencido', valor: N(c.vencidos), tono: c.vencidos ? 'malo' : 'ok' },
+        { etiqueta: 'Rebotes', valor: N(c.rebotes), tono: c.rebotes ? 'malo' : 'ok' },
+        { etiqueta: 'Respondieron', valor: N(c.respondieron), tono: 'ok' }
+      ],
+      secciones: [
+        { titulo: 'Estado del plazo', intro: 'El último envío de cada expediente: plazo de ' + PLAZO + ' días corridos desde el día siguiente.',
+          graficas: [{ titulo: 'Expedientes por estado del plazo', tipo: 'proporcion', datos: [
+            { etiqueta: 'Corriendo', valor: c.corriendo, tono: 'ok' }, { etiqueta: 'Por vencer', valor: c.porVencer, tono: 'aviso' },
+            { etiqueta: 'Vencido', valor: c.vencidos, tono: 'malo' }, { etiqueta: 'Rebotó', valor: c.rebotes, tono: 'malo' },
+            { etiqueta: 'Reconsideración', valor: c.rec, tono: 'info' }].filter(function (x) { return x.valor; }) }] },
+        { titulo: 'Quién notificó y cuándo', intro: 'Envíos y reenvíos del periodo.',
+          graficas: [{ titulo: 'Notificaciones por persona', tipo: 'barrasH', datos: porCampo(fs, 'por').slice(0, 15) },
+                     { titulo: 'Notificaciones por mes', tipo: 'barras', datos: Object.keys(meses).sort().map(function (k) { return { etiqueta: k.slice(5) + '/' + k.slice(0, 4), valor: meses[k] }; }) }] }
+      ],
+      hallazgos: hall
+    };
+  }
+  function abrirInforme() {
+    if (!listaVista().length) { aviso('Abre BD Predial y espera que cargue la lista.', 'aviso', 3500); return; }
+    var m = modal({
+      titulo: 'Informe de notificaciones', icono: 'sobre',
+      cuerpo: '<p class="ntf-ayuda">Las notificaciones electrónicas de la factura que puedes ver en BD Predial (una fila por envío). Deja las fechas vacías para traer todas.</p>' +
+        '<div class="ntf-inf__fechas"><label>Desde<input type="date" data-desde></label><label>Hasta<input type="date" data-hasta></label></div>' +
+        '<p class="ntf-inf__cuenta" data-cuenta></p>' +
+        '<div class="ntf-inf__btns">' +
+          '<button type="button" class="kit-btn" data-x="xlsx">' + ico('excel', 18) + ' Excel</button>' +
+          '<button type="button" class="kit-btn" data-x="pdf">' + ico('pdf', 18) + ' PDF</button>' +
+          '<button type="button" class="kit-btn kit-btn--marca" data-x="ger">' + ico('grafica', 18) + ' Informe gerencial</button>' +
+        '</div>',
+      pie: '<button type="button" class="kit-btn" data-cerrar>Cerrar</button>'
+    });
+    var d1 = m.q('[data-desde]'), d2 = m.q('[data-hasta]'), cu = m.q('[data-cuenta]');
+    function filas() { return filasInforme(d1.value, d2.value); }
+    function contar() { var fs = filas(), c = cifrasInf(fs); cu.innerHTML = '<b>' + fs.length + '</b> ' + (fs.length === 1 ? 'notificación' : 'notificaciones') + ' · ' + c.expedientes + ' expedientes' + (c.rebotes ? ' · <b class="ntf-mal">' + c.rebotes + ' con rebote</b>' : ''); }
+    d1.addEventListener('change', contar); d2.addEventListener('change', contar); contar();
+    m.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-x]'); if (!b || b.disabled) return;
+      var fs = filas();
+      if (!fs.length) { aviso('No hay notificaciones en ese rango.', 'aviso', 3000); return; }
+      var ex = K.piezas && K.piezas.exportar;
+      if (!ex) { aviso('La descarga no cargó. Recarga la app.', 'aviso'); return; }
+      var que = b.getAttribute('data-x'), t0 = Date.now();
+      var rango = (d1.value || d2.value) ? 'Del ' + (d1.value ? dmy(d1.value) : 'inicio') + ' al ' + (d2.value ? dmy(d2.value) : 'hoy') : 'Todas las notificaciones';
+      b.disabled = true; b.classList.add('kit-ocupado');
+      var p = que === 'xlsx' ? ex.aExcel('Notificaciones predial', COLS, fs)
+        : que === 'pdf' ? ex.aPDF('Informe de notificaciones predial', [
+            { campo: 'correos', titulo: 'Correos', largo: true }, { campo: 'rebote', titulo: 'Rebotó' }, { campo: 'vence', titulo: 'Vence' },
+            { campo: 'respuestas', titulo: 'Respuestas' }, { campo: 'estado', titulo: 'Estado del proceso' }, { campo: 'sustanciador', titulo: 'Sustanciador' }
+          ], fs, {
+            subtitulo: rango + ' · ' + fs.length + ' notificaciones',
+            bloque: {
+              titulo: function (f) { return 'Exp. ' + f.exp + ' · ' + f.contribuyentes; },
+              sub: function (f) { return [f.tipo + ' factura ' + f.factura, f.fecha + ' ' + f.hora, f.por, 'NIT/CC ' + f.documentos].filter(Boolean).join(' · '); },
+              marca: function (f) { return f.plazo; },
+              tono: function (f) { return f.__t === 'info' ? '' : f.__t; }
+            },
+            resumen: function (x) { var c = cifrasInf(x); return [{ etiqueta: 'Notificaciones', valor: c.envios }, { etiqueta: 'Expedientes', valor: c.expedientes },
+              { etiqueta: 'Por vencer', valor: c.porVencer }, { etiqueta: 'Vencidos', valor: c.vencidos }, { etiqueta: 'Rebotes', valor: c.rebotes }, { etiqueta: 'Respondieron', valor: c.respondieron }]; }
+          })
+        : ex.aGerencial(specGer(fs, d1.value, d2.value));
+      Promise.resolve(p).then(function () {
+        try { window.__ntfMed.push({ ruta: 'informe:' + que, ms: Date.now() - t0, filas: fs.length }); } catch (_) {}
+        if (que === 'ger') aviso('Informe gerencial descargado.', 'ok', 3500);
+      }, function (er) { aviso((er && er.message) || 'No se pudo armar el informe.', 'aviso', 6000); })
+        .then(function () { b.disabled = false; b.classList.remove('kit-ocupado'); });
+    });
+  }
+  document.addEventListener('click', function (e) {
+    if (e.target.closest && e.target.closest('#btn-bdp-informe-notif')) { sonar('menu'); abrirInforme(); }
+  });
+
   window.NOTIF = {
-    puedeConfig: puedeConfig, abrirConfig: abrirConfig,
+    puedeConfig: puedeConfig, abrirConfig: abrirConfig, abrirInforme: abrirInforme, filasInforme: filasInforme, destinos: destinos,
     PLAZO: PLAZO, OPC: OPC,
     estado: estado, tarjeta: tarjeta, boton: boton, abrir: abrir, detalle: detalle,
     pasa: pasa, clave: clave, contar: contar, respuestas: respuestas,

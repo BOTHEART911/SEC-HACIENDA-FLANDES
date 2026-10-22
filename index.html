@@ -911,6 +911,8 @@
           <button type="button" id="btn-bdp-panel" class="kit-btn" style="display:none;"><i class="hi" data-ico="grafica"></i> Panel</button>
           <!-- 21/10 — correo de NOTIFICACIÓN ELECTRÓNICA (asunto y cuerpo): solo ADMIN y DEV (js/notificar.js) -->
           <button type="button" id="btn-bdp-correo" class="kit-btn" style="display:none;"><i class="hi" data-ico="engranaje"></i> Correo de notificación</button>
+          <!-- 22/10 — informes de las notificaciones hechas: Excel, PDF y gerencial (js/notificar.js, sin viajes) -->
+          <button type="button" id="btn-bdp-informe-notif" class="kit-btn"><i class="hi" data-ico="sobre"></i> Informe de notificaciones</button>
           <button type="button" id="btn-bdp-mis-exp" class="kit-btn" style="display:none;"><i class="hi" data-ico="excel"></i> Datos Excel</button>
           <button type="button" id="btn-bdp-expedientes" class="kit-btn"><i class="hi" data-ico="expediente"></i> Mis expedientes</button>
         </div>
@@ -974,6 +976,7 @@
             <button type="button" class="proc-status-pill" data-notif="PORVENCER">Plazo por vencer (≤ 10 días)</button>
             <button type="button" class="proc-status-pill" data-notif="VENCIDO">Plazo vencido</button>
             <button type="button" class="proc-status-pill" data-notif="RESPONDIO">Respondieron</button>
+            <button type="button" class="proc-status-pill" data-notif="REBOTE">Rebotes</button>
             <button type="button" class="proc-status-pill" data-notif="RECONSIDERACION">En reconsideración</button>
           </div>
         </div>
@@ -1545,6 +1548,7 @@
 <script src="js/no-aperturados.js"></script>
 <script src="js/form-ancho.js"></script>
 <script src="js/solicitud-exp.js"></script>
+<script src="js/propietarios.js"></script>   <!-- 22/10: varios propietarios en Agregar/Editar expediente -->
 <script src="js/notificar.js"></script>   <!-- 21/10: notificación electrónica de la factura (BD Predial) -->
 <script src="js/bitacora-export.js"></script>
 <script src="js/mi-trabajo.js"></script>

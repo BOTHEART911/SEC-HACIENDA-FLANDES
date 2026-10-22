@@ -180,7 +180,10 @@
         var tips = [
           ['sobre', 'Botón **Notificar** (sobre) en la tarjeta: escribe los **6 dígitos** de la factura (se guarda con el año delante) y adjunta, arrastra o pega (Ctrl+V) el **PDF**.'],
           ['buscar', '**Validar** revisa que esa factura no se haya enviado antes; si ya salió, no deja enviar.'],
-          ['reloj', 'Al enviar: aviso **Notificado**, CITACIÓN y ELECTRÓNICA en SI y el reloj **Plazo**: 60 días corridos desde el día siguiente.'],
+          ['persona', 'Varios propietarios: en **Editar** → **Agregar otro propietario** (hasta 9). Nombre + NIT/CC = destinatario; **solo el correo** = va en copia. Sale **un solo correo con un solo PDF** para todos.'],
+          ['reloj', 'Al enviar: aviso **Notificado**, CITACIÓN y ELECTRÓNICA en SI, ESTADO **COBRO PERSUASIVO/LIQUIDACION**, ACTUACIÓN **LIQUIDACION OFICIAL**, la línea en la **bitácora** con el asunto y el reloj **Plazo**: 60 días corridos desde el día siguiente (rojo y latiendo con 10 días o menos).'],
+          ['aviso', 'Si un correo **rebota**, la tarjeta dice **Rebote** y la bitácora el correo a corregir: corrígelo en Editar y toca **Reenviar** en Notificar; el plazo vuelve a contar desde el reenvío. Pastilla **Rebotes** en el filtro.'],
+          ['excel', '**Informe de notificaciones**: Excel, PDF o informe gerencial de lo que ves, por rango de fechas.'],
           ['balanza', 'Estado del proceso **RECONSIDERACIÓN**: detiene el reloj y lo quita.'],
           ['responder', 'Si el contribuyente responde, la tarjeta dice **Respondió** y el detalle muestra el texto y los adjuntos.'],
           ['filtro', 'Filtro **NOTIFICACIÓN** y Consultar → **Notificaciones y plazos**.']
@@ -188,7 +191,7 @@
         if (c.admin) tips.push(['engranaje', 'El asunto y el cuerpo del correo se cambian en **Configuración → Plantillas**.']);
         return [
           { k: 'flujo', p: [['documento', 'Factura', '6 dígitos + PDF'], ['buscar', 'Validar', 'Que no se repita'], ['enviar', 'Enviar', 'Desde cobro coactivo'], ['reloj', 'Plazo', '60 días']] },
-          { k: 'leyenda', p: [['#6b7280', 'Más de 15 días'], ['#e39b2d', '15 días o menos'], ['#d64541', '5 días o menos / vencido'], ['#b45309', 'Reconsideración']] },
+          { k: 'leyenda', p: [['#6b7280', 'Más de 15 días'], ['#e39b2d', '15 días o menos'], ['#d64541', '10 días o menos (late) / vencido / rebote'], ['#b45309', 'Reconsideración']] },
           { k: 'tips', p: tips }
         ];
       }

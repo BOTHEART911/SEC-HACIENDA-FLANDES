@@ -6768,7 +6768,8 @@ function bdpCardHTML_(row, idx, puedeEliminar, puedeDecision) {
   const actuacion  = (row.actuacion      || 'NINGUNA').toUpperCase();
   const estadoProc = (row.estado_proceso || 'PENDIENTE').toUpperCase();
   const fichaTxt   = bdpCleanFicha_(row.ficha_catastral);
-  const correoTxt  = String(row.correo_electronico || '').trim();
+  /* 22/10 — varios propietarios: en la tarjeta, una línea con " · " / " / " */
+  const correoTxt  = String(row.correo_electronico || '').trim().split(/\n+/).map(x => x.trim()).filter(Boolean).join(' · ');
 
   /* AJUSTE 10/09 — dato TOCABLE: al tocarlo se copia al portapapeles.
      Solo se vuelve tocable si hay valor; sin valor se pinta el guion de
@@ -6817,7 +6818,8 @@ function bdpCardHTML_(row, idx, puedeEliminar, puedeDecision) {
     '<div class="bdp-card clasif-' + clasif + '" data-bdp-idx="' + idx + '">' +
       '<div class="bdp-head">' +
         '<div class="bdp-head-left">' +
-          '<p class="bdp-nombres">' + (cop(row.nombres, 'nombres') || escapeHtml_(row.nombres || '')) + '</p>' +
+          '<p class="bdp-nombres">' + (cop(row.nombres, 'nombres') || escapeHtml_(row.nombres || '')) +
+            (/\n/.test(String(row.nombres || '').trim()) ? ' <span class="bdp-props-n" title="Varios propietarios">' + ICO_('persona', 12) + ' ' + String(row.nombres).trim().split(/\n+/).length + '</span>' : '') + '</p>' +
           '<p class="bdp-direccion">' + ICO_('ubicacion', 14) + ' ' + (cop(row.direccion_predio, 'direccion') || 'Sin dirección') + '</p>' +
         '</div>' +
         '<div class="bdp-head-right">' +
@@ -7826,6 +7828,8 @@ __bdpFormMode = 'add';
     'bdp-fecha-resolucion','bdp-oficio-citacion','bdp-fecha-oficio',
     'bdp-ejecutoria','bdp-f-mp','bdp-asistente'
   ].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  /* 22/10 — varios propietarios: sin filas extra al agregar (js/propietarios.js) */
+  if (window.PROP) window.PROP.limpiar();
 
   document.getElementById('bdp-escaneado').value      = 'NO';
   document.getElementById('bdp-actuacion').value      = 'NINGUNA';
@@ -7902,9 +7906,13 @@ function abrirBDPEditar_(row) {
   bdpSetupNumericInputs_();
 
   /* Cargar valores */
-  document.getElementById('bdp-nombres').value   = row.nombres || '';
-  document.getElementById('bdp-nit').value       = row.nit_cedula || '';
-  document.getElementById('bdp-correo').value    = row.correo_electronico || '';
+  /* 22/10 — varios propietarios: el 1.º en los campos de siempre, los demás en filas */
+  if (window.PROP) window.PROP.cargar(row);
+  else {
+    document.getElementById('bdp-nombres').value   = row.nombres || '';
+    document.getElementById('bdp-nit').value       = row.nit_cedula || '';
+    document.getElementById('bdp-correo').value    = row.correo_electronico || '';
+  }
   document.getElementById('bdp-direccion').value = row.direccion_predio || '';
 
   const matRaw = String(row.matricula || '').replace(/^357-/, '');
@@ -8165,8 +8173,15 @@ document.getElementById('btn-bdp-form-guardar')?.addEventListener('click', async
   const esAlDia = normalizeText_(estadoProc) === 'AL DIA';
 
  if (puedeCamposGenerales) {
-    const nombres  = (document.getElementById('bdp-nombres').value || '').trim();
-    const nit      = bdpDigitsOnly_(document.getElementById('bdp-nit').value || '');
+    /* 22/10 — varios propietarios (js/propietarios.js): nombres, NIT y correo, uno por línea */
+    const props    = window.PROP ? window.PROP.leer() : null;
+    if (props && !props.ok) {
+      await Swal.fire({ icon:'warning', title:'Revisa los propietarios', text: props.error });
+      try { props.campo && props.campo.focus(); } catch (_) {}
+      return;
+    }
+    const nombres  = props ? props.nombres : (document.getElementById('bdp-nombres').value || '').trim();
+    const nit      = props ? props.nits : bdpDigitsOnly_(document.getElementById('bdp-nit').value || '');
     const direccion= (document.getElementById('bdp-direccion').value || '').trim();
     const valorRaw = Number(bdpDigitsOnly_(document.getElementById('bdp-valor-deuda').value || '')) || 0;
     const debeRaw  = (document.getElementById('bdp-debe-desde-raw').value || '').trim();
@@ -8176,7 +8191,7 @@ document.getElementById('btn-bdp-form-guardar')?.addEventListener('click', async
     const expNum   = (document.getElementById('bdp-exp-numero').value || '').trim();
 
     if (!nombres) { Swal.fire({ icon:'warning', title:'Nombres requeridos' }); return; }
-    if (!nit || !/^\d{1,10}$/.test(nit)) { Swal.fire({ icon:'warning', title:'NIT/Cédula inválido', text:'1 a 10 dígitos' }); return; }
+    if (!props && (!nit || !/^\d{1,10}$/.test(nit))) { Swal.fire({ icon:'warning', title:'NIT/Cédula inválido', text:'1 a 10 dígitos' }); return; }
     if (!direccion) { Swal.fire({ icon:'warning', title:'Dirección requerida' }); return; }
     // Si el estado es AL DIA, el valor se fuerza a 0 y NO se valida como requerido
     if (!esAlDia) {
@@ -8205,7 +8220,7 @@ document.getElementById('btn-bdp-form-guardar')?.addEventListener('click', async
       ...payload,
       nombres,
       nit_cedula: nit,
-      correo_electronico: (document.getElementById('bdp-correo').value || '').trim(),
+      correo_electronico: props ? props.correos : (document.getElementById('bdp-correo').value || '').trim(),
       direccion_predio: direccion,
       matricula: bdpDigitsOnly_(document.getElementById('bdp-matricula').value || ''),
       ficha_catastral: bdpDigitsOnly_(document.getElementById('bdp-ficha').value || ''),
