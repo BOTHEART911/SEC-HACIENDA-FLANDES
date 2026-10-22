@@ -92,3 +92,8 @@
   .sop-cifras__r { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .sop-herr .kit-btn { flex: 1 1 calc(50% - 8px); justify-content: center; }
 }
+
+/* 22/10 · el buscador de "Registrar un soporte": .hf-buscar trae flex-basis 260px
+   pensado para la barra en fila; dentro de una columna se volvía 260 px de ALTO */
+.sop-quien .sop-bus { flex: 0 0 auto; width: 100%; height: auto; }
+.sop-quien .sop-bus input { padding: 10px 0 !important; }
