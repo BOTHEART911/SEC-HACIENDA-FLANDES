@@ -8,4 +8,4 @@
 
    Formato: año.mes.día.consecutivo del día.
    ============================================================ */
-var APP_VERSION = "2026.10.21.3";
+var APP_VERSION = "2026.10.22.1";

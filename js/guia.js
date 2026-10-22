@@ -297,6 +297,38 @@
         return [{ k: 'flujo', p: p }];
       }
     },
+    /* 22/10 — SOPORTE (js/soportes.js + kit/soporte.js) */
+    {
+      id: 'soporte', ic: 'salvavidas', t: 'Soporte',
+      si: function () { return true; },
+      r: 'Cuentas lo que pasa y ves en qué va tu solicitud.',
+      b: function () {
+        return [
+          { k: 'flujo', p: [['salvavidas', 'Soporte', 'Inicio o menú de tu foto'], ['comentario', 'Cuenta', 'Qué hacías y qué salió'], ['imagen', 'Capturas', 'Hasta 3: adjuntar, arrastrar o Ctrl+V'], ['estrella', 'Califica', 'Cuando quede resuelto']] },
+          { k: 'tips', p: [
+            ['reloj', '**Ver mis solicitudes**: el estado, la respuesta y quién te atendió.'],
+            ['campana', 'Cuando quede **resuelto** te llega el aviso y al entrar calificas de 1 a 5 estrellas.'],
+            ['recargar', 'Con **1 o 2 estrellas** el caso se vuelve a abrir con tu comentario.']
+          ] }
+        ];
+      }
+    },
+    {
+      id: 'soportes', ic: 'responder', t: 'Soportes · desarrollador',
+      si: function (c) { return c.dev; },
+      r: 'Todos los soportes: responder, estados y descargas.',
+      b: function () {
+        return [
+          { k: 'flujo', p: [['filtro', 'Filtra', 'Estado, fechas y texto'], ['responder', 'Responde', 'En proceso o resuelto'], ['mas', 'Registra', 'Lo atendido por teléfono'], ['descargar', 'Descarga', 'PDF, Excel y gerencial']] },
+          { k: 'tips', p: [
+            ['whatsapp', 'Cada soporte nuevo llega al **grupo de desarrollo** de FLANDES-CORE con el encabezado **APP SEC HACIENDA**.'],
+            ['campana', '**Resuelto** avisa a la persona (push y WhatsApp) y le pide calificar.'],
+            ['imagen', 'Las capturas se ven con el visor de la app: no se publican por enlace.'],
+            ['engranaje', 'Textos en Configuración → **Plantillas** (Soporte ·) y el grupo en **IDs y ajustes** (Soporte).']
+          ] }
+        ];
+      }
+    },
     {
       id: 'config', ic: 'engranaje', t: 'Configuración',
       si: function (c) { return c.admin; },

@@ -151,7 +151,8 @@
     'view-bdp-detalle': 'Detalle del expediente',
     'view-bdp-panel': 'Panel base de datos',
     'view-config': 'Configuración',
-    'view-ica-req': 'Requerimientos ICA'
+    'view-ica-req': 'Requerimientos ICA',
+    'view-soportes': 'Soportes'
   };
   var PUERTA = { 'view-login': 1, 'view-instalar': 1 };
 
@@ -346,13 +347,18 @@
       rol: rolesTexto(p),
       menu: [
         { texto: 'Guía rápida', al: function () { if (window.GUIA) window.GUIA.abrir(); } },
+        /* 22/10 — SOPORTE para todos; SOPORTES (la gestión) solo DEV */
+        { texto: 'Soporte', al: function () { if (window.SOPORTES) window.SOPORTES.contar(); } }
+      ].concat((window.IDN && window.IDN.esDev && window.IDN.esDev()) ? [
+        { texto: 'Soportes (desarrollador)', al: function () { if (window.SOPORTES) window.SOPORTES.abrir(); } }
+      ] : []).concat([
         { texto: 'Cambiar mi PIN', al: function () { abrirPin(); } },
         { texto: 'Cambiar foto de perfil', al: cambiarFoto },
         { texto: 'Avisos al teléfono', al: activarAvisos },
         { texto: 'Instalar la app', al: function () { if (K.piezas.instalar) K.piezas.instalar.abrir(); } },
         { texto: 'Cambiar de usuario', al: cambiarUsuario },
         { texto: 'Cerrar sesión', peligro: true, al: salir }
-      ]
+      ])
     });
     var b = K.piezas.banner.elemento();
     if (b) {

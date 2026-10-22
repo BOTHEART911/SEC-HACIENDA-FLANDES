@@ -750,7 +750,9 @@ function aplicarPermisosVistas_(){
     ['btn-ica-empl',                function(){ return puedeICA_(); }],
     ['btn-ica-rev',                 function(){ return puedeICA_(); }],
     ['btn-ica-has',                 function(){ return puedeICA_(); }],
-    ['btn-ica-bal',                 function(){ return puedeICA_(); }]
+    ['btn-ica-bal',                 function(){ return puedeICA_(); }],
+    /* 22/10 — SOPORTES: solo el desarrollador (js/soportes.js) */
+    ['btn-soportes',                function(){ try{ return !!(window.IDN && window.IDN.esDev()); }catch(_){ return false; } }]
   ];
   for(let i = 0; i < botones.length; i++){
     try{
@@ -779,7 +781,8 @@ const APAGAR_AL_SALIR_ = [
   'btn-estadisticas', 'btn-semaforo', 'btn-panel-dashboard', 'btn-drive-anexos',
   'btn-mis-informes', 'btn-bdp-mis-exp', 'btn-mis-procesos',
   'btn-cat-predial', 'predial-submenu',
-  'btn-ica-req', 'btn-ica-empl', 'btn-ica-rev', 'btn-ica-has', 'btn-ica-bal'
+  'btn-ica-req', 'btn-ica-empl', 'btn-ica-rev', 'btn-ica-has', 'btn-ica-bal',
+  'btn-soportes'
 ];
 
 /* ================== ÉXITO DE LOGIN (compartido doc + PIN) ================== */

@@ -565,6 +565,8 @@
     guardarCuenta_();
     if (res && res.publico) window.HAC_PUBLICO = res.publico;
     try { window.dispatchEvent(new CustomEvent('hac:login', { detail: { uid: perfil.uid } })); } catch (_) {}
+    /* 22/10 — SOPORTE: lo resuelto por calificar viaja con el arranque (js/soportes.js) */
+    if (res && res.soporte) { try { window.dispatchEvent(new CustomEvent('hac:soportePendiente', { detail: res.soporte })); } catch (_) {} }
   };
 
   /* FASE 3 — el documento ya NO abre la sesión de quien tiene PIN: solo
@@ -651,6 +653,8 @@
       /* FASE 2 — la revalidación trae también el alcance y la configuración
          pública (un solo viaje): se aplican aquí. */
       if (p.publico) window.HAC_PUBLICO = p.publico;
+      /* 22/10 — SOPORTE: lo resuelto por calificar viaja con la revalidación */
+      if (p.soporte && antes === (normaliza_(p).roles || []).join(',')) { try { window.dispatchEvent(new CustomEvent('hac:soportePendiente', { detail: p.soporte })); } catch (_) {} }
       try { if (p.alcance && p.alcance.encontrado && window.ALCANCE && window.ALCANCE.aplicar) window.ALCANCE.aplicar(p.alcance); } catch (_) {}
       perfil = normaliza_(p);
       if (currentUser) {

@@ -63,6 +63,9 @@
   <link rel="stylesheet" href="css/ica.css">
   <link rel="stylesheet" href="css/notificar.css">   <!-- 21/10: notificación electrónica -->
   <link rel="stylesheet" href="css/gerencial.css">
+  <link rel="stylesheet" href="kit/soporte.css">     <!-- 22/10: soporte (kit) -->
+  <link rel="stylesheet" href="kit/exportar.css">
+  <link rel="stylesheet" href="css/soportes.css">
   <link rel="stylesheet" href="css/guia.css">         <!-- 18/10: guía gráfica por roles -->
 
   <!-- version.js y marca.js ANTES que el kit: el kit lee APP_VERSION y MARCA al cargarse -->
@@ -235,6 +238,14 @@
             <button type="button" class="acceso" id="btn-gerencial">
               <span class="acceso__img acceso__img--ico"><i class="hi" data-ico="tendencia" data-t="24"></i></span>
               <span class="acceso__txt"><span class="acceso__t">Informe gerencial</span><span class="acceso__p">PDF con indicadores y gráficas de la gestión por fechas</span></span>
+            </button>
+            <button type="button" class="acceso" id="btn-soporte">
+              <span class="acceso__img acceso__img--ico"><i class="hi" data-ico="salvavidas" data-t="24"></i></span>
+              <span class="acceso__txt"><span class="acceso__t">Soporte</span><span class="acceso__p">Cuenta lo que pasa con hasta 3 capturas y mira en qué va</span></span>
+            </button>
+            <button type="button" class="acceso" id="btn-soportes" style="display:none;">
+              <span class="acceso__img acceso__img--ico"><i class="hi" data-ico="responder" data-t="24"></i></span>
+              <span class="acceso__txt"><span class="acceso__t">Soportes</span><span class="acceso__p">Todos los casos: responder, estados, calificación y descargas</span></span>
             </button>
             <button type="button" class="acceso" id="btn-guia">
               <span class="acceso__img acceso__img--ico"><i class="hi" data-ico="libro" data-t="24"></i></span>
@@ -1539,7 +1550,11 @@
 <script src="js/mi-trabajo.js"></script>
 <script src="js/ica-municipios.js" defer></script>  <!-- 04/10: catálogo DIVIPOLA (estático) -->
 <script src="js/ica.js"></script>          <!-- 04/10: Industria y Comercio · Requerimientos (backend ICA) -->
-<script src="js/gerencial.js"></script>   <!-- 11/10: informe gerencial (kit/gerencial.js se baja en reposo) -->
+<script src="js/gerencial.js"></script>
+<script src="kit/imagenes.js"></script>     <!-- 22/10: capturas a JPEG antes de subir -->
+<script src="kit/exportar.js"></script>     <!-- 22/10: PDF, Excel e informe gerencial de soportes -->
+<script src="kit/soporte.js"></script>      <!-- 22/10: soporte con 3 capturas, mis solicitudes y estrellas -->
+<script src="js/soportes.js"></script>      <!-- 22/10: puente al backend HACIENDA + vista SOPORTES (DEV) -->   <!-- 11/10: informe gerencial (kit/gerencial.js se baja en reposo) -->
 <script src="js/guia.js"></script>        <!-- 18/10: guía gráfica armada por roles y permisos -->
 <script src="js/hacienda.js"></script>    <!-- FASE 2: banner, tema, inicio, PIN, iconos (EL ÚLTIMO) -->
 </body>

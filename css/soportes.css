@@ -1,0 +1,94 @@
+/* ============================================================
+   SEC-HACIENDA-FLANDES · SOPORTES (22/10/2026) — vista del DEV
+   Las capas usan kit/soporte.css (kit-capa, kit-sop, kit-est). Aquí solo
+   lo propio de la vista; todo con las variables del kit (claro/oscuro).
+   ============================================================ */
+.sop { display: flex; flex-direction: column; gap: 14px; }
+.sop-herr { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.sop-cifras { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.sop-cifras__r { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.sop-cifra { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 6px; border: 1px solid var(--k-linea);
+  border-radius: var(--k-r-m, 12px); background: var(--k-papel); color: var(--k-tinta); cursor: pointer; font: inherit; }
+.sop-cifra b { font: 700 1.35rem/1 var(--k-fuente-titulo, inherit); color: var(--k-marca); }
+.sop-cifra span { font-size: .78rem; color: var(--k-apagado); text-align: center; }
+.sop-cifra:hover { border-color: var(--k-marca); }
+.sop-cifra--malo b { color: var(--k-malo); }
+.sop-prom { margin: 0; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; color: var(--k-apagado); font-size: .88rem; }
+.sop-prom b { color: var(--k-tinta); }
+
+.sop-filtros { display: flex; flex-direction: column; gap: 10px; }
+.sop-filtros .kit-pastilla .sop-n { font-weight: 700; opacity: .75; }
+.sop-fechas { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+.sop-fechas label { display: flex; flex-direction: column; gap: 4px; font-size: .78rem; color: var(--k-apagado); }
+.sop-fechas input { padding: 8px 10px; border: 1px solid var(--k-linea); border-radius: var(--k-r-s, 8px); background: var(--k-papel); color: var(--k-tinta); font: inherit; }
+
+.sop-lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr)); gap: 12px; }
+.sop-c { padding: 14px; display: flex; flex-direction: column; gap: 8px; border-left: 4px solid var(--k-linea); min-width: 0; }
+.sop-c--aviso { border-left-color: var(--k-aviso); }
+.sop-c--info { border-left-color: var(--k-marca); }
+.sop-c--ok { border-left-color: var(--k-ok); }
+.sop-c--malo { border-left-color: var(--k-malo); }
+.sop-c__cab { display: flex; align-items: center; gap: 10px; }
+.sop-c__cara { flex: none; }
+.sop-c__t { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.sop-c__t b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sop-c__t small { color: var(--k-apagado); font-size: .78rem; }
+.sop-est { flex: none; font: 700 .68rem/1 var(--k-fuente, inherit); letter-spacing: .4px; padding: 5px 8px; border-radius: 999px; text-transform: uppercase; }
+.sop-est--aviso { background: var(--k-aviso-fondo); color: var(--k-aviso); }
+.sop-est--info { background: var(--k-fondo); color: var(--k-marca); }
+.sop-est--ok { background: var(--k-ok-fondo); color: var(--k-ok); }
+.sop-est--malo { background: var(--k-malo-fondo); color: var(--k-malo); }
+.sop-est--nada { background: var(--k-fondo); color: var(--k-apagado); }
+.sop-c__meta { margin: 0; font-size: .78rem; color: var(--k-apagado); display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.sop-re, .sop-dias { font-style: normal; font-weight: 700; color: var(--k-malo); display: inline-flex; align-items: center; gap: 3px; }
+.sop-dias { color: var(--k-aviso); }
+.sop-c__sol { margin: 0; white-space: pre-wrap; word-break: break-word; }
+.sop-fotos, .sop-c__acc { display: flex; flex-wrap: wrap; gap: 6px; }
+.sop-mini { padding: 6px 10px; font-size: .8rem; }
+.sop-resp { background: var(--k-fondo); border-radius: var(--k-r-s, 8px); padding: 10px; }
+.sop-resp p { margin: 0; }
+.sop-resp__t { white-space: pre-wrap; word-break: break-word; }
+.sop-resp small { color: var(--k-apagado); font-size: .76rem; }
+.sop-et { margin: 0 0 4px; font: 700 .7rem/1 var(--k-fuente, inherit); letter-spacing: .6px; text-transform: uppercase; color: var(--k-apagado); }
+.sop-cal { margin: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: .86rem; }
+.sop-det summary { cursor: pointer; font-size: .8rem; color: var(--k-apagado); display: inline-flex; align-items: center; gap: 4px; }
+.sop-traza p { margin: 4px 0 0; font-size: .78rem; color: var(--k-apagado); }
+.sop-vacio { grid-column: 1 / -1; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 36px 16px; text-align: center; color: var(--k-apagado); }
+.sop-mas { display: flex; justify-content: center; }
+
+/* esqueletos */
+.sop-esq { min-height: 110px; }
+.sop-esq span, .sop-esq--cifras span { display: block; height: 12px; margin: 8px 0; border-radius: 6px;
+  background: linear-gradient(90deg, var(--k-fondo), var(--k-linea), var(--k-fondo)); background-size: 200% 100%; animation: sop-brillo 1.2s infinite; }
+.sop-esq span:nth-child(2) { width: 70%; } .sop-esq span:nth-child(3) { width: 45%; }
+.sop-esq--cifras span { height: 54px; }
+@keyframes sop-brillo { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .sop-esq span, .sop-esq--cifras span { animation: none; } }
+
+/* formularios de las capas */
+.sop-hoja { max-width: 640px; }
+.sop-form { display: flex; flex-direction: column; gap: 12px; }
+.sop-form__sol { background: var(--k-fondo); border-radius: var(--k-r-s, 8px); padding: 10px; }
+.sop-form__txt { margin: 0; white-space: pre-wrap; word-break: break-word; }
+.sop-estados { display: flex; flex-wrap: wrap; gap: 8px; }
+.sop-check { display: flex; gap: 8px; align-items: center; font-size: .88rem; }
+.sop-nota { margin: 0; font-size: .82rem; color: var(--k-apagado); }
+.sop-nota--malo { color: var(--k-malo); }
+.sop-quien { display: flex; flex-direction: column; gap: 6px; }
+.sop-res { display: flex; flex-direction: column; gap: 6px; }
+.sop-per { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 8px 10px; border: 1px solid var(--k-linea); border-radius: var(--k-r-s, 8px);
+  background: var(--k-papel); color: var(--k-tinta); text-align: left; cursor: pointer; font: inherit; }
+.sop-per small { color: var(--k-apagado); font-size: .76rem; }
+.sop-per:hover { border-color: var(--k-marca); }
+.sop-per--on { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px; cursor: default; border-color: var(--k-marca); }
+
+/* modo oscuro: lo que no sale solo de las variables */
+:root[data-tema="oscuro"] .sop-cifra b { color: var(--k-marca-clara); }
+:root[data-tema="oscuro"] .sop-est--info { color: var(--k-marca-clara); }
+:root[data-tema="oscuro"] .sop-c--info { border-left-color: var(--k-marca-clara); }
+
+@media (max-width: 640px) {
+  .sop-cifras__r { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .sop-herr .kit-btn { flex: 1 1 calc(50% - 8px); justify-content: center; }
+}

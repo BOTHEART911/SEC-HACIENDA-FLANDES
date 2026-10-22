@@ -606,6 +606,15 @@
         { id: 'naturaleza', et: 'Naturales y jurídicas',     ic: '🏢' },
         { id: 'envios',     et: 'Envíos por mes',            ic: '📤' }
       ]
+    },
+    /* 22/10 — SOPORTES (solo DEV, js/soportes.js) */
+    'view-soportes': {
+      titulo: 'Consultas de soportes', sub: 'Soporte de la app',
+      botones: [
+        { id: 'resumen',      et: 'Resumen',          ic: '👀' },
+        { id: 'abiertos',     et: 'Por atender',      ic: '🚨' },
+        { id: 'calificacion', et: 'Calificación',     ic: '⭐' }
+      ]
     }
   };
 
@@ -628,6 +637,7 @@
       case 'view-bdp-panel':    return repPred(id, bdpp(), 'panel');
       case 'view-drive-anexos': return repDrive(id, drive());
       case 'view-ica-req':      return (window.ICA && window.ICA.insight) ? window.ICA.insight(id) : rep('', 'El módulo aún no cargó.', '');
+      case 'view-soportes':     return (window.SOPORTES && window.SOPORTES.insight) ? window.SOPORTES.insight(id) : rep('', 'El módulo aún no cargó.', '');
     }
     return rep('', 'No conozco esa consulta.', '');
   }

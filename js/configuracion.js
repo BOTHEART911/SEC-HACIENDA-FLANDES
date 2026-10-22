@@ -587,6 +587,8 @@
       { t: 'Firebase: chat y EN VIVO', ic: 'nube', pre: ['chat.', 'envivo.'] },
       { t: 'Voz de las consultas', ic: 'altavoz', pre: ['voz.'] },
       { t: 'Industria y Comercio (backend ICA)', ic: 'base-datos', pre: ['ica.'] },
+      /* 22/10 — SOPORTE: el grupo de desarrollo, la carpeta de capturas y las estrellas */
+      { t: 'Soporte', ic: 'salvavidas', pre: ['soporte.'] },
       { t: 'Ingreso, enlaces y topes', ic: 'candado', pre: ['pin.', 'sesion.', 'app.', 'visor.'] }
     ];
     function grupoDe(clave) {
