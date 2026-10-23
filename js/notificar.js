@@ -593,9 +593,26 @@
   var EJEMPLO = { numFactura: anio() + '117639', fichaCatastral: '010000930011000', nombre: 'NOMBRE DEL CONTRIBUYENTE', documento: '12345678', exp: 'A-0001',
     dia: String(hoyBogota().getDate()), mes: MESES[hoyBogota().getMonth()], ano: anio() };
   /* 22/10 — {{contribuyentes}} en su propia línea: el bloque que arma ICA (con un propietario de ejemplo) */
-  var BLOQUE_EJ = ['Señor(a)', 'Contribuyente:', '**NOMBRE DEL CONTRIBUYENTE** - NIT/CC No. 12345678',
+  var BLOQUE_EJ = ['Señor(a)', 'contribuyente:', '**NOMBRE DEL CONTRIBUYENTE** - NIT/CC No. 12345678',
     'Ficha Catastral No. 010000930011000', 'Expediente Físico: A-0001', 'Municipio: Flandes, Tolima.'];
 
+  /** 23/10 — misma regla que ICA: {{contribuyentes}} o el bloque viejo (Señor(a) … {{nombre}} … Municipio) → el bloque nuevo. */
+  function bloqueEj(tpl) {
+    var L = String(tpl || '').replace(/\r\n?/g, '\n').split('\n'), out = [];
+    for (var i = 0; i < L.length; i++) {
+      if (/^\s*\{\{\s*contribuyentes\s*\}\}\s*$/.test(L[i])) { out.push.apply(out, BLOQUE_EJ); continue; }
+      if (/^\s*Señor\s*\(\s*a\s*\)\s*:?\s*$/i.test(L[i])) {
+        var fin = -1, conNombre = false;
+        for (var k = i + 1; k < Math.min(L.length, i + 9); k++) {
+          if (/\{\{\s*nombre\s*\}\}/.test(L[k])) conNombre = true;
+          if (/^\s*Municipio\s*:/i.test(L[k])) { fin = k; break; }
+        }
+        if (conNombre && fin !== -1) { out.push.apply(out, BLOQUE_EJ); i = fin; continue; }
+      }
+      out.push(L[i]);
+    }
+    return out;
+  }
   /** Vista previa: misma regla que el servidor (**negrita**, • lista, enlaces, firmas). */
   function previa(tpl) {
     var out = [], lista = null, par = [];
@@ -605,9 +622,7 @@
       var h = esc(t).replace(/\{\{\s*(\w+)\s*\}\}/g, function (m, k) { return EJEMPLO[k] != null ? '<mark>' + esc(EJEMPLO[k]) + '</mark>' : '<span class="ntf-cfg__malo">' + m + '</span>'; });
       return h.replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>').replace(/(https?:\/\/[^\s<]+)/g, '<a>$1</a>');
     };
-    String(tpl || '').replace(/\r\n?/g, '\n').split('\n').map(function (l) {
-      return /^\s*\{\{\s*contribuyentes\s*\}\}\s*$/.test(l) ? BLOQUE_EJ.join('\n') : l;
-    }).join('\n').split('\n').forEach(function (l) {
+    bloqueEj(tpl).forEach(function (l) {
       var t = l.trim(), fm = /^\{\{\s*(firmaSecretaria|firmaVistoBueno)\s*\}\}$/.exec(t);
       if (fm) { cp(); cl(); out.push('<div class="ntf-cfg__firma">' + ico('firma', 16) + (fm[1] === 'firmaSecretaria' ? ' Firma de la Secretaria' : ' Firma de visto bueno') + '</div>'); return; }
       if (!t) { cp(); cl(); return; }

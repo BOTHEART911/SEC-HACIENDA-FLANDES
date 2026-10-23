@@ -151,18 +151,22 @@
 .ntf-inf__btns .kit-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
 @media (max-width: 520px) { .ntf-inf__btns { grid-template-columns: 1fr; } .ntf-inf__fechas { grid-template-columns: 1fr; } }
 
-/* varios propietarios (js/propietarios.js) */
+/* varios propietarios (js/propietarios.js) — 23/10: a TODO el ancho, campos alineados con los de arriba */
+.fa-cont > .bdp-props-wrap, .bdp-props-wrap { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
 .bdp-props { display: flex; flex-direction: column; gap: 10px; }
 .bdp-props:empty { display: none; }
-.bdp-prop { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 10px 12px; border-radius: 14px;
+.bdp-prop { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 18px; padding: 10px 12px 12px; border-radius: 14px;
   border: 1px solid var(--k-linea); background: var(--k-papel-2); }
 .bdp-prop__tit { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.bdp-prop__tit span { display: inline-flex; align-items: center; gap: 6px; font-size: .84rem; color: var(--k-tinta); }
+.bdp-prop__tit span { display: inline-flex; align-items: center; gap: 6px; font-size: .84rem; color: var(--k-tinta); flex-wrap: wrap; }
+.bdp-prop__tit b { white-space: nowrap; }
 .bdp-prop__tit small { color: var(--k-apagado); font-size: .74rem; font-weight: 400; }
-.bdp-prop input { margin: 0 !important; min-width: 0; }
+.hf-form .bdp-prop label.bdp-prop__c { display: flex; flex-direction: column; gap: 4px; margin: 0 !important; min-width: 0; }
+.bdp-prop__c > span { font-size: .78rem; font-weight: 600; color: var(--k-tinta-2); }
+.bdp-prop input { margin: 0 !important; min-width: 0; width: 100%; }
 .bdp-prop input.bdp-prop--mal { border-color: var(--k-malo) !important; }
-.bdp-prop-mas { justify-self: start; align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; margin: 8px 0 4px; }
-@media (max-width: 640px) { .bdp-prop { grid-template-columns: 1fr; } }
+.bdp-prop-mas { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; }
+@media (max-width: 819px) { .bdp-prop { grid-template-columns: 1fr; } }
 /* la tarjeta: un propietario por línea */
 .bdp-nombres .bdp-copy, .bdp-id-nit .bdp-copy { white-space: pre-line; }
 .bdp-props-n { display: inline-flex; align-items: center; gap: 3px; padding: 1px 7px; border-radius: 999px; font-size: .7rem; vertical-align: 2px;

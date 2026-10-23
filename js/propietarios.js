@@ -58,12 +58,14 @@
     if (!z || filas().length + 1 >= MAX) return null;
     var f = document.createElement('div');
     f.className = 'bdp-prop';
+    /* 23/10 — la fila va a TODO el ancho del formulario, con los 3 campos
+       alineados bajo Nombres / NIT o cédula / Correo del 1.er propietario */
     f.innerHTML =
       '<div class="bdp-prop__tit"><span>' + ico('persona', 16) + ' <b></b> <small>opcional · con solo el correo va en copia</small></span>' +
         '<button type="button" class="bdp-icon-btn danger-icon" data-quitar title="Quitar este propietario" aria-label="Quitar este propietario">' + ico('basura', 18) + '</button></div>' +
-      '<input type="text" data-p="nom" placeholder="Nombres (se guarda en mayúscula)" autocomplete="off">' +
-      '<input type="text" data-p="doc" inputmode="numeric" placeholder="NIT o cédula (sin puntos)" autocomplete="off">' +
-      '<input type="email" data-p="cor" placeholder="Correo electrónico" autocomplete="off">';
+      '<label class="bdp-prop__c"><span>Nombres</span><input type="text" data-p="nom" placeholder="Se guarda en mayúscula" autocomplete="off"></label>' +
+      '<label class="bdp-prop__c"><span>NIT o cédula</span><input type="text" data-p="doc" inputmode="numeric" placeholder="Sin puntos ni espacios" autocomplete="off"></label>' +
+      '<label class="bdp-prop__c"><span>Correo electrónico</span><input type="email" data-p="cor" placeholder="Opcional" autocomplete="off"></label>';
     z.appendChild(f);
     if (datos) {
       f.querySelector('[data-p=nom]').value = datos.nombre || '';
@@ -91,6 +93,9 @@
     if ($('bdp-props-extra')) return;
     var cor = $('bdp-correo');
     if (!cor) return;
+    var w = document.createElement('div');
+    w.id = 'bdp-props-wrap';
+    w.className = 'bdp-props-wrap fa-full';
     var z = document.createElement('div');
     z.id = 'bdp-props-extra';
     z.className = 'bdp-props';
@@ -99,8 +104,9 @@
     b.id = 'btn-bdp-prop-mas';
     b.className = 'kit-btn bdp-prop-mas';
     b.innerHTML = ico('mas', 18) + ' <span>Agregar otro propietario</span>';
-    cor.insertAdjacentElement('afterend', b);
-    cor.insertAdjacentElement('afterend', z);
+    w.appendChild(z); w.appendChild(b);
+    cor.insertAdjacentElement('afterend', w);
+    colocar();
     b.addEventListener('click', function () {
       var f = fila();
       if (f) setTimeout(function () { try { f.querySelector('[data-p=nom]').focus(); } catch (_) {} }, 30);
@@ -117,13 +123,27 @@
     renumerar();
   }
 
+  /**
+   * 23/10 — form-ancho.js reparte el formulario en columnas (grupos .fa-g):
+   * la zona no puede quedar dentro del grupo del Correo (salía debajo, en la
+   * 3.ª columna). Se saca justo después de ese grupo, a todo el ancho.
+   */
+  function colocar() {
+    var w = $('bdp-props-wrap'), cor = $('bdp-correo');
+    if (!w || !cor) return;
+    var g = cor.closest('.fa-g');
+    if (g && w.parentNode === g) g.insertAdjacentElement('afterend', w);
+    else if (g && g.nextElementSibling !== w) g.insertAdjacentElement('afterend', w);
+  }
+
   /** Vacía las filas extra (Agregar expediente). */
-  function limpiar() { montar(); filas().forEach(function (f) { f.remove(); }); renumerar(); }
+  function limpiar() { montar(); colocar(); filas().forEach(function (f) { f.remove(); }); renumerar(); }
 
   /** Editar: el 1.º a los campos de siempre, los demás a filas. */
   function cargar(row) {
     montar();
     limpiar();
+    colocar();
     var a = lineas(row && row.nombres), b = lineas(row && row.nit_cedula), c = lineas(row && row.correo_electronico);
     var n = Math.max(a.length, b.length, c.length);
     var ps = [];
