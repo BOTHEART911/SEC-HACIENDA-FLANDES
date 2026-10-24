@@ -1,0 +1,67 @@
+/* SEC-HACIENDA-FLANDES · ENTRENAMIENTO DEL ASISTENTE (solo DEV) · 24/10/2026
+   Pareja de js/ayuda-dev.js. Mismo lenguaje de SOPORTES: tarjetas, pastillas
+   y la barra de búsqueda; a todo el ancho en PC y en una columna en el móvil. */
+
+.ayd { display: flex; flex-direction: column; gap: 12px; }
+.ayd-intro { margin: 0; color: var(--k-texto-2, #5b6b63); font-size: .92rem; line-height: 1.45; }
+
+.ayd-res { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; padding: 12px 14px; font-size: .9rem; }
+.ayd-res span { display: inline-flex; align-items: center; gap: 4px; }
+.ayd-res b { font-size: 1.08rem; }
+.ayd-res--malo b { color: var(--k-malo, #c0392b); }
+.ayd-hora { margin-left: auto; color: var(--k-texto-2, #5b6b63); font-size: .82rem; }
+.ayd-ref { min-height: 32px; padding: 4px 8px; }
+
+.ayd-pest { display: flex; flex-wrap: wrap; gap: 8px; }
+.ayd-pest .ayd-n { font-weight: 700; opacity: .8; }
+.ayd-pest .ayd-n:empty { display: none; }
+
+.ayd-barra { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.ayd-barra .hf-buscar { flex: 1 1 260px; }
+
+.ayd-lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr)); gap: 12px; }
+
+.ayd-tema { display: flex; flex-direction: column; gap: 6px; text-align: left; padding: 14px; cursor: pointer; width: 100%; font: inherit; color: inherit; }
+.ayd-tema--off { opacity: .55; }
+.ayd-tema__t { font-weight: 700; font-size: 1rem; }
+.ayd-tema__m { display: flex; flex-wrap: wrap; gap: 6px; }
+.ayd-tema__m i { font-style: normal; font-size: .74rem; padding: 2px 8px; border-radius: 999px; background: var(--k-fondo-2, rgba(6, 64, 43, .08)); color: var(--k-texto-2, #42534b); overflow-wrap: anywhere; }
+.ayd-tema__m .ayd-chip--off { background: rgba(192, 57, 43, .14); color: var(--k-malo, #c0392b); font-weight: 700; }
+.ayd-tema__r { font-size: .86rem; color: var(--k-texto-2, #5b6b63); line-height: 1.4; }
+
+.ayd-form small.ayd-ayuda { display: block; margin-top: 4px; font-size: .78rem; color: var(--k-texto-2, #5b6b63); line-height: 1.35; }
+.ayd-form textarea, .ayd-form input { width: 100%; box-sizing: border-box; }
+.ayd-hoja { width: min(720px, calc(100vw - 24px)); }
+
+.ayd-preg { display: flex; flex-direction: column; gap: 8px; padding: 14px; }
+.ayd-preg__q { margin: 0; font-weight: 700; font-size: 1rem; overflow-wrap: anywhere; }
+.ayd-preg__m { margin: 0; font-size: .8rem; color: var(--k-texto-2, #5b6b63); }
+.ayd-preg__sug { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.ayd-preg__b { display: flex; flex-wrap: wrap; gap: 6px; }
+.ayd-et { font-size: .8rem; color: var(--k-texto-2, #5b6b63); width: 100%; }
+.ayd-sel { min-height: 40px; border-radius: 10px; padding: 6px 10px; border: 1px solid var(--k-borde, rgba(0, 0, 0, .15)); background: var(--k-fondo, #fff); color: inherit; font: inherit; }
+
+.ayd-probar { display: flex; flex-direction: column; gap: 12px; padding: 16px; }
+.ayd-probar .ayd-q { width: 100%; box-sizing: border-box; min-height: 44px; }
+.ayd-probar__res p { margin: 6px 0; }
+.ayd-probar__resp { border-left: 4px solid var(--k-marca, #06402B); padding: 8px 12px; border-radius: 6px; background: var(--k-fondo-2, rgba(6, 64, 43, .06)); }
+.ayd-probar__tt i, .ayd-probar__cand i { font-style: normal; font-size: .78rem; color: var(--k-texto-2, #5b6b63); }
+.ayd-probar__acc { display: flex; align-items: center; gap: 6px; font-size: .85rem; }
+.ayd-probar__cand { margin: 6px 0 0; padding-left: 20px; font-size: .86rem; }
+.ayd-probar__frec { display: flex; flex-wrap: wrap; gap: 6px; }
+.ayd-ok { color: var(--k-ok, #1e8e5a); }
+.ayd-duda { color: var(--k-aviso, #b7791f); }
+.ayd-malo { color: var(--k-malo, #c0392b); }
+.ayd-nada { color: var(--k-texto-2, #5b6b63); }
+
+.ayd-vacio { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 24px; text-align: center; }
+
+.ayd-esq { display: block; height: 14px; border-radius: 6px; background: linear-gradient(90deg, rgba(127, 127, 127, .12), rgba(127, 127, 127, .24), rgba(127, 127, 127, .12)); background-size: 200% 100%; animation: ayd-brillo 1.2s linear infinite; width: 120px; }
+.ayd-esq--c { width: 70%; margin-top: 10px; }
+.ayd-esq-t { padding: 16px; min-height: 90px; }
+@keyframes ayd-brillo { to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .ayd-esq { animation: none; } }
+
+@media (max-width: 560px) {
+  .ayd-hora { margin-left: 0; width: 100%; }
+}

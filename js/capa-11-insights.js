@@ -2163,6 +2163,9 @@
      BOTÓN FLOTANTE
      ============================================================ */
   function montar() {
+    /* 24/10 — un solo robot: con el asistente de ayuda (js/ayuda-app.js) este
+       botón no sale; sus consultas se abren desde el asistente. */
+    if (window.HAC_AYUDA && window.HAC_AYUDA.activo) return quitar();
     var v = vistaActiva();
     if (!PANELES[v] || !haySesion()) return quitar();
     if (fab) {

@@ -152,7 +152,8 @@
     'view-bdp-panel': 'Panel base de datos',
     'view-config': 'Configuración',
     'view-ica-req': 'Requerimientos ICA',
-    'view-soportes': 'Soportes'
+    'view-soportes': 'Soportes',
+    'view-asistente': 'Entrenamiento del asistente'
   };
   var PUERTA = { 'view-login': 1, 'view-instalar': 1 };
 

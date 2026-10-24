@@ -74,6 +74,8 @@
     /* SEC-HACIENDA-FLANDES: el banner (atrás, tema, menú), la portada, el
        tema del login y las capas del kit son salidas: nunca se bloquean. */
     '.kit-banner', '.kit-bien', '.kit-capa', '.kit-conex', '.hf-tema',
+    /* 24/10: el robot del asistente de ayuda y su llamada de atención */
+    '.kit-ins__fab', '.kit-as-llama',
     /* FASE 2: los Cancelar/Cerrar de los modales nuevos y el cambio de
        cuenta del ingreso */
     '#pin-cancelar', '#btn-rebote-regresar', '#btn-bdp-exp-salir',

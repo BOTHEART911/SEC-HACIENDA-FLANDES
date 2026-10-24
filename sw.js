@@ -91,6 +91,15 @@ var APP_SHELL = [
   './kit/exportar.js',
   './kit/exportar.css',
   './js/soportes.js',
+  './kit/insights.js',
+  './kit/insights.css',
+  './kit/gemini.js',
+  './kit/asistente.js',
+  './kit/asistente.css',
+  './js/ayuda-base.js',
+  './js/ayuda-app.js',
+  './js/ayuda-dev.js',
+  './css/ayuda-dev.css',
   './css/soportes.css',
   './js/ica-municipios.js',
   './kit/sesion.css',
@@ -152,6 +161,12 @@ function versionDeLaRed_() {
   });
 }
 
+/** La misma dirección con ?v=<versión> (la caché se guarda con la dirección limpia). */
+function conV_(u, v) {
+  if (!v) return u;
+  return u + (String(u).indexOf('?') === -1 ? '?' : '&') + 'v=' + encodeURIComponent(v);
+}
+
 function deMiCache_(req) {
   return caches.open(CACHE_NAME).then(function (c) { return c.match(req, { ignoreSearch: false }); });
 }
@@ -170,7 +185,10 @@ self.addEventListener('install', (event) => {
        del navegador, o la caché nueva nacería con archivos viejos. */
     caches.open(CACHE_NAME).then(cache =>
       Promise.all(APP_SHELL.map(u =>
-        fetch(new Request(u, { cache: 'reload' }))
+        /* 24/10: con ?v=<versión>: la red de GitHub Pages puede entregar un
+           archivo viejo junto a un version.js nuevo (pasó en Contratista);
+           una dirección nueva por versión no sale de ninguna caché intermedia. */
+        fetch(new Request(conV_(u, APP_VERSION), { cache: 'reload' }))
           .then(res => { if (res && res.ok) return cache.put(u, res); })
           .catch(() => {})
       ))
@@ -229,7 +247,7 @@ self.addEventListener('fetch', (event) => {
   if (req.mode === 'navigate') {
     event.respondWith(versionDeLaRed_().then(function (red) {
       const fresca = !!red && red !== String(APP_VERSION);
-      if (event.resultingClientId) FRESCOS[event.resultingClientId] = fresca;
+      if (event.resultingClientId) FRESCOS[event.resultingClientId] = fresca ? red : false;
       return fetch(req, { cache: fresca ? 'reload' : 'no-cache' })
         .then(function (res) { if (!fresca) guardar_(req, res); return res; })
         .catch(function () { return deMiCache_(req).then(h => h || deMiCache_('./index.html')); });
@@ -241,10 +259,10 @@ self.addEventListener('fetch', (event) => {
   const isAppShell = /\.(html|js|css|webmanifest)$/.test(url.pathname) || url.pathname.endsWith('/');
   if (isAppShell) {
     const fresca = FRESCOS[event.clientId];
-    if (fresca === true) {
+    if (fresca) {
       /* La página abrió con una versión más nueva que este service worker:
-         todo de la red, sin pasar por ninguna caché. */
-      event.respondWith(fetch(req, { cache: 'reload' }).catch(() => deMiCache_(req)));
+         todo de la red, sin pasar por ninguna caché (ni la de Pages: ?v=). */
+      event.respondWith(fetch(new Request(conV_(req.url, fresca), { cache: 'reload' })).catch(() => deMiCache_(req)));
       return;
     }
     if (fresca === false) {

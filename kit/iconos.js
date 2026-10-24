@@ -213,8 +213,16 @@
     'camara':
       '<path d="M3.5 8.5A2 2 0 0 1 5.5 6.5h2.2l1.5-2.2h5.6l1.5 2.2h2.2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/>' +
       '<circle cx="12" cy="13" r="3.6"/>',
+    /* 22/10 · reemplazo de supervisor: uno sale y otro entra */
+    'intercambiar':
+      '<path d="M4 8h14"/><path d="M14.5 4.5 18 8l-3.5 3.5"/><path d="M20 16H6"/><path d="M9.5 12.5 6 16l3.5 3.5"/>',
     'girar':
       '<path d="M20 11.5A8 8 0 1 1 17.6 6"/><path d="M20 3.5v5h-5"/>',
+    /* 28/09 · ver en grande y ajustar la foto de perfil */
+    'lupa':
+      '<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.4 15.4L20.5 20.5"/><path d="M10.5 7.8v5.4M7.8 10.5h5.4"/>',
+    'recortar':
+      '<path d="M6.5 2.5v14a1 1 0 0 0 1 1h14"/><path d="M2.5 6.5h14a1 1 0 0 1 1 1v14"/>',
     'persona':
       '<circle cx="12" cy="8" r="3.8"/><path d="M4.5 20.2c.9-3.7 3.9-5.9 7.5-5.9s6.6 2.2 7.5 5.9"/>',
     'info':
@@ -253,7 +261,22 @@
     /* velocimetro: cuanto se demora cada area en revisar */
     'velocimetro':
       '<path d="M4.2 17.5a9 9 0 1 1 15.6 0"/><path d="M12 13.6l4.2-4.6"/><circle cx="12" cy="14.4" r="1.4"/>' +
-      '<path d="M6.6 11.2l1.2.7M12 6.5v1.4M17.4 11.2l-1.2.7"/>'
+      '<path d="M6.6 11.2l1.2.7M12 6.5v1.4M17.4 11.2l-1.2.7"/>',
+    /* 15/10 · AGENDA DE REVISIÓN: calendario con días marcados */
+    'calendario':
+      '<rect x="3.4" y="4.8" width="17.2" height="15.8" rx="2.4"/><path d="M3.4 9.6h17.2M8 3v3.4M16 3v3.4"/>' +
+      '<path d="M7.6 13.4h1.6M11.2 13.4h1.6M14.8 13.4h1.6M7.6 16.8h1.6M11.2 16.8h1.6"/>',
+    /* 24/10 · asistente de ayuda: dictar, callar la voz y calificar */
+    'microfono':
+      '<rect x="9" y="3.2" width="6" height="11" rx="3"/><path d="M5.6 11.2a6.4 6.4 0 0 0 12.8 0"/><path d="M12 17.6v3.2M8.8 20.8h6.4"/>',
+    'silencio':
+      '<path d="M4.8 9.4h3.2l4.2-3.2v11.6l-4.2-3.2H4.8z"/><path d="M16 9.6l4.8 4.8M20.8 9.6L16 14.4"/>',
+    'pulgar-arriba':
+      '<path d="M7.4 10.6v9.2H4.6a1 1 0 0 1-1-1v-7.2a1 1 0 0 1 1-1z"/>' +
+      '<path d="M7.4 10.6l3.6-6.8a2.1 2.1 0 0 1 3 1.9l-.5 3.6h5.1a2 2 0 0 1 2 2.4l-1.3 6.4a2 2 0 0 1-2 1.7H7.4"/>',
+    'pulgar-abajo':
+      '<path d="M7.4 13.4V4.2H4.6a1 1 0 0 0-1 1v7.2a1 1 0 0 0 1 1z"/>' +
+      '<path d="M7.4 13.4l3.6 6.8a2.1 2.1 0 0 0 3-1.9l-.5-3.6h5.1a2 2 0 0 0 2-2.4l-1.3-6.4a2 2 0 0 0-2-1.7H7.4"/>'
   };
 
   function svg(nombre, tam) {

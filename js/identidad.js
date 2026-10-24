@@ -505,9 +505,12 @@
     pintarPaso_();
   }
 
+  /* 24/10 — el sello de la base del asistente que ya tiene este equipo */
+  function selloAyuda_() { try { return (window.AYUDA && window.AYUDA.selloGuardado()) || ''; } catch (_) { return ''; } }
+
   async function entrarConPin_() {
     try {
-      var data = await apiGet('loginpin', { uid: uidElegido, pin: pinBuf });
+      var data = await apiGet('loginpin', { uid: uidElegido, pin: pinBuf, sa: selloAyuda_() });
       pinBuf = ''; pintarPuntos_();
 
       if (data && data.encontrado) { procesarLoginExitoso_(data, data.documento || ''); return; }
@@ -567,6 +570,8 @@
     try { window.dispatchEvent(new CustomEvent('hac:login', { detail: { uid: perfil.uid } })); } catch (_) {}
     /* 22/10 — SOPORTE: lo resuelto por calificar viaja con el arranque (js/soportes.js) */
     if (res && res.soporte) { try { window.dispatchEvent(new CustomEvent('hac:soportePendiente', { detail: res.soporte })); } catch (_) {} }
+    /* 24/10 — ASISTENTE DE AYUDA: su base viaja con el arranque solo si cambió el sello (js/ayuda-app.js) */
+    if (res && res.asistente) { try { window.dispatchEvent(new CustomEvent('hac:asistente', { detail: res.asistente })); } catch (_) {} }
   };
 
   /* FASE 3 — el documento ya NO abre la sesión de quien tiene PIN: solo
@@ -639,7 +644,7 @@
   async function revalidar_() {
     if (!perfil || !perfil.uid) return;
     try {
-      var p = await apiGet('perfil', { uid: perfil.uid });
+      var p = await apiGet('perfil', { uid: perfil.uid, sa: selloAyuda_() });
       if (!p || !p.encontrado) {
         await Swal.fire({
           icon: 'warning',
@@ -653,6 +658,7 @@
       /* FASE 2 — la revalidación trae también el alcance y la configuración
          pública (un solo viaje): se aplican aquí. */
       if (p.publico) window.HAC_PUBLICO = p.publico;
+      if (p.asistente) { try { window.dispatchEvent(new CustomEvent('hac:asistente', { detail: p.asistente })); } catch (_) {} }
       /* 22/10 — SOPORTE: lo resuelto por calificar viaja con la revalidación */
       if (p.soporte && antes === (normaliza_(p).roles || []).join(',')) { try { window.dispatchEvent(new CustomEvent('hac:soportePendiente', { detail: p.soporte })); } catch (_) {} }
       try { if (p.alcance && p.alcance.encontrado && window.ALCANCE && window.ALCANCE.aplicar) window.ALCANCE.aplicar(p.alcance); } catch (_) {}

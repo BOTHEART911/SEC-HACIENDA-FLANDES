@@ -752,7 +752,9 @@ function aplicarPermisosVistas_(){
     ['btn-ica-has',                 function(){ return puedeICA_(); }],
     ['btn-ica-bal',                 function(){ return puedeICA_(); }],
     /* 22/10 — SOPORTES: solo el desarrollador (js/soportes.js) */
-    ['btn-soportes',                function(){ try{ return !!(window.IDN && window.IDN.esDev()); }catch(_){ return false; } }]
+    ['btn-soportes',                function(){ try{ return !!(window.IDN && window.IDN.esDev()); }catch(_){ return false; } }],
+    /* 24/10 — ENTRENAMIENTO DEL ASISTENTE: solo el desarrollador (js/ayuda-dev.js) */
+    ['btn-asistente-dev',           function(){ try{ return !!(window.IDN && window.IDN.esDev()); }catch(_){ return false; } }]
   ];
   for(let i = 0; i < botones.length; i++){
     try{
@@ -782,7 +784,7 @@ const APAGAR_AL_SALIR_ = [
   'btn-mis-informes', 'btn-bdp-mis-exp', 'btn-mis-procesos',
   'btn-cat-predial', 'predial-submenu',
   'btn-ica-req', 'btn-ica-empl', 'btn-ica-rev', 'btn-ica-has', 'btn-ica-bal',
-  'btn-soportes'
+  'btn-soportes', 'btn-asistente-dev'
 ];
 
 /* ================== ÉXITO DE LOGIN (compartido doc + PIN) ================== */

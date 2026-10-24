@@ -66,7 +66,10 @@
   <link rel="stylesheet" href="kit/soporte.css">     <!-- 22/10: soporte (kit) -->
   <link rel="stylesheet" href="kit/exportar.css">
   <link rel="stylesheet" href="css/soportes.css">
-  <link rel="stylesheet" href="css/guia.css">         <!-- 18/10: guía gráfica por roles -->
+  <link rel="stylesheet" href="css/guia.css">
+  <link rel="stylesheet" href="kit/insights.css">     <!-- 24/10: botón del asistente (robot) -->
+  <link rel="stylesheet" href="kit/asistente.css">    <!-- 24/10: asistente de ayuda -->
+  <link rel="stylesheet" href="css/ayuda-dev.css">    <!-- 24/10: entrenamiento del asistente (DEV) -->         <!-- 18/10: guía gráfica por roles -->
 
   <!-- version.js y marca.js ANTES que el kit: el kit lee APP_VERSION y MARCA al cargarse -->
   <script src="version.js"></script>
@@ -246,6 +249,10 @@
             <button type="button" class="acceso" id="btn-soportes" style="display:none;">
               <span class="acceso__img acceso__img--ico"><i class="hi" data-ico="responder" data-t="24"></i></span>
               <span class="acceso__txt"><span class="acceso__t">Soportes</span><span class="acceso__p">Todos los casos: responder, estados, calificación y descargas</span></span>
+            </button>
+            <button type="button" class="acceso" id="btn-asistente-dev" style="display:none;">
+              <span class="acceso__img acceso__img--ico"><i class="hi" data-ico="robot" data-t="24"></i></span>
+              <span class="acceso__txt"><span class="acceso__t">Entrenamiento del asistente</span><span class="acceso__p">Temas, preguntas por enseñar y probar frases</span></span>
             </button>
             <button type="button" class="acceso" id="btn-guia">
               <span class="acceso__img acceso__img--ico"><i class="hi" data-ico="libro" data-t="24"></i></span>
@@ -1559,6 +1566,12 @@
 <script src="kit/exportar.js"></script>     <!-- 22/10: PDF, Excel e informe gerencial de soportes -->
 <script src="kit/soporte.js"></script>      <!-- 22/10: soporte con 3 capturas, mis solicitudes y estrellas -->
 <script src="js/soportes.js"></script>      <!-- 22/10: puente al backend HACIENDA + vista SOPORTES (DEV) -->   <!-- 11/10: informe gerencial (kit/gerencial.js se baja en reposo) -->
+<script src="kit/insights.js"></script>      <!-- 24/10: el robot y la voz Inworld (sus paneles no se usan aquí) -->
+<script src="kit/gemini.js"></script>        <!-- 24/10: Gemini solo ELIGE el tema (Firebase AI Logic + App Check) -->
+<script src="kit/asistente.js"></script>     <!-- 24/10: asistente de ayuda (motor en el teléfono, voz, dictado) -->
+<script src="js/ayuda-base.js"></script>     <!-- 24/10: base sembrada (respaldo; la del backend llega con el arranque) -->
+<script src="js/ayuda-app.js"></script>      <!-- 24/10: adaptador del asistente para esta app -->
+<script src="js/ayuda-dev.js"></script>      <!-- 24/10: entrenamiento del asistente (solo DEV) -->
 <script src="js/guia.js"></script>        <!-- 18/10: guía gráfica armada por roles y permisos -->
 <script src="js/hacienda.js"></script>    <!-- FASE 2: banner, tema, inicio, PIN, iconos (EL ÚLTIMO) -->
 </body>
