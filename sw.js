@@ -23,6 +23,7 @@ var APP_SHELL = [
   './',
   './index.html',
   './js/app.js',
+  './js/proc-ligero.js',
   './styles.css',
   './js/assets.js',
   './js/identidad.js',

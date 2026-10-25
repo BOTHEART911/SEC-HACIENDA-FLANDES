@@ -94,7 +94,9 @@ function listaDeEsteUsuario_(lista){
 function hacOlvidarListas_(col, accion, res){
   if (col === 'solicitudes') { __atencionesChatCache = []; __atencionesPresCache = []; }
   /* procarchivo devuelve la fila y ya se parchó en memoria: no se olvida la lista */
-  if (col === 'procesos' && !(res && (Array.isArray(res.lista) || (accion === 'procarchivo' && res.fila)))) __procListCache = [];
+  /* 24/10 — solicitudexpproceso devuelve su texto y solicitud-exp.js parcha la fila en memoria:
+     vaciar aquí dejaba la vista en "No hay asignaciones" (pasaba antes de que el parche llegara). */
+  if (col === 'procesos' && !(res && (Array.isArray(res.lista) || (accion === 'procarchivo' && res.fila) || accion === 'solicitudexpproceso'))) __procListCache = [];
   if (col === 'predial' && !(res && res.fila) && accion !== 'eliminarpredial') {
     /* sin fila de vuelta no se sabe cómo quedó: se vuelve a pedir al entrar */
     try { Object.defineProperty(__bdpListCache, '__uid', { value: '', writable: true, configurable: true }); }catch(_){}

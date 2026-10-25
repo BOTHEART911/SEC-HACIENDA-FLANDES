@@ -39,12 +39,13 @@
     getpredial: 1, getpredialbloque: 1, getsolicitudbyid: 1, listdriverows: 1, dapanel: 1, daarranque: 1,
     listmisexpedientes: 1, buscarmisexpedientes: 1, buscarcontacto: 1,
     vozestado: 1, descargaopciones: 1, bitpendientes: 1,
-    soportevista: 1   /* 22/10 — SOPORTES (DEV) */
+    soportevista: 1,  /* 22/10 — SOPORTES (DEV) */
+    listprocesoshist: 1, getproceso: 1   /* 24/10 — semáforo liviano (js/proc-ligero.js) */
   };
   /* Segundo plano: detrás de lo de primer plano. */
-  var FONDO = { getpredialbloque: 1, vozestado: 1, bitpendientes: 1 };
+  var FONDO = { getpredialbloque: 1, vozestado: 1, bitpendientes: 1, listprocesoshist: 1 };
   /* Detalles que se recuerdan un rato. */
-  var MEMO = { getpredial: 1, getsolicitudbyid: 1, listmisexpedientes: 1 };
+  var MEMO = { getpredial: 1, getsolicitudbyid: 1, listmisexpedientes: 1, getproceso: 1 };
 
   var FAMILIAS = {
     'view-lista': 'solicitudes', 'view-respuesta': 'solicitudes',
