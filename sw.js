@@ -24,6 +24,7 @@ var APP_SHELL = [
   './index.html',
   './js/app.js',
   './js/proc-ligero.js',
+  './js/pred-sync.js',
   './styles.css',
   './js/assets.js',
   './js/identidad.js',
