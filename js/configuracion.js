@@ -126,6 +126,8 @@
           '<button class="cfg-tab panel-tab" data-tab="festivos">' + ICOS('calendario') + 'Festivos</button>' +
           '<button class="cfg-tab panel-tab cfg-tab-plant" data-tab="plantillas" style="display:none;">' + ICOS('chat') + 'Plantillas de mensajes</button>' +
           '<button class="cfg-tab panel-tab cfg-tab-dev" data-tab="avanzado" style="display:none;">' + ICOS('llave') + 'IDs y ajustes</button>' +
+          /* 25/10 — ASESORÍAS (solo DEV): asuntos y cupos de la web pública (js/asesorias.js) */
+          '<button class="cfg-tab panel-tab cfg-tab-dev" data-tab="asesorias" style="display:none;">' + ICOS('telefono') + 'Asesorías</button>' +
         '</div>' +
 
         '<div id="cfg-panel-usuarios" class="cfg-panel">' +
@@ -145,6 +147,7 @@
           '<div id="cfg-plantillas" class="cfg-acordeon"></div>' +
         '</div>' +
 
+        '<div id="cfg-panel-asesorias" class="cfg-panel hidden"><div id="cfg-asesorias"></div></div>' +
         '<div id="cfg-panel-avanzado" class="cfg-panel hidden">' +
           '<p class="hf-intro cfg-alerta">' + ICOS('aviso') + 'IDs de carpetas de Drive, llaves de BuilderBot, Firebase, voz y topes. Un dato mal puesto aquí deja de funcionar el envío de mensajes o la subida de archivos.</p>' +
           '<div id="cfg-avanzado" class="cfg-campos"></div>' +
@@ -184,10 +187,12 @@
 
   function pestana_(cual) {
     estado.pestana = cual;
-    ['usuarios', 'festivos', 'plantillas', 'avanzado'].forEach(function (p) {
+    ['usuarios', 'festivos', 'plantillas', 'avanzado', 'asesorias'].forEach(function (p) {
       var panel = el_('cfg-panel-' + p);
       if (panel) panel.classList.toggle('hidden', p !== cual);
     });
+    /* 25/10 — la pestaña de asesorías se pinta al abrirla (un viaje, el de la vista) */
+    if (cual === 'asesorias' && window.ASESORIAS && window.ASESORIAS.pintarConfig) window.ASESORIAS.pintarConfig(el_('cfg-asesorias'));
     document.querySelectorAll('.cfg-tab').forEach(function (t) {
       t.classList.toggle('activa', t.dataset.tab === cual);
       t.classList.toggle('active', t.dataset.tab === cual);
@@ -227,7 +232,7 @@
       if (intro) intro.textContent = estado.esDev
         ? 'Los mensajes que la app manda por WhatsApp y por correo. Toca una variable para insertarla donde tengas el cursor. Las de Notificación electrónica también las cambian los ADMIN.'
         : 'El correo de la NOTIFICACIÓN ELECTRÓNICA de la factura predial (asunto y cuerpo). Toca una variable para insertarla donde tengas el cursor. **texto** sale en negrita y las líneas que empiezan por • salen como lista.';
-      if (!estado.esDev && estado.pestana === 'avanzado') pestana_('usuarios');
+      if (!estado.esDev && (estado.pestana === 'avanzado' || estado.pestana === 'asesorias')) pestana_('usuarios');
       if (!estado.esDev && !estado.plantillas.length && estado.pestana === 'plantillas') pestana_('usuarios');
       FES.datos = (todo && todo.festivos) || null;
       FES.borrador = null;

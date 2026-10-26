@@ -607,6 +607,16 @@
         { id: 'envios',     et: 'Envíos por mes',            ic: '📤' }
       ]
     },
+    /* 25/10 — ASESORÍAS telefónicas (js/asesorias.js) */
+    'view-asesorias': {
+      titulo: 'Consultas de asesorías', sub: 'Asesoría telefónica',
+      botones: [
+        { id: 'resumen',      et: 'Resumen',      ic: '👀' },
+        { id: 'hoy',          et: 'Hoy',          ic: '📞' },
+        { id: 'asesor',       et: 'Por asesor',   ic: '🧑‍💼' },
+        { id: 'calificacion', et: 'Calificación', ic: '⭐' }
+      ]
+    },
     /* 22/10 — SOPORTES (solo DEV, js/soportes.js) */
     'view-soportes': {
       titulo: 'Consultas de soportes', sub: 'Soporte de la app',
@@ -638,6 +648,7 @@
       case 'view-drive-anexos': return repDrive(id, drive());
       case 'view-ica-req':      return (window.ICA && window.ICA.insight) ? window.ICA.insight(id) : rep('', 'El módulo aún no cargó.', '');
       case 'view-soportes':     return (window.SOPORTES && window.SOPORTES.insight) ? window.SOPORTES.insight(id) : rep('', 'El módulo aún no cargó.', '');
+      case 'view-asesorias':    return (window.ASESORIAS && window.ASESORIAS.insight) ? window.ASESORIAS.insight(id) : rep('', 'El módulo aún no cargó.', '');
     }
     return rep('', 'No conozco esa consulta.', '');
   }

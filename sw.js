@@ -69,7 +69,6 @@ var APP_SHELL = [
   './js/solicitud-exp.js',
   './css/solicitud-exp.css',
   './manifest.webmanifest',
-  './version.js',
   './js/marca.js',
   './js/sesion.js',
   './js/corte.js',
@@ -93,6 +92,8 @@ var APP_SHELL = [
   './kit/exportar.js',
   './kit/exportar.css',
   './js/soportes.js',
+  './js/asesorias.js',
+  './css/asesorias.css',
   './kit/insights.js',
   './kit/insights.css',
   './kit/gemini.js',
@@ -219,7 +220,8 @@ self.addEventListener('fetch', (event) => {
 
   // version.js de la raíz SIEMPRE desde la red (kit/version.js decide con él)
   if (url.pathname === RUTA_VERSION) {
-    event.respondWith(fetch(req, { cache: 'no-store' }).catch(() => deMiCache_(req)));
+    /* 25/10 — version.js nunca se guarda (regla 17): sin red, se contesta con la de este service worker */
+    event.respondWith(fetch(req, { cache: 'no-store' }).catch(() => new Response('var APP_VERSION = "' + APP_VERSION + '";', { headers: { 'Content-Type': 'text/javascript' } })));
     return;
   }
 

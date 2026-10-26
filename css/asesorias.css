@@ -1,0 +1,121 @@
+/* ============================================================
+   SEC-HACIENDA-FLANDES · ASESORÍAS (25/10/2026) · js/asesorias.js
+   Con los tokens del kit (--k-*): modo día y noche salen solos.
+   ============================================================ */
+.ase-herr { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.ase-modo { margin: 0; }
+.ase-aviso { margin: 8px 0; padding: 10px 12px; border-radius: 12px; background: var(--k-aviso-fondo); color: var(--k-aviso); font-size: .9rem; }
+.ase-pills { margin: 6px 0 8px; }
+.ase-filtros { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; margin: 0 0 12px; }
+.ase-filtros label { display: flex; flex-direction: column; gap: 4px; font-size: .78rem; color: var(--k-apagado); }
+.ase-filtros select, .ase-filtros input[type=date] { min-height: 38px; border: 1px solid var(--k-linea); border-radius: 10px; background: var(--k-papel); color: var(--k-tinta); padding: 6px 10px; font: inherit; font-size: .9rem; max-width: 240px; }
+.ase-chk { display: inline-flex !important; flex-direction: row !important; align-items: center; gap: 8px !important; font-size: .9rem !important; color: var(--k-tinta) !important; min-height: 38px; cursor: pointer; }
+.ase-chk input { width: 18px; height: 18px; accent-color: var(--k-marca); }
+.ase-lista { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+@media (max-width: 520px) { .ase-lista { grid-template-columns: 1fr; } }
+.ase-c { border-left: 5px solid var(--k-apagado); display: flex; flex-direction: column; gap: 6px; }
+.ase-c--info { border-left-color: #2563eb; }
+.ase-c--ok { border-left-color: var(--k-ok); }
+.ase-c--aviso { border-left-color: var(--k-aviso); }
+.ase-c__cab { display: flex; align-items: center; gap: 10px; }
+.ase-c__t { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.ase-c__t b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ase-c__t small { color: var(--k-apagado); font-size: .8rem; }
+.ase-est { font-size: .7rem; font-weight: 700; padding: 3px 9px; border-radius: 999px; white-space: nowrap; background: var(--k-papel-2); color: var(--k-tinta-2); }
+.ase-est--PROGRAMADA, .ase-est--REPROGRAMADA { background: #dbeafe; color: #1d4ed8; }
+.ase-est--ATENDIDA, .ase-est--RESUELTA { background: var(--k-ok-fondo); color: var(--k-ok); }
+.ase-est--NO-CONTESTA { background: var(--k-aviso-fondo); color: var(--k-aviso); }
+html[data-tema="oscuro"] .ase-est--PROGRAMADA, html[data-tema="oscuro"] .ase-est--REPROGRAMADA { background: #14213d; color: #93c5fd; }
+.ase-c__cuando { margin: 0; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.ase-hoy { font-style: normal; font-size: .7rem; font-weight: 700; background: var(--k-marca); color: #fff; border-radius: 999px; padding: 1px 8px; }
+.ase-c__meta { margin: 0; font-size: .82rem; color: var(--k-apagado); }
+.ase-c__det { margin: 0; font-size: .9rem; color: var(--k-tinta-2); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.ase-cal-est { margin: 0; font-size: .85rem; color: var(--k-tinta-2); }
+.ase-c__acc { display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto; padding-top: 4px; }
+.ase-mini { min-height: 34px; padding: 4px 12px; font-size: .85rem; text-decoration: none; }
+.ase-vacio { text-align: center; color: var(--k-apagado); padding: 30px 10px; display: flex; flex-direction: column; align-items: center; gap: 10px; grid-column: 1 / -1; }
+.ase-vacio--chico { padding: 10px; }
+.ase-mas { display: flex; justify-content: center; gap: 10px; margin: 14px 0; }
+.ase-esq { min-height: 130px; }
+.ase-esq span { display: block; height: 12px; margin: 10px 0; border-radius: 6px; background: linear-gradient(90deg, var(--k-papel-2), var(--k-linea), var(--k-papel-2)); background-size: 200% 100%; animation: ase-brillo 1.2s infinite; }
+.ase-esq span:nth-child(2) { width: 70%; } .ase-esq span:nth-child(3) { width: 45%; }
+@keyframes ase-brillo { to { background-position: -200% 0; } }
+
+/* calendario */
+.ase-cal { background: var(--k-papel); border: 1px solid var(--k-linea); border-radius: 16px; padding: 12px; margin-bottom: 12px; }
+.ase-cal__cab { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; text-transform: capitalize; }
+.ase-cal__rej { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.ase-cal__dn { text-align: center; font-size: .72rem; color: var(--k-apagado); text-transform: uppercase; }
+.ase-cal__d { position: relative; min-height: 56px; border: 1px solid var(--k-linea); border-radius: 12px; background: var(--k-papel-2); color: var(--k-tinta); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font: inherit; }
+.ase-cal__d span { font-weight: 600; }
+.ase-cal__d b { font-size: .75rem; min-width: 22px; border-radius: 999px; padding: 0 6px; background: var(--k-linea); }
+.ase-cal__d b.act, .ase-cal__ley b.act { background: #2563eb; color: #fff; }
+.ase-cal__d.con-disp { box-shadow: inset 0 -3px 0 var(--k-ok); }
+.ase-cal__d.es-hoy { border-color: var(--k-marca); border-width: 2px; }
+.ase-cal__d.sel { background: var(--k-marca); color: #fff; }
+.ase-cal__ley { margin: 8px 0 0; font-size: .78rem; color: var(--k-apagado); display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.ase-cal__ley b { border-radius: 999px; padding: 0 6px; }
+.con-disp-m { display: inline-block; width: 18px; height: 4px; background: var(--k-ok); border-radius: 2px; }
+
+/* gestionar */
+.ase-form { display: flex; flex-direction: column; gap: 12px; }
+.ase-ficha p { margin: 2px 0; }
+.ase-ficha__n { font-weight: 700; }
+.ase-ficha__m { color: var(--k-apagado); font-size: .88rem; }
+.ase-det summary { cursor: pointer; font-weight: 600; }
+.ase-det__txt { white-space: pre-wrap; margin: 6px 0 0; padding: 10px; border-radius: 10px; background: var(--k-papel-2); }
+.ase-et { margin: 0 0 6px; font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--k-apagado); }
+.ase-traza { max-height: 220px; overflow: auto; border: 1px solid var(--k-linea); border-radius: 12px; padding: 8px 12px; }
+.ase-traza p { margin: 6px 0; font-size: .88rem; }
+.ase-traza small { color: var(--k-apagado); }
+.ase-nota { margin: 0; color: var(--k-apagado); font-size: .88rem; }
+.ase-reprog { border: 1.5px dashed var(--k-linea); border-radius: 12px; padding: 10px; }
+.ase-rp-dias { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; }
+.ase-rp-dias .kit-pastilla { flex: none; }
+.ase-rp-horas { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 6px; margin-top: 6px; }
+.ase-hora { border: 1px solid var(--k-linea); border-radius: 10px; background: var(--k-papel); color: var(--k-tinta); padding: 8px 4px; cursor: pointer; font: inherit; display: flex; flex-direction: column; align-items: center; }
+.ase-hora small { color: var(--k-apagado); font-size: .72rem; }
+.ase-hora[aria-pressed="true"] { background: var(--k-marca); color: #fff; border-color: var(--k-marca); }
+.ase-hora[aria-pressed="true"] small { color: rgba(255, 255, 255, .85); }
+
+/* mi disponibilidad */
+.ase-disp__acc { display: flex; flex-wrap: wrap; gap: 6px; }
+.ase-disp__rej { display: grid; gap: 6px; max-height: 55vh; overflow: auto; padding-right: 4px; }
+.ase-disp__dia { display: grid; grid-template-columns: 92px 1fr 1fr; gap: 6px; align-items: stretch; }
+.ase-disp__f { display: flex; align-items: center; text-transform: capitalize; font-size: .9rem; }
+.ase-fr { border: 1px solid var(--k-linea); border-radius: 10px; background: var(--k-papel-2); color: var(--k-tinta-2); padding: 6px 8px; cursor: pointer; font: inherit; text-align: left; display: flex; flex-direction: column; min-height: 46px; }
+.ase-fr small { font-size: .7rem; color: var(--k-apagado); }
+.ase-fr span { font-size: .85rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ase-fr.on { background: var(--k-ok-fondo); border-color: var(--k-ok); color: var(--k-ok); }
+.ase-fr.otro { opacity: .6; cursor: not-allowed; background: repeating-linear-gradient(45deg, var(--k-papel-2), var(--k-papel-2) 6px, var(--k-papel) 6px, var(--k-papel) 12px); }
+.ase-fr.fija { border-style: solid; border-width: 2px; }
+.ase-fr.cambio { box-shadow: 0 0 0 2px #f5b400; }
+
+/* tarjeta del inicio */
+.ase-hoyc { margin: 0 0 14px; }
+.ase-hoyc__cab { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; color: var(--k-marca); }
+.ase-hoyc__cab b { flex: 1; color: var(--k-tinta); }
+.ase-hoyc__l { display: grid; gap: 6px; }
+.ase-hoyc__i { display: flex; gap: 8px; align-items: center; }
+.ase-hoyc__i button[data-ase] { flex: 1; text-align: left; border: 1px solid var(--k-linea); border-radius: 12px; background: var(--k-papel-2); color: var(--k-tinta); padding: 8px 12px; cursor: pointer; font: inherit; }
+.ase-hoyc__i button small { display: block; color: var(--k-apagado); font-size: .78rem; }
+.ase-hoyc__i.prox button[data-ase] { border-color: var(--k-marca); box-shadow: 0 0 0 2px rgba(var(--k-marca-rgb), .15); }
+.ase-hoyc__i.hecha { opacity: .6; }
+
+/* configuración */
+.ase-cfg h4 { margin: 16px 0 8px; }
+.ase-cfg__as { display: grid; gap: 6px; }
+.ase-cfg__a { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid var(--k-linea); border-radius: 10px; cursor: pointer; }
+.ase-cfg__a input { width: 18px; height: 18px; accent-color: var(--k-marca); }
+.ase-cfg__nuevo { display: flex; gap: 8px; margin-top: 8px; }
+.ase-cfg__nuevo input, .ase-cfg__num input { flex: 1; min-height: 40px; border: 1px solid var(--k-linea); border-radius: 10px; background: var(--k-papel); color: var(--k-tinta); padding: 6px 10px; font: inherit; }
+.ase-cfg__num { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+.ase-cfg__num label { display: flex; flex-direction: column; gap: 4px; font-size: .82rem; color: var(--k-apagado); }
+.ase-cfg__g { margin-top: 14px; }
+
+/* filtros plegables (abiertos en computador, plegados en celular) */
+.ase-fil { margin: 0 0 12px; }
+.ase-fil > summary { cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-weight: 600; color: var(--k-marca); padding: 6px 2px; list-style: none; }
+.ase-fil > summary::-webkit-details-marker { display: none; }
+.ase-fil[open] > summary { margin-bottom: 8px; }
+.ase-fil .ase-filtros { margin: 0; }

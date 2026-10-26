@@ -57,7 +57,8 @@
     'view-bdp-form': 'predial', 'view-bdp-panel': 'predial',
     'view-drive-anexos': 'drive', 'view-drive-editar': 'drive', 'view-da-form': 'drive',
     'view-atenciones': 'atenciones', 'view-estadisticas': 'estadisticas',
-    'view-soportes': 'soportes'
+    'view-soportes': 'soportes',
+    'view-asesorias': 'asesorias'
   };
 
   function familiaDe(id) { return FAMILIAS[id] || id || ''; }
