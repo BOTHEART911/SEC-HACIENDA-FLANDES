@@ -129,12 +129,39 @@
     return llamar('asesoriasvista', {}, { signal: CTRL && CTRL.signal }).then(function (d) {
       CTRL = null;
       d.lista = rehidratar(d.campos, d.filas).map(preparar); delete d.filas;
-      d.disp = (d.disp || []).map(function (x) { return { f: x[0], fr: x[1], doc: x[2], nombre: x[3] }; });
+      d.disp = (d.disp || []).map(dispDe);
       d.cupos = (d.cupos || []).map(function (x) { return { f: x[0], fr: x[1], h: x[2], doc: x[3] }; });
       D = d;
       pintarHoyLocal();
       return D;
     });
+  }
+  function dispDe(x) { return { f: x[0], fr: x[1], doc: x[2], nombre: x[3], abierta: x[4] || '' }; }
+  /* ══════════════ de dónde sale la agenda (transparencia) ══════════════ */
+  function minFranja(v) { var r = /(\d+):(\d+)-(\d+):(\d+)/.exec(v || ''); return r ? ((+r[3]) * 60 + (+r[4]) - (+r[1]) * 60 - (+r[2])) : 0; }
+  function franjaTxt(v) { var r = /(\d+:\d+)-(\d+:\d+)/.exec(v || ''); return r ? hora12(r[1]) + ' a ' + hora12(r[2]) : (v || ''); }
+  function cambioTxt() {
+    var c = D && D.cambio;
+    if (!c || !c.t) return 'Son los valores iniciales del sistema (instalación del 25/10/2026); nadie los ha cambiado.';
+    return 'Último cambio: ' + titulo(c.nombre || 'sin nombre') + ', el ' + c.t.slice(0, 16) + (c.campos && c.campos.length ? ' (' + c.campos.join(', ') + ')' : '') + '.';
+  }
+  function pintarReglas() {
+    var z = $('ase-reglas'); if (!z || !D) return;
+    var c = D.cfg || {}, dur = +c.duracion || 20;
+    var nm = Math.floor(minFranja(c.manana) / dur), nt = Math.floor(minFranja(c.tarde) / dur);
+    var hoy = hoyIso(), prox = (D.disp || []).filter(function (x) { return x.f >= hoy; }).sort(function (a, b) { return (a.f + a.fr) < (b.f + b.fr) ? -1 : 1; });
+    var filas = prox.slice(0, 12).map(function (x) {
+      return '<li><b>' + esc(fechaCorta(x.f)) + ' · ' + (x.fr === 'M' ? 'Mañana' : 'Tarde') + '</b> — ' + esc(titulo(x.nombre)) +
+        (x.abierta ? ' <small>(la abrió el ' + esc(String(x.abierta).slice(0, 16)) + ')</small>' : '') + '</li>';
+    }).join('');
+    z.querySelector('summary').innerHTML = ico('reloj', 14) + ' <span>Agenda: llamadas de <b>' + dur + ' min</b> · Mañana ' + esc(franjaTxt(c.manana)) + ' (' + nm + ' cupos) · Tarde ' + esc(franjaTxt(c.tarde)) + ' (' + nt + ' cupos)</span>';
+    z.querySelector('.ase-reglas__c').innerHTML =
+      '<p><b>¿De dónde salen los ' + dur + ' minutos y las franjas?</b> Los fija el desarrollador en <b>Configuración → Asesorías</b> ' +
+        '(minutos por cupo, franja de la mañana y de la tarde, horas de antelación: ' + esc(c.antelacion) + ' h, días hacia adelante: ' + esc(c.ventana) + '). ' + esc(cambioTxt()) + '</p>' +
+      '<p><b>¿Quién abre los horarios?</b> Cada funcionario abre sus franjas en <b>Mi disponibilidad</b>; una franja es de una sola persona y la web solo ofrece cupos en franjas abiertas, sin festivos. ' +
+        'Cada franja abierta da ' + nm + ' cupos en la mañana o ' + nt + ' en la tarde.</p>' +
+      (filas ? '<p><b>Próximas franjas abiertas:</b></p><ul>' + filas + '</ul>' + (prox.length > 12 ? '<p class="ase-nota">… y ' + (prox.length - 12) + ' más (ver en Mi disponibilidad).</p>' : '')
+             : '<p class="ase-nota">Todavía nadie ha abierto franjas: la web no ofrece cupos hasta que alguien abra su disponibilidad.</p>');
   }
   function lista() { return (D && D.lista) || []; }
   function porId(id) { var l = lista(); for (var i = 0; i < l.length; i++) if (l[i].id === id) return l[i]; return null; }
@@ -201,6 +228,7 @@
           '<button type="button" class="kit-btn" id="ase-refrescar" title="Volver a traer las asesorías">' + ico('recargar') + ' Refrescar</button>' +
         '</div>' +
         '<div class="ase-aviso" id="ase-aviso" hidden></div>' +
+        '<details class="ase-reglas" id="ase-reglas"><summary></summary><div class="ase-reglas__c"></div></details>' +
         '<div class="hf-barra">' +
           '<span class="hf-conteo"><b id="ase-count">0</b> <span id="ase-count-t">asesorías</span></span>' +
           '<label class="hf-buscar"><i class="hi" data-ico="buscar"></i><input id="ase-buscar" type="search" placeholder="Buscar por nombre, documento, celular, código o texto" autocomplete="off"></label>' +
@@ -325,6 +353,7 @@
   function pintar() {
     if (!D || !$(VISTA)) return;
     var t0 = performance.now();
+    pintarReglas();
     opcionesSelect();
     var nf = (F.mias ? 1 : 0) + (F.asesor ? 1 : 0) + (F.asunto ? 1 : 0) + (F.desde ? 1 : 0) + (F.hasta ? 1 : 0);
     $('ase-fil-n').textContent = nf ? '(' + nf + ')' : '';
@@ -366,7 +395,7 @@
     var primero = CAL_MES + '-01', diasMes = new Date(Date.UTC(y, m, 0)).getUTCDate();
     var porDia = {};
     l.forEach(function (x) { var k = x.fecha; (porDia[k] = porDia[k] || { n: 0, act: 0 }).n++; if (ACTIVOS[x.estado]) porDia[k].act++; });
-    var disp = {}; (D.disp || []).forEach(function (x) { if (!F.mias || x.doc === yo()) disp[x.f] = 1; });
+    var disp = {}, quien = {}; (D.disp || []).forEach(function (x) { if (!F.mias || x.doc === yo()) disp[x.f] = 1; (quien[x.f] = quien[x.f] || []).push((x.fr === 'M' ? 'Mañana: ' : 'Tarde: ') + titulo(x.nombre)); });
     var ant = new Date(Date.UTC(y, m - 2, 1)).toISOString().slice(0, 7), sig = new Date(Date.UTC(y, m, 1)).toISOString().slice(0, 7);
     var h = '<div class="ase-cal__cab"><button type="button" class="kit-btn kit-btn--plano" data-mes="' + ant + '">' + ico('atras', 14) + '</button>' +
       '<b>' + MESES[m - 1] + ' ' + y + '</b><button type="button" class="kit-btn kit-btn--plano" data-mes="' + sig + '">' + ico('adelante', 14) + '</button></div>' +
@@ -375,7 +404,7 @@
     for (var i = 0; i < off; i++) h += '<span></span>';
     for (var d = 1; d <= diasMes; d++) {
       var iso = CAL_MES + '-' + ('0' + d).slice(-2), c = porDia[iso];
-      h += '<button type="button" class="ase-cal__d' + (iso === hoy ? ' es-hoy' : '') + (iso === F.dia ? ' sel' : '') + (disp[iso] ? ' con-disp' : '') + '" data-dia="' + iso + '">' +
+      h += '<button type="button" class="ase-cal__d' + (iso === hoy ? ' es-hoy' : '') + (iso === F.dia ? ' sel' : '') + (disp[iso] ? ' con-disp' : '') + '" data-dia="' + iso + '"' + (quien[iso] ? ' title="' + esc('Franjas abiertas — ' + quien[iso].join(' · ')) + '"' : '') + '>' +
         '<span>' + d + '</span>' + (c ? '<b class="' + (c.act ? 'act' : '') + '">' + c.n + '</b>' : '') + '</button>';
     }
     h += '</div><p class="ase-cal__ley"><span class="con-disp-m"></span> con horario abierto · <b class="act">n</b> por atender</p>';
@@ -561,7 +590,7 @@
     var dias = [], d = hoy;
     while (dias.length < 30) { var w = dow(d); if (w >= 1 && w <= 5) dias.push(d); d = sumarDias(d, 1); }
     var f = K.nodo('<div class="ase-form ase-disp">' +
-      '<p class="ase-nota">Toca una franja para abrirla o cerrarla. Mañana ' + esc(cfg.manana || '') + ' · Tarde ' + esc(cfg.tarde || '') + ' · cupos de ' + esc(cfg.duracion || 20) + ' minutos. ' +
+      '<p class="ase-nota">Toca una franja para abrirla o cerrarla. Mañana ' + esc(cfg.manana || '') + ' · Tarde ' + esc(cfg.tarde || '') + ' · cupos de ' + esc(cfg.duracion || 20) + ' minutos (ajuste de Configuración → Asesorías; ' + esc(cambioTxt().replace(/\.$/, '').replace(/^Ú/, 'ú').replace(/^S/, 's')) + '). ' +
       'Las franjas de otro funcionario no se pueden tomar; las que tienen asesorías agendadas no se pueden cerrar. Los festivos se descuentan solos.</p>' +
       '<div class="ase-disp__acc"><button type="button" class="kit-btn kit-btn--plano ase-mini" data-todo="M">Abrir todas las mañanas</button><button type="button" class="kit-btn kit-btn--plano ase-mini" data-todo="T">Abrir todas las tardes</button></div>' +
       '<div class="ase-disp__rej"></div></div>');
@@ -578,7 +607,9 @@
           var k = iso + '|' + fr, e = estadoDe(k);
           var cls = e.otro ? 'otro' : (e.abierto ? 'on' : '');
           var et = e.otro ? titulo(e.otro.nombre).split(' ').slice(0, 2).join(' ') : (e.abierto ? (e.agendadas ? e.agendadas + ' agendada' + (e.agendadas === 1 ? '' : 's') : 'Abierta') : 'Cerrada');
-          h += '<button type="button" class="ase-fr ' + cls + (e.agendadas ? ' fija' : '') + (k in cambios ? ' cambio' : '') + '" data-k="' + k + '"' + (e.otro ? ' disabled' : '') + '>' +
+          var tt = e.otro ? 'Abierta por ' + titulo(e.otro.nombre) + (e.otro.abierta ? ' el ' + String(e.otro.abierta).slice(0, 16) : '')
+            : (dueno[k] && dueno[k].doc === yoD && dueno[k].abierta ? 'La abriste el ' + String(dueno[k].abierta).slice(0, 16) : '');
+          h += '<button type="button" class="ase-fr ' + cls + (e.agendadas ? ' fija' : '') + (k in cambios ? ' cambio' : '') + '" data-k="' + k + '"' + (e.otro ? ' disabled' : '') + (tt ? ' title="' + esc(tt) + '"' : '') + '>' +
             '<small>' + (fr === 'M' ? 'Mañana' : 'Tarde') + '</small><span>' + esc(et) + '</span></button>';
         });
         return h + '</div>';
@@ -613,7 +644,7 @@
         var t0 = performance.now();
         llamar('asedisp', { agregar: ag, quitar: qu }, { post: true, rid: rid }).then(function (r) {
           ocupar(m, b, false);
-          D.disp = (r.disp || []).map(function (x) { return { f: x[0], fr: x[1], doc: x[2], nombre: x[3] }; });
+          D.disp = (r.disp || []).map(dispDe);
           D.cupos = (r.cupos || []).map(function (c) { return { f: c[0], fr: c[1], h: c[2], doc: c[3] }; });
           sellar(); m.cerrar(); pintar(); pintarHoyLocal();
           aviso('Disponibilidad guardada. ' + (r.publicado ? 'Los ciudadanos ya ven tus horarios.' : 'Los horarios se publican en un minuto.'), 'ok', 5000);
@@ -763,7 +794,7 @@
           '<label><span>Días hacia adelante</span><input type="number" min="1" max="60" name="ventana"></label>' +
           '<label><span>Franja de la mañana</span><input type="text" name="manana" placeholder="09:00-11:00"></label>' +
           '<label><span>Franja de la tarde</span><input type="text" name="tarde" placeholder="15:00-17:00"></label>' +
-        '</div><p class="ase-nota ase-cfg__cuenta"></p>' +
+        '</div><p class="ase-nota ase-cfg__cuenta"></p><p class="ase-nota ase-cfg__cambio"></p>' +
         '<button type="button" class="kit-btn kit-btn--marca ase-cfg__g">' + ico('check', 16) + ' Guardar ajustes de asesorías</button></div>');
       ['duracion', 'antelacion', 'ventana', 'manana', 'tarde'].forEach(function (k) { f.querySelector('[name="' + k + '"]').value = c[k] == null ? '' : c[k]; });
       function cuenta() {
@@ -772,6 +803,7 @@
         f.querySelector('.ase-cfg__cuenta').textContent = 'Así quedan ' + a + ' cupos en la mañana y ' + b + ' en la tarde por funcionario.';
       }
       f.addEventListener('input', cuenta); cuenta();
+      f.querySelector('.ase-cfg__cambio').textContent = cambioTxt();
       var za = f.querySelector('.ase-cfg__as');
       function pintarAs() {
         za.innerHTML = '';
@@ -796,7 +828,8 @@
         var datos = { asuntos: as };
         ['duracion', 'antelacion', 'ventana', 'manana', 'tarde'].forEach(function (k) { datos[k] = f.querySelector('[name="' + k + '"]').value.trim(); });
         llamar('asecfg', datos, { post: true, rid: rid }).then(function (r) {
-          D.cfg = r.cfg; D.asuntosTodos = r.asuntosTodos; rid = nuevoRid();
+          D.cfg = r.cfg; D.asuntosTodos = r.asuntosTodos; if (r.cambio) D.cambio = r.cambio; rid = nuevoRid();
+          f.querySelector('.ase-cfg__cambio').textContent = cambioTxt();
           aviso('Ajustes de asesorías guardados' + (r.publicado ? ' y publicados en la web.' : '. Se publican en un minuto.'), 'ok', 5000);
         }, function (e) { aviso(e.message, 'malo', 8000); }).then(function () { b.disabled = false; b.classList.remove('kit-ocupado'); });
       });

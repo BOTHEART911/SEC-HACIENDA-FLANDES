@@ -119,3 +119,14 @@ html[data-tema="oscuro"] .ase-est--PROGRAMADA, html[data-tema="oscuro"] .ase-est
 .ase-fil > summary::-webkit-details-marker { display: none; }
 .ase-fil[open] > summary { margin-bottom: 8px; }
 .ase-fil .ase-filtros { margin: 0; }
+
+/* de dónde sale la agenda: duración, franjas y quién abrió cada una */
+.ase-reglas { margin: 0 0 12px; border: 1px solid var(--k-linea, rgba(0,0,0,.1)); border-radius: 12px; background: var(--k-papel-2, transparent); }
+.ase-reglas > summary { cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 10px 12px; list-style: none; font-size: .9rem; }
+.ase-reglas > summary::-webkit-details-marker { display: none; }
+.ase-reglas > summary b { color: var(--k-marca); }
+.ase-reglas__c { padding: 0 14px 12px; font-size: .88rem; line-height: 1.5; }
+.ase-reglas__c p { margin: 6px 0; }
+.ase-reglas__c ul { margin: 4px 0 6px; padding-left: 18px; columns: 2 260px; }
+.ase-reglas__c li { break-inside: avoid; margin: 2px 0; }
+.ase-reglas__c small { opacity: .7; }
