@@ -147,6 +147,9 @@
                 loQueAdmite() + '.', 'aviso', 5000);
         return false;
       }
+      /* 27/10 — regla única (kit/un-archivo.js): ya puesto en OTRO campo del formulario */
+      var otra = (K.unArchivo && K.unArchivo.repetido) ? K.unArchivo.repetido(zona, f) : '';
+      if (otra) { K.aviso(otra, 'aviso', 6000); return false; }
       /* mismo nombre y mismo peso = el mismo archivo dos veces */
       var i;
       for (i = 0; i < lista.length; i++) {

@@ -109,6 +109,7 @@ var APP_SHELL = [
   './kit/bienvenida.css',
   './kit/bienvenida.js',
   './kit/kit.js',
+  './kit/un-archivo.js',
   './kit/iconos.js',
   './kit/confirmar.js',
   './kit/version.js',
