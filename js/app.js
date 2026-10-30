@@ -2987,7 +2987,11 @@ function abrirVerAsignacion_(row) {
   }
 
   // Solicitar Finalización
-  if (estado === 'PENDIENTE DE EVIDENCIA') {
+  /* 30/10 — la hoja guarda "PENDIENTE EVIDENCIA" (sin "DE"): con la
+     comparación vieja el botón no salía nunca. Sale mientras la asignación
+     está en manos del asignado. Al pedirla queda EJECUTADO POR FINALIZAR. */
+  const estN = normalizeText_(estado);
+  if (estN === 'ASIGNADO' || estN === 'EN PROYECCION' || estN.indexOf('EVIDENCIA') !== -1) {
     const btnFin = document.createElement('button');
     btnFin.type = 'button';
     btnFin.className = 'proc-action-btn';
@@ -3004,9 +3008,18 @@ function abrirVerAsignacion_(row) {
         showCancelButton: true, confirmButtonText: 'Confirmar', cancelButtonText: 'Cancelar'
       });
       if (!ok.isConfirmed) return;
-      await apiPost('procAviso', { uid: uidActual_(), id_proceso: row.id_proceso, rowIndex: row.rowIndex, tipo: 'finalizacion' });
+      let resFin = null;
+      try {
+        resFin = await apiPost('procAviso', { uid: uidActual_(), id_proceso: row.id_proceso, rowIndex: row.rowIndex, tipo: 'finalizacion' });
+      } catch (e) {
+        Swal.fire({ icon:'error', title:'No se pudo enviar', text: String(e.message || e) });
+        return;
+      }
+      try { window.FINR && FINR.aplicarRespuesta(row, resFin); } catch (_) {}
       playSoundOnce(SOUNDS.success);
-      await Swal.fire({ icon:'success', title:'Solicitud enviada', timer:1800, showConfirmButton:false });
+      await Swal.fire({ icon:'success', title:'Solicitud enviada',
+        text: (resFin && resFin.porFinalizar) ? 'Quedó EJECUTADO POR FINALIZAR: tu reloj se detuvo.' : '',
+        timer:2200, showConfirmButton:false });
       abrirVerAsignacion_(row);
     });
     actionsWrap.appendChild(btnFin);
@@ -3135,7 +3148,7 @@ function abrirEditarAsignacion_(row) {
     if (estadoLabel) estadoLabel.style.display = '';
     if (estadoSel)   estadoSel.style.display   = '';
     estadoSel.innerHTML = '<option value="">— Selecciona —</option>';
-    const estadosSuper = ['ASIGNADO','PENDIENTE ASIGNACION','EN PROYECCIÓN','PENDIENTE EVIDENCIA','FINALIZADO'];
+    const estadosSuper = ['ASIGNADO','PENDIENTE ASIGNACION','EN PROYECCIÓN','PENDIENTE EVIDENCIA','EJECUTADO POR FINALIZAR','FINALIZADO'];
     estadosSuper.forEach(s => {
       const o = document.createElement('option');
       o.value = s; o.textContent = s;
@@ -3969,8 +3982,9 @@ document.getElementById('btn-sp-guardar')?.addEventListener('click', async () =>
   const solicitud = String(document.getElementById('modal-sp-solicitud').value || '').trim();
   const tipo     = __spTipoSeleccionado;
 
+  let resSp = null;
   try {
-    await apiPost('procAviso', {
+    resSp = await apiPost('procAviso', {
       uid: uidActual_(), id_proceso: row.id_proceso, rowIndex: row.rowIndex,
       tipo: 'solicitud', clase: tipo, texto: solicitud
     });
@@ -3982,8 +3996,16 @@ document.getElementById('btn-sp-guardar')?.addEventListener('click', async () =>
   __spTipoSeleccionado = null;
   __spRowActual = null;
 
+  /* 30/10 — si fue de finalización, la fila queda EJECUTADO POR FINALIZAR */
+  try { window.FINR && FINR.aplicarRespuesta(row, resSp); } catch (_) {}
   playSoundOnce(SOUNDS.success);
-  await Swal.fire({ icon: 'success', title: 'Solicitud enviada', timer: 1800, showConfirmButton: false });
+  await Swal.fire({ icon: 'success', title: 'Solicitud enviada',
+    text: (resSp && resSp.porFinalizar) ? 'Quedó EJECUTADO POR FINALIZAR: tu reloj se detuvo.' : '',
+    timer: 2200, showConfirmButton: false });
+  if (resSp && resSp.porFinalizar) {
+    if (document.getElementById('view-ver-asignacion')?.classList.contains('active')) abrirVerAsignacion_(row);
+    else if (document.getElementById('view-asignaciones')?.classList.contains('active') && typeof applyProcFilters_ === 'function') applyProcFilters_();
+  }
 });
 
 /* ── DECISIÓN (super usuario → asignado) ────────────────── */
@@ -4688,6 +4710,7 @@ const PANEL_ESTADO_COLORS = {
   'EN PROYECCIÓN':         '#7c3aed',
   'PENDIENTE EVIDENCIA':   '#f97316',
   'PENDIENTE ASIGNACION':  '#d97706',
+  'EJECUTADO POR FINALIZAR': '#9333ea',
   'FINALIZADO':            '#16a34a',
   'REBOTADO':              '#dc2626'
 };
@@ -4811,6 +4834,7 @@ function panelRenderResumen_(rows) {
   const enProy    = rows.filter(r => normalizeText_(r.estado||'') === 'EN PROYECCION').length;
   const pendEv    = rows.filter(r => normalizeText_(r.estado||'').includes('EVIDENCIA')).length;
   const finaliz   = rows.filter(r => normalizeText_(r.estado||'') === 'FINALIZADO').length;
+  const porFin    = rows.filter(r => normalizeText_(r.estado||'') === 'EJECUTADO POR FINALIZAR').length;
   const activos   = total - finaliz;
 
   // ── KPIs ────────────────────────────────────────────────
@@ -4823,6 +4847,7 @@ function panelRenderResumen_(rows) {
       { icon: PANEL_ICON_USUARIOS, value: asignados,label: 'Asignadas',      sub: 'esperando respuesta',cls: 'kpi-blue' },
       { icon: PANEL_ICON_RELOJ,    value: enProy,   label: 'En Proyección',  sub: 'trabajando en ello', cls: 'kpi-naranja' },
       { icon: PANEL_ICON_TARGET,   value: pendEv,   label: 'Pend. Evidencia',sub: 'falta soporte',      cls: 'kpi-naranja' },
+      { icon: PANEL_ICON_RELOJ,    value: porFin,   label: 'Por finalizar', sub: 'reloj del asignador', cls: 'kpi-morado' },
       { icon: PANEL_ICON_BARRAS,   value: finaliz,  label: 'Finalizadas',    sub: 'completadas',        cls: 'kpi-verde' }
     ];
     kpis.forEach(k => {
@@ -4848,6 +4873,7 @@ function panelRenderResumen_(rows) {
       { key: 'naranja',    label: 'MITAD DE PLAZO',   cls: 'semaforo-naranja' },
       { key: 'rojo-claro', label: '≤ 3 DÍAS',         cls: 'semaforo-rojo-claro' },
       { key: 'rojo',       label: 'VENCIDO',          cls: 'semaforo-rojo' },
+      { key: 'morado',     label: 'POR FINALIZAR',    cls: 'semaforo-morado' },
       { key: 'gris',       label: 'FINALIZADO',       cls: 'semaforo-gris' }
     ];
     semConfig.forEach(s => {
@@ -4927,14 +4953,16 @@ function panelRenderEquipo_(rows) {
   const byAsignado = {};
   rows.forEach(r => {
     const n = (r.asignado || '').trim().toUpperCase() || 'SIN ASIGNAR';
-    if (!byAsignado[n]) byAsignado[n] = { total: 0, activo: 0, porVencer: 0, vencida: 0, finaliz: 0 };
+    if (!byAsignado[n]) byAsignado[n] = { total: 0, activo: 0, porVencer: 0, vencida: 0, finaliz: 0, porFin: 0 };
     byAsignado[n].total++;
 
     const estado = normalizeText_(r.estado || '');
     if (estado === 'FINALIZADO') {
       byAsignado[n].finaliz++;
+    } else if (estado === 'EJECUTADO POR FINALIZAR') {
+      byAsignado[n].porFin++;      /* 30/10: hecha; su reloj está detenido */
     } else {
-      const faltan = diasHabiles_(hoy, r.respuesta);
+      const faltan = diasHabiles_(hoy, (window.FINR ? FINR.venceAsignado(r) : r.respuesta));
       if (faltan < 0)                       byAsignado[n].vencida++;    // estrictamente vencida
       else if (faltan >= 0 && faltan <= 3)  byAsignado[n].porVencer++;  // hoy y 1–3 días hábiles
       else                                  byAsignado[n].activo++;     // > 3 días
@@ -4961,6 +4989,7 @@ function panelRenderEquipo_(rows) {
         if (stats.activo > 0)    parts.push(`<span style="color:#16a34a;font-weight:800;">ACTIVO: ${stats.activo}</span>`);
         if (stats.porVencer > 0) parts.push(`<span style="color:#f97316;font-weight:800;">POR VENCER: ${stats.porVencer}</span>`);
         if (stats.vencida > 0)   parts.push(`<span style="color:#dc2626;font-weight:800;">VENCIDAS: ${stats.vencida}</span>`);
+        if (stats.porFin > 0)    parts.push(`<span style="color:#9333ea;font-weight:800;">POR FINALIZAR: ${stats.porFin}</span>`);
         if (stats.finaliz > 0)   parts.push(`<span style="color:#6b7280;font-weight:800;">FINALIZADAS: ${stats.finaliz}</span>`);
         const detailHtml = parts.length
           ? parts.join(' · ')
@@ -4995,6 +5024,7 @@ function panelRenderEquipo_(rows) {
     const pvData   = topN.map(([,s]) => s.porVencer);
     const venData  = topN.map(([,s]) => s.vencida);
     const finData  = topN.map(([,s]) => s.finaliz);
+    const pfData   = topN.map(([,s]) => s.porFin || 0);
 
     __panelCharts['equipo'] = new Chart(ctxEq, {
       type: 'bar',
@@ -5005,6 +5035,7 @@ function panelRenderEquipo_(rows) {
           { label: 'ACTIVO',      data: actData, backgroundColor: '#16a34a', borderRadius: 6, stack: 'stack' },
           { label: 'POR VENCER',  data: pvData,  backgroundColor: '#f97316', borderRadius: 6, stack: 'stack' },
           { label: 'VENCIDAS',    data: venData, backgroundColor: '#dc2626', borderRadius: 6, stack: 'stack' },
+          { label: 'POR FINALIZAR', data: pfData, backgroundColor: '#9333ea', borderRadius: 6, stack: 'stack' },
           { label: 'FINALIZADAS', data: finData, backgroundColor: '#6b7280', borderRadius: 6, stack: 'stack' }
         ]
       },
@@ -5046,12 +5077,13 @@ function panelRenderEquipo_(rows) {
 /* ── TAB: TIEMPOS ────────────────────────────────────────── */
 function panelRenderTiempo_(rows) {
   // Solo activos (no finalizados)
-  const activos = rows.filter(r => normalizeText_(r.estado||'') !== 'FINALIZADO');
+  /* 30/10 — EJECUTADO POR FINALIZAR ya no corre contra el asignado */
+  const activos = rows.filter(r => { const e = normalizeText_(r.estado||''); return e !== 'FINALIZADO' && e !== 'EJECUTADO POR FINALIZAR'; });
   const hoy = formatDDMMYYYY_(new Date());
 
   // Calcular días restantes
   const conDias = activos.map(r => {
-    const faltan = diasHabiles_(hoy, r.respuesta);
+    const faltan = diasHabiles_(hoy, (window.FINR ? FINR.venceAsignado(r) : r.respuesta));
     const sem    = calcSemaforo_(r);
     return { ...r, _faltan: faltan, _semClase: sem.clase, _semTxt: sem.texto };
   });

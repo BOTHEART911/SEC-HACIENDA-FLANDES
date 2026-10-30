@@ -337,15 +337,28 @@
     /* Asignaciones */
     var A = d.proc || {}, procRegs = regs.filter(function (r) { return r.categoria === 'Asignaciones'; });
     if (procRegs.length || A.recibidas || A.abiertas) {
-      secciones.push({ titulo: 'Asignaciones · Mi semáforo', intro: 'Oficios asignados ' + (todos ? '' : 'a la persona (como asignado o asistente) ') + 'que llegaron y se cerraron en el periodo. "A tiempo" = cerrada hasta la fecha de respuesta.',
+      secciones.push({ titulo: 'Asignaciones · Mi semáforo', intro: 'Oficios asignados ' + (todos ? '' : 'a la persona (como asignado o asistente) ') + 'que llegaron y se cerraron en el periodo. "A tiempo" = la finalización se pidió hasta la fecha de respuesta (más los días que estuvo detenida si el asignador la devolvió); en las que no tienen solicitud registrada cuenta la fecha de cierre.',
         kpis: [{ etiqueta: 'Recibidas en el periodo', valor: n(A.recibidas), tono: 'info' },
                { etiqueta: 'Finalizadas', valor: n(A.finalizadas), nota: pct(A.aTiempo, A.finalizadas) + ' a tiempo', tono: 'ok' },
-               { etiqueta: 'Abiertas hoy', valor: n(A.abiertas), nota: n(A.vencidas) + ' con el plazo vencido', tono: A.vencidas ? 'aviso' : 'ok' },
+               { etiqueta: 'Abiertas hoy', valor: n(A.abiertas), nota: n(A.vencidas) + ' con el plazo vencido' + (A.porFinalizar ? ' · ' + n(A.porFinalizar) + ' ejecutadas por finalizar' : ''), tono: A.vencidas ? 'aviso' : 'ok' },
                { etiqueta: 'Bitácoras de asignación', valor: n(procRegs.filter(function (r) { return /^Bitácora/.test(r.tipo); }).length), tono: 'info' }],
         graficas: [{ titulo: 'Cierre frente al plazo', tipo: 'proporcion', datos: [{ etiqueta: 'A tiempo', valor: A.aTiempo || 0, tono: 'ok' }, { etiqueta: 'Fuera de plazo', valor: A.fuera || 0, tono: 'malo' }].filter(function (x) { return x.valor; }) },
                    { titulo: 'Recibidas por categoría', tipo: 'barrasH', datos: pares(A.porCategoria), max: 10 },
                    { titulo: 'Recibidas por medio', tipo: 'barrasH', datos: pares(A.porMedio), max: 8 }] });
       if (A.vencidas) extra.push(n(A.vencidas) + (A.vencidas === 1 ? ' asignación sigue abierta' : ' asignaciones siguen abiertas') + ' con el plazo de respuesta vencido.');
+    }
+
+    /* 30/10 — Finalización (reloj del asignador): solo si el backend lo trae */
+    var FN = d.fin || null;
+    if (FN && (FN.finalizadas || FN.pendientes)) {
+      var plazoFin = (window.FINR && FINR.plazo) ? FINR.plazo() : 2;
+      secciones.push({ titulo: 'Asignaciones · Finalización (asignador)', intro: 'Asignaciones que el asignado dejó en EJECUTADO POR FINALIZAR y ' + (todos ? 'que se' : 'que la persona') + ' finalizó en el periodo. Plazo del asignador: ' + plazoFin + ' días hábiles desde la solicitud.',
+        kpis: [{ etiqueta: 'Finalizadas', valor: n(FN.finalizadas), nota: pct(FN.aTiempo, FN.finalizadas) + ' dentro del plazo', tono: 'ok' },
+               { etiqueta: 'Finalizaciones tardías', valor: n(FN.tarde), tono: FN.tarde ? 'malo' : 'ok' },
+               { etiqueta: 'Promedio para finalizar', valor: String(FN.diasProm || 0).replace('.', ',') + ' días', nota: 'hábiles desde la solicitud', tono: 'info' },
+               { etiqueta: 'Esperando hoy', valor: n(FN.pendientes), nota: n(FN.pendVencidas) + ' fuera del plazo', tono: FN.pendVencidas ? 'aviso' : 'ok' }],
+        graficas: [{ titulo: 'Finalización frente al plazo', tipo: 'proporcion', datos: [{ etiqueta: 'Dentro del plazo', valor: FN.aTiempo || 0, tono: 'ok' }, { etiqueta: 'Tardías', valor: FN.tarde || 0, tono: 'malo' }].filter(function (x) { return x.valor; }) }] });
+      if (FN.pendVencidas) extra.push(n(FN.pendVencidas) + (FN.pendVencidas === 1 ? ' asignación ejecutada espera' : ' asignaciones ejecutadas esperan') + ' finalización con el plazo del asignador vencido.');
     }
 
     /* Atención al contribuyente */

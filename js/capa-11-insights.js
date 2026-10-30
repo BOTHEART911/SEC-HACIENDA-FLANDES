@@ -516,6 +516,7 @@
         { id: 'etapa',     et: 'Etapa jurídica',     ic: '⚖️' },
         { id: 'medio',     et: 'Por medio',          ic: '📮' },
         { id: 'cierre',    et: 'Cierres y tiempos',  ic: '✅' },
+        { id: 'porfin',    et: 'Ejecutado por finalizar', ic: '🟣' },
         { id: 'evidencia', et: 'Sin evidencia',      ic: '📎' },
         { id: 'rebote',    et: 'Rebotadas',          ic: '🔁' },
         { id: 'mes',       et: 'Por mes',            ic: '📅' }
@@ -526,6 +527,7 @@
       botones: [
         { id: 'resumen',   et: 'Lo que estoy viendo', ic: '👀' },
         { id: 'vence',     et: 'Vencidas y por vencer', ic: '⏰' },
+        { id: 'porfin',    et: 'Ejecutado por finalizar', ic: '🟣' },
         { id: 'equipo',    et: 'Por asignado',       ic: '👥' },
         { id: 'estado',    et: 'Por estado',         ic: '🚦' },
         { id: 'categoria', et: 'Por categoría',      ic: '🗂️' },
@@ -1267,8 +1269,9 @@
           '- 🟡 Mitad de plazo: ' + b(s.naranja),
           '- 🟠 Quedan 3 días o menos: ' + b(s['rojo-claro']),
           '- 🔴 Vencidas: ' + b(s.rojo),
+          s.morado ? '- 🟣 Ejecutadas por finalizar (reloj del asignador): ' + b(s.morado) : null,
           '- ⚪ Finalizadas: ' + b(s.gris)
-        ] : null;
+        ].filter(Boolean) : null;
         return rep(titulo, unir(
           (donde === 'panel' ? 'El panel está mirando ' : 'Estás viendo ') + b(n) + ' ' + plural(n, 'asignación', 'asignaciones') + '.',
           bloque('De un vistazo', lineas),
@@ -1313,7 +1316,7 @@
           (conVenc.length ? conVenc.length + ' tienen asignaciones vencidas.' : 'Nadie tiene vencidas.'));
       }
       case 'vence': {
-        var g2 = { VENCIDOS: 0, HOY: 0, PRONTO: 0, LEJOS: 0, SIN: 0 };
+        var g2 = { VENCIDOS: 0, HOY: 0, PRONTO: 0, LEJOS: 0, PORFIN: 0, SIN: 0 };
         act.forEach(function (r) {
           var k = grupoVence(r);
           if (g2[k] === undefined) g2.SIN++; else g2[k]++;
@@ -1329,6 +1332,7 @@
             '- 🟠 Vencen hoy: ' + b(g2.HOY),
             '- 🟡 En 3 días o menos: ' + b(g2.PRONTO),
             '- 🟢 Con más de 3 días: ' + b(g2.LEJOS),
+            g2.PORFIN ? '- 🟣 Ejecutadas, esperando que el asignador las finalice: ' + b(g2.PORFIN) : null,
             g2.SIN ? '- ⚪ Sin fecha de respuesta: ' + b(g2.SIN) : null
           ].filter(Boolean)),
           lista2.length ? bloque('Las vencidas que más pesan', lista2.map(function (x) {
@@ -1337,6 +1341,41 @@
         ) + pieFiltro,
           'De ' + num(act.length) + ' activas, ' + num(g2.VENCIDOS) + ' están vencidas, ' + num(g2.HOY) +
           ' vencen hoy y ' + num(g2.PRONTO) + ' en tres días o menos.');
+      }
+      case 'porfin': {
+        /* 30/10 — EJECUTADO POR FINALIZAR (js/fin-reloj.js): el asignado ya
+           pidió la finalización; el reloj corre para quien coordina. */
+        var F = window.FINR;
+        var pf = lista.filter(function (r) { return F ? F.esPorFin(r) : llano(r.estado) === 'EJECUTADO POR FINALIZAR'; });
+        if (!pf.length) return rep(titulo, '✅ Ninguna asignación está esperando que la finalicen' + (donde === 'lista' && todos.length !== n ? ' en lo que estás viendo.' : '.') + pieFiltro,
+          'Ninguna asignación está esperando que la finalicen.');
+        var hoyS = (typeof formatDDMMYYYY_ === 'function') ? formatDDMMYYYY_(new Date()) : '';
+        var filasPf = pf.map(function (r) {
+          var vence = F ? F.venceAsignador(r) : '';
+          var espera = F ? F.entre(r.fin_sol, hoyS) : null;
+          var tarde = !!(F && espera !== null && espera > F.plazo());
+          return { r: r, vence: vence, espera: espera, tarde: tarde };
+        }).sort(function (a, bb) { return (bb.espera || 0) - (a.espera || 0); });
+        var porCoord = {};
+        filasPf.forEach(function (x) {
+          var k = etiq(x.r.coordinador);
+          var c = porCoord[k] || (porCoord[k] = { n: 0, tarde: 0 });
+          c.n++; if (x.tarde) c.tarde++;
+        });
+        var tardes = filasPf.filter(function (x) { return x.tarde; }).length;
+        return rep(titulo, unir(
+          'Hay ' + b(pf.length) + ' ' + plural(pf.length, 'asignación ejecutada', 'asignaciones ejecutadas') + ' esperando que el asignador ' + plural(pf.length, 'la finalice', 'las finalice') + '. El reloj del asignado está detenido; el del asignador tiene ' + num(F ? F.plazo() : 2) + ' días hábiles.',
+          bloque('Por asignador', Object.keys(porCoord).sort().map(function (k) {
+            return '- ' + k + ' — ' + b(porCoord[k].n) + (porCoord[k].tarde ? ' · 🔴 fuera de plazo ' + b(porCoord[k].tarde) : '');
+          })),
+          bloque('Las que más esperan', filasPf.slice(0, 10).map(function (x) {
+            return '- ' + txt(x.r.consecutivo || x.r.id_proceso) + ' — pidió ' + txt(x.r.fin_solpor || x.r.asignado) +
+              (x.r.fin_sol ? ' el ' + txt(x.r.fin_sol) : '') + (x.espera !== null ? ' · lleva ' + num(x.espera) + ' ' + plural(x.espera, 'día hábil', 'días hábiles') : '') +
+              (x.tarde ? ' 🔴' : '');
+          })),
+          tardes ? '⚠️ **' + num(tardes) + '** ya pasaron el plazo del asignador.' : '✅ Todas siguen dentro del plazo del asignador.'
+        ) + pieFiltro,
+          'Hay ' + num(pf.length) + ' asignaciones ejecutadas esperando finalización; ' + num(tardes) + ' fuera del plazo del asignador.');
       }
       case 'categoria': {
         var m3 = conteo(lista, 'categoria');

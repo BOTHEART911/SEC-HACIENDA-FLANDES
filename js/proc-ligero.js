@@ -32,7 +32,7 @@
   if (window.__HACPROCLIG) return;
   window.__HACPROCLIG = true;
 
-  var LIGERAS = { agregarproceso: 1, editarproceso: 1, eliminarproceso: 1, rebotarproceso: 1, procdecision: 1 };
+  var LIGERAS = { agregarproceso: 1, editarproceso: 1, eliminarproceso: 1, rebotarproceso: 1, procdecision: 1, procaviso: 1 };   /* 30/10: pedir la finalización cambia el estado */
   var completas = (typeof WeakSet === 'function') ? new WeakSet() : null;
 
   /* estado de la historia, por usuario */

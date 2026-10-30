@@ -814,3 +814,30 @@ html .kit-guard { z-index: 10040; }
 /* 04/10 · el visor único va sobre los modales de la app (10000) y por debajo del guardado */
 html .kit-visor { z-index: 10030; }
 .ica-campo--bloq input { opacity: .7; cursor: not-allowed; }
+
+/* ── 30/10 · EJECUTADO POR FINALIZAR (js/fin-reloj.js) ── */
+.semaforo-morado { background: linear-gradient(135deg, #9333ea, #7e22ce); color: #fff; }
+.proc-card.color-morado { border-left: 4px solid #9333ea !important; }
+.kpi-card.kpi-morado { --kpi-color: #9333ea; }
+.proc-status-pill[data-status="EJECUTADO POR FINALIZAR"].active { background: #9333ea; border-color: #9333ea; color: #fff; }
+.fin-linea { margin: 0 0 14px; padding: 12px 14px; border: 1px solid var(--k-borde, rgba(0,0,0,.1)); border-radius: 14px; background: var(--k-superficie, rgba(255,255,255,.7)); }
+.fin-linea__tit { font: 700 .72rem/1 var(--k-fuente, inherit); letter-spacing: .6px; text-transform: uppercase; color: var(--k-apagado, #64748b); margin-bottom: 10px; }
+.fin-paso { position: relative; display: flex; gap: 10px; padding: 0 0 12px 2px; }
+.fin-paso:last-child { padding-bottom: 0; }
+.fin-paso:not(:last-child)::before { content: ""; position: absolute; left: 7px; top: 16px; bottom: 0; width: 2px; background: var(--k-borde, rgba(0,0,0,.12)); }
+.fin-punto { flex: 0 0 auto; width: 12px; height: 12px; margin-top: 3px; border-radius: 50%; background: #94a3b8; box-shadow: 0 0 0 3px rgba(148,163,184,.25); }
+.fin-paso--asig .fin-punto { background: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,.2); }
+.fin-paso--sol .fin-punto { background: #9333ea; box-shadow: 0 0 0 3px rgba(147,51,234,.2); }
+.fin-paso--dev .fin-punto { background: #f97316; box-shadow: 0 0 0 3px rgba(249,115,22,.2); }
+.fin-paso--fin .fin-punto { background: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,.2); }
+.fin-paso--espera .fin-punto { background: #9333ea; animation: fin-latido 1.6s ease-in-out infinite; }
+@keyframes fin-latido { 50% { box-shadow: 0 0 0 7px rgba(147,51,234,.12); } }
+@media (prefers-reduced-motion: reduce) { .fin-paso--espera .fin-punto { animation: none; } }
+.fin-cuerpo { min-width: 0; }
+.fin-cab { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: .9rem; color: var(--k-tinta, inherit); }
+.fin-meta { font-size: .8rem; color: var(--k-apagado, #64748b); overflow-wrap: anywhere; }
+.fin-tramo { font-weight: 600; }
+.fin-nota { font-size: .8rem; color: var(--k-tinta-2, inherit); margin-top: 2px; overflow-wrap: anywhere; }
+.fin-sello { font: 700 .66rem/1 var(--k-fuente, inherit); text-transform: uppercase; letter-spacing: .4px; padding: 3px 7px; border-radius: 999px; }
+.fin-sello.ok { background: rgba(22,163,74,.14); color: #15803d; }
+.fin-sello.tarde { background: rgba(220,38,38,.14); color: #b91c1c; }
