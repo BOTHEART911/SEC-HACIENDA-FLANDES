@@ -9,7 +9,8 @@
    Un viaje: la ruta 'gerencial' de HACIENDA (Gerencial.gs) cuenta por
    AUTOR en PREDIAL (bitácoras y actuaciones), PROCESOS (bitácoras y
    asignaciones finalizadas) y SOLICITUDES (quién atendió) y devuelve todo
-   compacto (< 100 KB aun con un año de toda la Secretaría). ICA sale de la
+   compacto (< 100 KB aun con un año de toda la Secretaría; desde el 30/10
+   el formato 2 agrupa por día lo que no va al anexo). ICA sale de la
    lista que la app ya precarga al entrar (otro backend, sin viaje nuevo).
 
    Mientras el modal está abierto se bajan en reposo jsPDF y la pieza
@@ -246,7 +247,42 @@
 
   /* ══════════════ de la respuesta al "spec" de kit/gerencial.js ══════════════ */
   var TONO = { o: 'ok', a: 'aviso', m: 'malo', i: 'info' };
+  /* 30/10 — formato 2 (pedido con g=2): los registros que no van al anexo
+     llegan agrupados por día "salto:t.a*n,…|…" y el contribuyente del anexo
+     como posición en xs. Da los mismos registros que el formato 1; solo
+     cambia el orden dentro de un mismo día fuera del anexo, que el kit no usa. */
   function decodificar(d) {
+    if (d && d.v === 2) return decodificar2(d);
+    return decodificar1(d);
+  }
+  function decodificar2(d) {
+    var base = aDia(d.desde), out = [], off = 0;
+    function uno(dia, t, a) {
+      var f = new Date(base); f.setDate(f.getDate() + dia);
+      var tt = d.tipos[t] || ['', 'i', ''];
+      return { fecha: iso(f), tipo: tt[0], tono: TONO[tt[1]] || 'info', categoria: tt[2], autor: a ? (d.autores[a] || '') : '' };
+    }
+    (d.g ? d.g.split('|') : []).forEach(function (s) {
+      var k = s.indexOf(':');
+      off += parseInt(s.slice(0, k), 36);
+      s.slice(k + 1).split(',').forEach(function (it) {
+        var st = it.split('*'), veces = st[1] ? parseInt(st[1], 36) : 1, c = st[0].split('.');
+        var t = parseInt(c[0], 36), a = c[1] ? parseInt(c[1], 36) : 0;
+        for (var i = 0; i < veces; i++) out.push(uno(off, t, a));
+      });
+    });
+    var xs = d.xs || [], x = d.x || [];
+    (d.r ? d.r.split(';') : []).forEach(function (s, i) {
+      var c = s.split('.');
+      var reg = uno(parseInt(c[0], 36), parseInt(c[1], 36), c[2] ? parseInt(c[2], 36) : 0);
+      var e = x[i] || [];
+      reg.sujeto = (typeof e[0] === 'number') ? (xs[e[0]] || '') : (e[0] || '');
+      reg.ref = e[1] || ''; reg.hora = e[2] || '';
+      out.push(reg);
+    });
+    return out;
+  }
+  function decodificar1(d) {
     var base = aDia(d.desde);
     var partes = d.r ? d.r.split(';') : [];
     var x = d.x || [], desdeX = partes.length - x.length;
@@ -412,7 +448,7 @@
     ocupado = true; botonOcupado();
     ctrl = window.AbortController ? new AbortController() : null;
     var t0 = performance.now(), tRed = 0;
-    var pRed = pedir({ desde: desde, hasta: hasta, persona: persona }, ctrl && ctrl.signal).then(function (d) { tRed = performance.now() - t0; return d; });
+    var pRed = pedir({ desde: desde, hasta: hasta, persona: persona, g: '2' }, ctrl && ctrl.signal).then(function (d) { tRed = performance.now() - t0; return d; });
     /* ICA: si la lista aún no se ha precargado y la persona la maneja, se pide en paralelo */
     var pIca = (window.ICA && window.ICA.puede && window.ICA.puede() && !(window.ICA._S && window.ICA._S.cargado))
       ? Promise.race([window.ICA.cargar().catch(function () {}), new Promise(function (r) { setTimeout(r, 4000); })]) : Promise.resolve();
@@ -446,5 +482,5 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', enchufar); else enchufar();
   window.addEventListener('hac:login', function () { personasListas = null; prepHecho = 0; });
 
-  window.GERENCIAL = { abrir: abrir, _spec: spec, _decodificar: decodificar, _medidas: function () { return MEDIDAS.slice(); } };
+  window.GERENCIAL = { abrir: abrir, _spec: spec, _decodificar: decodificar, _decodificar1: decodificar1, _decodificar2: decodificar2, _medidas: function () { return MEDIDAS.slice(); } };
 }());
