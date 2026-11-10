@@ -51,6 +51,7 @@
 .ica-et { margin-left: auto; font: 700 .72rem/1 var(--k-fuente); padding: 6px 10px; border-radius: var(--k-r-pill); color: #fff; background: #6b7a73; white-space: nowrap; }
 .ica-et--CREADO { background: #6b7a73; }
 .ica-et--REQUERIMIENTO { background: #2f6db5; }
+.ica-et--AMPLIACION { background: #0f8a8a; }
 .ica-et--EVALUACION { background: #b7791f; }
 .ica-et--DECISION { background: #7a4fb0; }
 .ica-et--ACTUACION { background: #b03a5b; }
@@ -253,3 +254,17 @@ div.ica-doc { cursor: default; }
   border-radius: 12px; background: #fff; border: 1px dashed var(--k-linea); }
 .ica-vb__prev img { display: block; max-width: 100%; height: auto; }
 .ica-vb__prev span { font-size: .78rem; color: #5b6660; }
+
+/* 10/11 · ampliación de fecha */
+.ica-btn--amp { color: #0f8a8a !important; }
+.ica-amp { display: flex; flex-direction: column; gap: 14px; }
+.ica-amp__datos { padding: 12px 14px; border-radius: 12px; background: var(--k-papel-2); border: 1px solid var(--k-linea); }
+.ica-amp__calc:empty { display: none; }
+.ica-amp__calc { display: flex; flex-direction: column; gap: 8px; }
+.ica-amp__nueva { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 12px;
+  background: rgba(15, 138, 138, .09); border: 1px solid rgba(15, 138, 138, .35); color: #0f6f6f; }
+.ica-amp__nueva span { display: flex; flex-direction: column; font-size: .8rem; }
+.ica-amp__nueva b { font: 700 1.05rem/1.25 var(--k-fuente-titulo); color: var(--k-tinta); }
+.ica-amp__alerta { margin: 0; display: flex; gap: 8px; align-items: flex-start; font-size: .84rem; color: var(--k-aviso, #b7791f); }
+.ica-amp__vb { display: flex; gap: 8px; align-items: center; font-size: .86rem; color: var(--k-tinta-2); }
+.ica-amp__vb i { color: var(--k-apagado); }

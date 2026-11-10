@@ -248,6 +248,7 @@
           { k: 'tips', p: [
             ['campana', '**Recordatorio** antes de vencer, en el mismo hilo.'],
             ['clip', 'Si responde, sus adjuntos quedan en el expediente.'],
+            ['ampliar-fecha', '**Ampliación de fecha**: si pide más plazo, se concede una vez por requerimiento y la tarjeta corre con la fecha nueva.'],
             ['excel', '**Mi trabajo** a Excel y PDF; hasta 5 evidencias por contribuyente.']
           ] }
         ];

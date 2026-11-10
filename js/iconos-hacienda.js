@@ -50,6 +50,10 @@
     'calendario':
       '<rect x="3.5" y="5" width="17" height="15.5" rx="2.4"/><path d="M3.5 10h17"/>' +
       '<path d="M8 3v4M16 3v4"/><path d="M8 14h2M12 14h2M8 17h2"/>',
+    /* 10/11 · AMPLIACIÓN DE FECHA: calendario con una flecha que corre la fecha hacia adelante */
+    'ampliar-fecha':
+      '<rect x="2.8" y="5" width="12.4" height="14.6" rx="2"/><path d="M2.8 9.6h12.4M6.6 3.2v3.6M11.4 3.2v3.6"/>' +
+      '<path d="M6.2 13.4h2.2M6.2 16.4h2.2"/><path d="M12 15h9.2M18.4 12.2l2.8 2.8-2.8 2.8"/>',
     'mapa':
       '<path d="M9 4.5L3.5 6.8v13L9 17.5l6 2.5 5.5-2.3v-13L15 7z"/><path d="M9 4.5v13M15 7v13"/>',
     'tendencia':

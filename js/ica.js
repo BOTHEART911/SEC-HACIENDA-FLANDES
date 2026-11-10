@@ -28,7 +28,7 @@
   var ANIO0 = 2021;
   var LOTE_MAX = 10;
   var ETAPAS = [
-    ['CREADO', 'Creado'], ['REQUERIMIENTO', 'Requerimiento'], ['EVALUACION', 'Evaluación'],
+    ['CREADO', 'Creado'], ['REQUERIMIENTO', 'Requerimiento'], ['AMPLIACION', 'Ampliación de fechas'], ['EVALUACION', 'Evaluación'],
     ['DECISION', 'Decisión del caso'], ['ACTUACION', 'Actuación tributaria'], ['CIERRE', 'Cierre'],
     ['TRASLADO', 'Traslado de cobro']
   ];
@@ -200,6 +200,7 @@
     var hoy = hoyIso();
     if (r.resp) return { k: 'RESP', t: 'Respondió el ' + fCorta(r.resp) };
     if (r.ins) {
+      if (/I/.test(r.amp || '') && hoy <= r.insv) return { k: 'INSIST', t: '2.º requerimiento con plazo AMPLIADO · vence el ' + fCorta(r.insv) };
       if (hoy > r.insv) return { k: 'PEND', t: '2.º requerimiento vencido el ' + fCorta(r.insv) + ' sin respuesta', ins: true, venc: true };
       return { k: 'INSIST', t: '2.º requerimiento enviado el ' + fCorta(r.ins) + ' · vence el ' + fCorta(r.insv) };
     }
@@ -207,8 +208,9 @@
     if (hoy > r.ven) return { k: 'PEND', t: 'Venció el ' + fCorta(r.ven) + ' sin respuesta · pendiente de seguimiento', venc: true };
     var q = habilesHasta(hoy, r.ven);
     var recDias = (S.cfg && S.cfg.recDias) || 5;
-    if (q <= recDias) return { k: 'PORVENCER', t: 'Vence el ' + fCorta(r.ven) + ' · ' + (q === 0 ? 'hoy es el último día' : 'quedan ' + q + ' día' + (q === 1 ? '' : 's') + ' hábil' + (q === 1 ? '' : 'es')) + (r.rec ? ' · recordatorio enviado' : ''), q: q };
-    return { k: 'PLAZO', t: 'Enviado el ' + fCorta(r.env) + ' · vence el ' + fCorta(r.ven) + ' (' + q + ' días hábiles)', q: q };
+    var ampl = /R/.test(r.amp || '') ? ' · plazo ampliado' : '';
+    if (q <= recDias) return { k: 'PORVENCER', t: 'Vence el ' + fCorta(r.ven) + ' · ' + (q === 0 ? 'hoy es el último día' : 'quedan ' + q + ' día' + (q === 1 ? '' : 's') + ' hábil' + (q === 1 ? '' : 'es')) + (r.rec ? ' · recordatorio enviado' : '') + ampl, q: q };
+    return { k: 'PLAZO', t: (ampl ? 'Plazo AMPLIADO' : 'Enviado el ' + fCorta(r.env)) + ' · vence el ' + fCorta(r.ven) + ' (' + q + ' días hábiles)', q: q };
   }
   function enviable(r) { return !r.env && !r.resp && ['CIERRE', 'TRASLADO'].indexOf(r.et) === -1; }
   function insistible(r) { return !!r.env && !r.resp && !r.ins && hoyIso() > r.ven && ['CIERRE', 'TRASLADO'].indexOf(r.et) === -1; }
@@ -395,10 +397,13 @@
       return true;
     });
   }
+  /* 10/11 — secuencial por número de oficio, de menor a mayor (los ceros a la izquierda no cuentan) */
   function orden(a, b) {
-    var pa = prioridad(a), pb = prioridad(b);
-    if (pa !== pb) return pa - pb;
-    return String(b.act || '').localeCompare(String(a.act || ''));
+    var na = parseInt(String(a.of).replace(/\D/g, ''), 10), nb = parseInt(String(b.of).replace(/\D/g, ''), 10);
+    var va = isNaN(na), vb = isNaN(nb);
+    if (va !== vb) return va ? 1 : -1;
+    if (!va && na !== nb) return na - nb;
+    return String(a.of).localeCompare(String(b.of)) || String(a.id).localeCompare(String(b.id));
   }
   function prioridad(r) { return ({ PEND: 0, PORVENCER: 1, SIN: 2, INSIST: 3, PLAZO: 4, RESP: 5 })[seg(r).k]; }
 
@@ -465,6 +470,10 @@
     acc += btn('editar', 'lapiz', 'Editar datos');
     if (insistible(r)) acc += btn('insistir', 'megafono', 'Enviar 2.º requerimiento', 'ica-btn--alerta');
     else acc += btn('enviar', 'enviar', r.env ? 'Reenviar requerimiento' : 'Enviar requerimiento', enviable(r) ? 'bdp-icon-btn--marca' : '', !(enviable(r) || (r.env && !r.resp)));
+    if (r.env && ['CIERRE', 'TRASLADO'].indexOf(r.et) === -1) {
+      var yaAmp = ampliado(r);
+      acc += btn('ampliar', 'ampliar-fecha', yaAmp ? 'Ampliación de fecha ya concedida (' + (r.ins ? '2.º requerimiento' : 'requerimiento') + ')' : 'Ampliación de fecha', yaAmp ? '' : 'ica-btn--amp', yaAmp);
+    }
     acc += btn('evidencia', 'clip', 'Anexar evidencia');
     acc += btn('etapa', 'adelante', 'Cambiar etapa');
     if (puedeEliminar(r)) acc += btn('eliminar', 'basura', 'Eliminar contribuyente', 'danger-icon');
@@ -500,6 +509,7 @@
     else if (a === 'insistir') enviarUno(r, 'ins');
     else if (a === 'evidencia') abrirEvidencias(r);
     else if (a === 'etapa') abrirEtapa(r);
+    else if (a === 'ampliar') abrirAmpliacion(r);
     else if (a === 'eliminar') eliminar(r);
   }
 
@@ -864,8 +874,8 @@
       }).join('') : '<p class="ica-nada">Sin evidencias todavía.</p>';
       var en = d.envios || [];
       m.q('[data-envios]').innerHTML = en.length ? en.map(function (x) {
-        var t = { req: 'Requerimiento', ins: '2.º requerimiento', rec: 'Recordatorio' }[x.t] || x.t;
-        return '<div class="ica-envio">' + ico(x.t === 'rec' ? 'campana' : (x.t === 'ins' ? 'megafono' : 'enviar'), 18) + '<span><b>' + esc(t) + '</b> · ' + esc(x.f) +
+        var t = { req: 'Requerimiento', ins: '2.º requerimiento', rec: 'Recordatorio', amp: 'Ampliación de fecha' + (x.s === 'ins' ? ' (2.º req.)' : '') }[x.t] || x.t;
+        return '<div class="ica-envio">' + ico(x.t === 'rec' ? 'campana' : (x.t === 'ins' ? 'megafono' : (x.t === 'amp' ? 'ampliar-fecha' : 'enviar')), 18) + '<span><b>' + esc(t) + '</b> · ' + esc(x.f) +
           '<small>Para: ' + esc(x.para || '') + (x.por ? ' · por ' + esc(titulo(x.por)) : '') + '</small></span></div>';
       }).join('') : '<p class="ica-nada">Aún no se ha enviado.</p>';
       pintarBit(d.bitacora);
@@ -1208,7 +1218,7 @@
       cuerpo: '<p class="hf-modal__p">' + esc(r.nom) + '</p><div class="ica-etapas">' + ETAPAS.map(function (e) {
         return '<label class="ica-etapa' + (r.et === e[0] ? ' on' : '') + '"><input type="radio" name="et" value="' + e[0] + '"' + (r.et === e[0] ? ' checked' : '') + '><span class="ica-et ica-et--' + e[0] + '">' + esc(e[1]) + '</span></label>';
       }).join('') + '</div><label class="ica-campo"><span class="ica-campo__t">Nota para la bitácora <span class="ica-opc">(opcional)</span></span><textarea rows="2" maxlength="500" data-nota></textarea></label>' +
-        '<p class="ica-nota">Creado, Requerimiento y Evaluación los pone la app sola (al crear, al enviar y al vencer el plazo). Aquí puedes moverlo a mano.</p>',
+        '<p class="ica-nota">Creado, Requerimiento, Ampliación de fechas y Evaluación los pone la app sola (al crear, al enviar, al conceder la ampliación y al vencer el plazo). Aquí puedes moverlo a mano.</p>',
       pie: '<button type="button" class="kit-btn" data-cerrar>Cancelar</button><button type="button" class="kit-btn kit-btn--marca" data-ok>' + ico('check') + ' Guardar etapa</button>'
     });
     m.q('.ica-etapas').addEventListener('change', function () { m.querySelectorAll('.ica-etapa').forEach(function (l) { l.classList.toggle('on', l.querySelector('input').checked); }); });
@@ -1222,6 +1232,174 @@
       }, function (e) { ocupado(m, btn, false); if (e.codigo !== 'RED') btn.__rid = null; aviso(e.message, 'aviso'); });
     });
   }
+
+  /* ══════════════ ampliación de fecha (10/11) ══════════════
+     Respuesta a la solicitud de ampliación del plazo. Se concede UNA vez por
+     requerimiento (1.º o 2.º): corre sobre el término vigente. El modal trae
+     lo que ya se sabe (contribuyente, requerimiento, vencimiento y, si la
+     solicitud llegó por correo, su fecha y quién escribió) y solo pide lo que
+     falta. La fecha nueva se calcula aquí igual que en el servidor (hábiles
+     con los festivos de HACIENDA). El correo sale desde cobrocoactivo. */
+  var AMP_CAL = [
+    ['APODERADA', 'Apoderada'], ['APODERADO', 'Apoderado'], ['REP_F', 'Representante legal (ella)'], ['REP_M', 'Representante legal (él)'],
+    ['REVISORA', 'Revisora fiscal'], ['REVISOR', 'Revisor fiscal'], ['CONTADORA', 'Contadora'], ['CONTADOR', 'Contador'],
+    ['PROPIO_F', 'La contribuyente (en nombre propio)'], ['PROPIO_M', 'El contribuyente (en nombre propio)']
+  ];
+  function ampSobre(r) { return r.ins ? 'I' : 'R'; }
+  function ampliado(r) { return String(r.amp || '').indexOf(ampSobre(r)) !== -1; }
+  function sumarPlazo(desde, n, unidad) {
+    var d = deIso(desde);
+    if (String(unidad).toUpperCase() === 'CALENDARIO') return aIso(new Date(d.getTime() + n * 86400000));
+    var c = 0; while (c < n) { d = new Date(d.getTime() + 86400000); if (esHabil(d)) c++; }
+    return aIso(d);
+  }
+  function miCasilla() {
+    var vb = (S.cfg && S.cfg.vb) || [];
+    return vb.filter(function (v) { return v.mia; })[0] || null;
+  }
+
+  function abrirAmpliacion(r) {
+    if (!r.env) { aviso('Primero se envía el requerimiento.', 'info'); return; }
+    if (ampliado(r)) { aviso('La ampliación de este ' + (r.ins ? '2.º requerimiento' : 'requerimiento') + ' ya se concedió: es una sola vez.', 'info', 5000); return; }
+    var ins = !!r.ins;
+    var venceIni = ins ? r.insv : r.ven, fReq = ins ? r.ins : r.env;
+    var plazoIni = Number(ins ? (r.ipl || (S.cfg && S.cfg.insDias) || 15) : r.pl) || 15;
+    var cas = miCasilla(), p = perfil() || {};
+    var jur = r.nat === 'JURIDICA';
+    var hoy = hoyIso();
+    var m = modal({
+      fijo: true, ancha: true, icono: 'ampliar-fecha',
+      sucio: function () { return foto0 !== null && foto() !== foto0; },
+      titulo: 'Ampliación de fecha · Oficio ' + r.of,
+      cuerpo:
+        '<form class="ica-form ica-amp" autocomplete="off" novalidate>' +
+          '<ul class="ica-lista-conf ica-amp__datos">' +
+            '<li><span>Contribuyente</span><b>' + esc(r.nom) + '</b></li>' +
+            '<li><span>' + esc(r.tid) + '</span><b>' + esc(identTxt(r.tid, r.ide)) + '</b></li>' +
+            '<li><span>Sobre</span><b>' + (ins ? '2.º requerimiento' : 'Requerimiento ordinario') + ' · enviado el ' + esc(fLarga(fReq)) + '</b></li>' +
+            '<li><span>Término</span><b>' + esc(plazoIni + ' ' + unidadTxt(r.un)) + ' · ' + (hoy > venceIni ? 'venció' : 'vence') + ' el ' + esc(fLarga(venceIni)) + '</b></li>' +
+            '<li><span>Para</span><b data-para>' + esc([r.c1, r.c2].filter(String).join(', ')) + '</b></li>' +
+          '</ul>' +
+          '<div class="ica-rej2">' +
+            campo('sol', 'Quién solicita', '<input name="sol" maxlength="120" placeholder="Nombres y apellidos">', 'Como aparece en la solicitud.') +
+            campo('cal', 'En calidad de', '<select name="cal"><option value="">Elige…</option>' + AMP_CAL.map(function (c) {
+              return '<option value="' + c[0] + '">' + esc(c[1]) + '</option>'; }).join('') + '</select>',
+              jur ? 'El documento dice «… de la sociedad».' : 'El documento dice «… del contribuyente».') +
+            campo('fsol', 'Fecha de la solicitud', '<input name="fsol" type="date" max="' + esc(hoy) + '" min="' + esc(String(fReq).slice(0, 10)) + '">', '<span data-fsolayuda></span>') +
+            campo('medio', 'Cómo llegó', '<select name="medio"><option value="correo">Por correo a cobrocoactivo</option><option value="fisico">Radicada en la Secretaría</option></select>') +
+            campo('csol', 'Correo de quien solicita <span class="ica-opc">(opcional)</span>', '<input name="csol" type="email" inputmode="email" placeholder="Se suma a los destinatarios">') +
+            campo('dias', 'Días de ampliación', '<input name="dias" type="number" min="1" max="90" value="' + plazoIni + '">',
+              esc(unidadTxt(r.un)) + ', contados desde el día siguiente al vencimiento del término.') +
+          '</div>' +
+          '<div class="ica-amp__calc" data-calc></div>' +
+          '<div class="ica-amp__vb">' + ico('firma', 18) + '<span>Proyectó: <b>' + esc(cas ? cas.nombre : titulo(p.nombre || '')) + '</b>' +
+            (cas ? ' · ' + esc(cas.cargo) + (cas.vigente ? ' · con tu firma de visto bueno' : ' · <i>sin firma cargada (súbela en Configuración)</i>') : '') + '</span></div>' +
+          (cas ? '' : campo('vbCargo', 'Tu cargo (va debajo de tu nombre en «Proyectó»)', '<input name="vbCargo" maxlength="80" placeholder="Ej.: Profesional Contratista">',
+            'No estás en las casillas de visto bueno de Configuración: el documento sale sin imagen de firma.')) +
+          '<p class="ica-nota">Firma la Secretaria de Hacienda. El correo sale desde cobrocoactivo@flandes-tolima.gov.co con el PDF; el PDF queda en el expediente y la tarjeta pasa a «Ampliación de fechas» con la fecha nueva.</p>' +
+          '<p class="ica-err" data-err hidden></p>' +
+        '</form>',
+      pie: '<button type="button" class="kit-btn" data-cerrar>Cancelar</button>' +
+        (tiene('DEV') ? '<button type="button" class="kit-btn" data-prueba title="Manda el documento solo a tu correo y no guarda nada">' + ico('sobre') + ' Prueba a mi correo</button>' : '') +
+        '<button type="button" class="kit-btn" data-previa>' + ico('pdf') + ' Vista previa</button>' +
+        '<button type="button" class="kit-btn kit-btn--marca" data-enviar>' + ico('enviar') + ' Conceder y enviar</button>'
+    });
+    var f = m.q('form');
+    var foto0 = null;
+    function foto() { return ['sol', 'cal', 'fsol', 'medio', 'csol', 'dias', 'vbCargo'].map(function (k) { return f[k] ? f[k].value : ''; }).join('|'); }
+    function datos() {
+      return { sol: f.sol.value.trim(), cal: f.cal.value, fsol: f.fsol.value, medio: f.medio.value, csol: f.csol.value.trim().toLowerCase(),
+        dias: f.dias.value, vbCargo: f.vbCargo ? f.vbCargo.value.trim() : '' };
+    }
+    function calc() {
+      var d = datos(), n = parseInt(d.dias, 10), html = '';
+      if (n >= 1 && n <= 90) {
+        var nv = sumarPlazo(venceIni, n, r.un);
+        html += '<div class="ica-amp__nueva">' + ico('calendario', 20) + '<span>Nueva fecha límite<b>' + esc(fLarga(nv)) + '</b></span></div>';
+        if (nv < hoy) html += '<p class="ica-amp__alerta">' + ico('vencido', 16) + ' Esa fecha ya pasó: sube los días de ampliación.</p>';
+      }
+      if (d.fsol && d.fsol > venceIni) html += '<p class="ica-amp__alerta">' + ico('vencido', 16) + ' La solicitud llegó <b>después</b> del vencimiento (' + esc(fLarga(venceIni)) +
+        '). Se puede conceder; el documento no dirá «se presentó en tiempo».</p>';
+      var para = [r.c1, r.c2].filter(String); if (d.csol && correoOk(d.csol) && para.indexOf(d.csol) === -1) para.push(d.csol);
+      m.q('[data-para]').textContent = para.join(', ');
+      m.q('[data-calc]').innerHTML = html;
+    }
+    f.addEventListener('input', calc); f.addEventListener('change', calc);
+    calc();
+    /* lo que se sabe de la solicitud: el último correo del contribuyente (de fondo; no frena el modal) */
+    if (respondio(r)) {
+      m.q('[data-fsolayuda]').textContent = 'Buscando el correo de la solicitud…';
+      traerFicha(r, false).then(function (d) {
+        if (!document.body.contains(m)) return;
+        var limpio = foto() === foto0;
+        var l = (d.respuestas || []).filter(function (x) { return !x.a && String(x.f).slice(0, 10) >= String(fReq).slice(0, 10); });
+        var u = l[l.length - 1];
+        if (u) {
+          if (!f.fsol.value) f.fsol.value = String(u.f).slice(0, 10);
+          var de = String(u.de || '').toLowerCase();
+          if (de && !f.csol.value && [r.c1, r.c2].indexOf(de) === -1) f.csol.value = de;
+          m.q('[data-fsolayuda]').textContent = 'Tomada del correo del ' + fHora(u.f) + (u.de ? ' (' + u.de + ')' : '') + '. Cámbiala si no es esa.';
+        } else m.q('[data-fsolayuda]').textContent = '';
+        if (limpio) foto0 = foto(); calc();
+      }, function () { var x = m.q('[data-fsolayuda]'); if (x) x.textContent = ''; });
+    }
+    foto0 = foto();
+    setTimeout(function () { try { f.sol.focus(); } catch (e) {} }, 60);
+
+    function validar() {
+      var d = datos(), falta = [];
+      if (d.sol.length < 3) falta.push('quién solicita');
+      if (!d.cal) falta.push('en calidad de');
+      if (!d.fsol) falta.push('fecha de la solicitud');
+      else if (d.fsol > hoy) falta.push('fecha de la solicitud (no puede ser futura)');
+      var n = parseInt(d.dias, 10); if (!(n >= 1 && n <= 90)) falta.push('días de ampliación (1 a 90)');
+      if (d.csol && !correoOk(d.csol)) falta.push('correo de quien solicita válido');
+      if (f.vbCargo && !d.vbCargo) falta.push('tu cargo');
+      var er = m.q('[data-err]');
+      er.hidden = !falta.length; er.textContent = falta.length ? 'Falta: ' + falta.join(', ') + '.' : '';
+      return falta.length ? null : d;
+    }
+    m.q('[data-previa]').addEventListener('click', function () {
+      var btn = this, d = validar(); if (!d || btn.disabled) return;
+      btn.disabled = true;
+      var t0 = Date.now();
+      guardando(llamar('ampprevia', { id: r.id, datos: d }, { post: true }), 'Armando la vista previa').then(function (x) {
+        btn.disabled = false;
+        medPant('ampprevia', t0);
+        var b64 = x.b64;
+        abrirVisor(r, [], null, { titulo: x.nombre, tipo: 'pdf', detalle: 'Vista previa (aún no enviada)',
+          cargar: function () { return Promise.resolve({ nombre: x.nombre + '.pdf', mime: 'application/pdf', base64: b64 }); } });
+      }, function (e) { btn.disabled = false; aviso(e.message, 'aviso', 6000); });
+    });
+    var prB = m.q('[data-prueba]');
+    if (prB) prB.addEventListener('click', function () {
+      var btn = this, d = validar(); if (!d || btn.disabled) return;
+      var correo = String(p.correo || '').trim();
+      if (!correoOk(correo)) { aviso('Tu perfil no tiene un correo válido.', 'aviso'); return; }
+      btn.disabled = true;
+      var t0 = Date.now();
+      guardando(llamar('ampliar', { id: r.id, datos: d, prueba: correo }, { post: true, rid: nuevoRid() }), 'Enviando la prueba').then(function (x) {
+        btn.disabled = false; medPant('ampliar-prueba', t0);
+        sonar('success'); aviso('Prueba enviada a ' + correo + '. No se guardó nada.', 'ok', 5000);
+      }, function (e) { btn.disabled = false; aviso(e.message, 'aviso', 7000); sonar('error'); });
+    });
+    m.q('[data-enviar]').addEventListener('click', function () {
+      var btn = this, d = validar(); if (!d || m.__ocupado) return;
+      ocupado(m, btn, true);
+      var rid = btn.__rid || (btn.__rid = nuevoRid());
+      var t0 = Date.now();
+      guardando(llamar('ampliar', { id: r.id, datos: d }, { post: true, rid: rid }), 'Enviando la ampliación').then(function (x) {
+        medPant('ampliar', t0);
+        parchar(x.fila); ocupado(m, btn, false);
+        delete S.fichas[r.id];
+        m.cerrar(true); sonar('success');
+        aviso('Ampliación concedida y enviada. Nueva fecha: ' + fLarga((x.ampliacion && x.ampliacion.vence) || '') + '.', 'ok', 5000);
+        if (activa()) pintarTodo();
+      }, function (e) { ocupado(m, btn, false); if (e.codigo !== 'RED') btn.__rid = null; aviso(e.message, 'aviso', 7000); sonar('error'); });
+    });
+  }
+  /** Tiempo de pantalla de una acción (medición en el front, regla 15). */
+  function medPant(ruta, t0) { try { window.__icaMed.push({ ruta: ruta + ':pantalla', ms: Date.now() - t0 }); } catch (e) {} }
 
   /* ══════════════ carga masiva ══════════════ */
   var CDN_XLSX = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
@@ -1403,8 +1581,8 @@
 
   /* ══════════════ configuración de la vista ══════════════ */
   var GRUPOS = [['correo', 'Correo del requerimiento', 'sobre'], ['plazo', 'Plazos y seguimiento', 'reloj'], ['rec', 'Recordatorio', 'campana'],
-    ['ins', '2.º requerimiento (insistencia)', 'megafono'], ['firmas', 'Firmas del documento', 'firma'], ['dev', 'Desarrollador', 'engranaje']];
-  var MARCADORES = '{{numOficio}} {{fecha}} {{nombre}} {{tipo}} {{identificacion}} {{direccion}} {{correo}} {{municipio}} {{vigencias}} {{plazoTexto}} {{vence}} {{fechaEnvio}} {{diasRestantes}} {{firmaNombre}} {{firmaCargo}}';
+    ['ins', '2.º requerimiento (insistencia)', 'megafono'], ['amp', 'Ampliación de fecha', 'ampliar-fecha'], ['firmas', 'Firmas del documento', 'firma'], ['dev', 'Desarrollador', 'engranaje']];
+  var MARCADORES = '{{numOficio}} {{fecha}} {{nombre}} {{tipo}} {{identificacion}} {{direccion}} {{correo}} {{municipio}} {{vigencias}} {{plazoTexto}} {{vence}} {{fechaEnvio}} {{diasRestantes}} {{firmaNombre}} {{firmaCargo}} · ampliación: {{reqNombre}} {{reqTitulo}} {{fechaReq}} {{solicitante}} {{fechaSolicitud}} {{diasAmpliacionTexto}} {{nuevoVence}} {{venceInicial}}';
   function abrirConfig() {
     var c = S.cfg;
     if (!c) { aviso('Espera a que cargue la vista.', 'info'); return; }
@@ -1415,6 +1593,7 @@
       cuerpo: '<div class="ica-cfg-plant">' +
           '<button type="button" class="kit-btn" data-plant="' + esc(c.plantillaReq || '') + '"' + (c.plantillaReq ? '' : ' disabled') + '>' + ico('documento') + ' Ir a plantilla del requerimiento</button>' +
           '<button type="button" class="kit-btn" data-plant="' + esc(c.plantillaIns || '') + '"' + (c.plantillaIns ? '' : ' disabled') + '>' + ico('documento') + ' Ir a plantilla del 2.º requerimiento</button>' +
+          '<button type="button" class="kit-btn" data-plant="' + esc(c.plantillaAmp || '') + '"' + (c.plantillaAmp ? '' : ' disabled') + '>' + ico('ampliar-fecha') + ' Ir a plantilla de ampliación de fecha</button>' +
           (c.esDev ? '<label class="kit-btn ica-subir">' + ico('firma') + (c.hayFirma ? ' Cambiar firma de la Secretaria ✓' : ' Subir firma de la Secretaria') + '<input type="file" accept="image/png,image/jpeg" hidden data-firma></label>' : '') +
         '</div>' +
         vbHtml(c) +
@@ -1610,6 +1789,7 @@
   window.ICA = {
     abrir: abrir, cargar: cargar, olvidar: olvidar, insight: insight, puede: puede, festivosCambiaron: festivosCambiaron,
     _S: S, _seg: seg, _dv: dvNit, _nitOk: nitOk, _habiles: habilesHasta, _validar: validar, _identTxt: identTxt,
-    _form: abrirForm, _config: abrirConfig, _limpiarFirma: limpiarFirma, _ofSiguiente: ofSiguiente
+    _form: abrirForm, _config: abrirConfig, _limpiarFirma: limpiarFirma, _ofSiguiente: ofSiguiente,
+    _amp: abrirAmpliacion, _orden: orden, _ampliado: ampliado, _sumar: sumarPlazo
   };
 }());
