@@ -995,8 +995,9 @@
       : escribirExcel(d, cols);
 
     trabajo.then(function () {
-      avance(d.items.length.toLocaleString('es-CO') + ' ' +
-             (F.cosas || 'anotaciones') + ' descargadas.');
+      /* 12/11 — "mensajes descargadas" no concordaba: frase sin género */
+      avance('Listo: ' + d.items.length.toLocaleString('es-CO') + ' ' +
+             (F.cosas || 'anotaciones') + ' en el archivo.');
     }).catch(function (e) {
       avisar('error', 'No se pudo descargar', (e && e.message) ? e.message : String(e));
     }).then(function () {

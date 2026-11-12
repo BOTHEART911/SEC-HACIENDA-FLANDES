@@ -64,8 +64,11 @@
       ver:   'descargaProcesos',
       titulo:'MIS PROCESOS',
       hoja:  'PROCESOS',
-      /* LOTE 13/08 — rango por FECHA DE CREACION (col B), marcado de entrada
-         y se puede desmarcar para llevarse todas las filas */
+      /* LOTE 13/08 — rango por FECHA DE CREACION (col B).
+         12/11/2026 — APAGADO de entrada: venía marcado con el mes en curso y
+         a quien no tenía asignaciones creadas este mes (ARCHIVO, varias
+         abogadas) el botón no le bajaba nada. Ahora baja todo lo suyo y el
+         rango es opcional, como el de la bitácora en Datos Excel. */
       creacion: true
     }
   };
@@ -350,9 +353,9 @@
       }
       cont.appendChild(bloqueRango(
         'dsc-crea',
-        'Descargar por fecha de Creación',
-        'Desmárcalo para llevarte todas las filas, sin rango de fechas.',
-        true, hoyISO(primero), hoyISO(hoy)
+        'Solo un rango por fecha de Creación (opcional)',
+        'Apagado te llevas todas tus asignaciones. Enciéndelo para quedarte con las creadas entre esas fechas.',
+        false, hoyISO(primero), hoyISO(hoy)
       ));
     }
   }
@@ -404,11 +407,18 @@
       fuenteActiva = fuente;
 
       $('dsc-titulo').textContent = FUENTES[fuente].titulo;
+      /* 12/11 — ARCHIVO: su trabajo son las SOLICITUDES DE EXPEDIENTE */
+      var txtArchivo = fuente === 'procesos'
+        ? 'Se descargan las asignaciones con SOLICITUD DE EXPEDIENTE (tu trabajo de ARCHIVO) y las que estén a tu nombre.'
+        : 'Se descargan los expedientes con SOLICITUD DE EXPEDIENTE o EXPEDIENTE (tu trabajo de ARCHIVO)' +
+          (op.porBitacora ? ' y aquellos donde escribiste en la bitácora.' : ' y los que estén a tu nombre.');
       $('dsc-alcance').textContent = op.todo
         ? 'Se descargan TODAS las filas de la hoja ' + FUENTES[fuente].hoja + '.'
-        : (op.porBitacora && fuente === 'predial'
-            ? 'Se descargan los expedientes donde TÚ escribiste en la bitácora.'
-            : 'Se descargan solo las filas que están a tu nombre.');
+        : (op.esArchivo && fuente !== 'solicitudes')
+          ? txtArchivo
+          : (op.porBitacora && fuente === 'predial'
+              ? 'Se descargan los expedientes donde TÚ escribiste en la bitácora.'
+              : 'Se descargan solo las filas que están a tu nombre.');
       avance('');
 
       pintarFiltros(fuente);
@@ -416,8 +426,12 @@
 
       $('modal-descargas').classList.remove('hidden');
 
-      /* FASE 8 — el conteo arranca con el modal, ya con los filtros de fábrica */
+      /* FASE 8 — el conteo arranca con el modal, ya con los filtros de fábrica.
+         12/11 — el caché de conteos es de ESTA apertura: si alguien guardó
+         algo mientras tanto, el número se vuelve a preguntar. */
       contTotal = null;
+      contSinRango = null;
+      contCache = {};
       pintarConteo('Contando filas…');
       contar(true);
     });
@@ -436,6 +450,7 @@
      combinación de filtros para no repetir la misma pregunta. */
 
   var contTotal   = null;     /* último total conocido            */
+  var contSinRango = null;    /* 12/11 — cuántas serían sin el rango de fechas */
   var contTimer   = null;     /* rebote del teclado/los selects   */
   var contPedido  = 0;        /* para descartar respuestas viejas */
   var contCache   = {};       /* firma de filtros → total         */
@@ -448,17 +463,54 @@
     return columnasMarcadas().length;
   }
 
+  /* 12/11 — el botón solo se enciende cuando hay algo que bajar: antes se
+     tocaba DESCARGAR, viajaba al servidor y volvía "no hay filas". */
+  function botonListo(ok) {
+    var b = $('btn-dsc-descargar');
+    if (b && !bajando) b.disabled = !ok;
+  }
+
+  /* 12/11 — ¿hay un rango de fechas encendido en el modal? */
+  function hayRango() {
+    var def = FUENTES[fuenteActiva] || {};
+    if (def.fecha) return !!(($('dsc-desde') || {}).value || ($('dsc-hasta') || {}).value);
+    if (def.creacion) return !!($('dsc-crea') && $('dsc-crea').checked);
+    if (def.bitacora) return !!($('dsc-bit') && $('dsc-bit').checked);
+    return false;
+  }
+
+  /* 12/11 — quitar el rango con un toque (y volver a contar). */
+  function quitarRango() {
+    var def = FUENTES[fuenteActiva] || {};
+    if (def.fecha) { if ($('dsc-desde')) $('dsc-desde').value = ''; if ($('dsc-hasta')) $('dsc-hasta').value = ''; }
+    ['dsc-crea', 'dsc-bit'].forEach(function (id) {
+      var c = $(id);
+      if (c && c.checked) { c.checked = false; var caja = $(id + '-bloque'); if (caja) caja.classList.add('dsc-off'); }
+    });
+    contar(true);
+  }
+
   function pintarConteo(texto) {
     var el = $('dsc-conteo');
     if (!el) return;
-    if (typeof texto === 'string') { el.textContent = texto; return; }
+    if (typeof texto === 'string') { el.textContent = texto; botonListo(false); return; }
 
     var cols = nColumnas();
-    if (contTotal === null) { el.textContent = ''; return; }
+    if (contTotal === null) { el.textContent = ''; botonListo(true); return; }
     if (contTotal === 0) {
-      el.textContent = 'Con estos filtros no queda ninguna fila para descargar.';
+      botonListo(false);
+      if (hayRango() && contSinRango) {
+        el.innerHTML = 'En ese rango de fechas no tienes filas; sin el rango tienes <b>' +
+          contSinRango.toLocaleString('es-CO') + '</b>. ' +
+          '<button type="button" class="dsc-mini" id="btn-dsc-sinrango">Quitar el rango</button>';
+        var q = $('btn-dsc-sinrango');
+        if (q) q.addEventListener('click', quitarRango);
+      } else {
+        el.textContent = 'Con estos filtros no queda ninguna fila para descargar.';
+      }
       return;
     }
+    botonListo(cols > 0);
     el.textContent = 'Se van a descargar ' + contTotal.toLocaleString('es-CO') +
       ' filas × ' + cols + (cols === 1 ? ' columna' : ' columnas') + '.';
   }
@@ -490,14 +542,15 @@
     if (!FUENTES[fuente]) return;
 
     var u = uid();
-    if (!u) { contTotal = null; pintarConteo(''); return; }
+    if (!u) { contTotal = null; pintarConteo(); return; }
 
     var filtros = filtrosDelModal(fuente);
     delete filtros.orden;                 /* el orden no cambia el conteo */
     var f = firma(fuente, filtros);
 
     if (contCache.hasOwnProperty(f)) {
-      contTotal = contCache[f];
+      contTotal = contCache[f].t;
+      contSinRango = contCache[f].s;
       pintarConteo();
       return;
     }
@@ -509,14 +562,17 @@
       .then(function (res) {
         if (mio !== contPedido) return;             /* llegó tarde */
         var t = (res && typeof res.total === 'number') ? res.total : null;
+        var sr = (res && typeof res.totalSinRango === 'number') ? res.totalSinRango : null;
         contTotal = t;
-        if (t !== null) contCache[f] = t;
+        contSinRango = sr;
+        if (t !== null) contCache[f] = { t: t, s: sr };
         pintarConteo();
       })
       .catch(function (e) {
         if (mio !== contPedido) return;
         contTotal = null;
-        pintarConteo('');
+        contSinRango = null;
+        pintarConteo();
         console.warn('DESCARGAS: no se pudo contar las filas.', e);
       });
   }
@@ -620,8 +676,7 @@
       avisar('error', 'No se pudo descargar', (e && e.message) ? e.message : String(e));
     }).then(function () {
       bajando = false;
-      var b = $('btn-dsc-descargar');
-      if (b) b.disabled = false;
+      pintarConteo();
     });
   }
 
