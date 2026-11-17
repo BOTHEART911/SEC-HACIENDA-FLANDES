@@ -124,7 +124,16 @@
     p.then(function () { S.cargando = null; }, function () { S.cargando = null; });
     return p;
   }
-  function olvidar() { S.camps = null; S.cfg = null; S.cargado = false; parar(); }
+  function olvidar() { S.camps = null; S.cfg = null; S.cargado = false; S.opc = null; parar(); }
+  /* 17/11 — conteos de BD Predial para los filtros: se piden de fondo al abrir
+     Marketing y se reutilizan 10 min (el asistente los pinta al instante). */
+  function opciones() {
+    if (S.opc && Date.now() - S.opcT < 600000) return Promise.resolve(S.opc);
+    if (S.opcP) return S.opcP;
+    S.opcP = llamar('masopciones', {}).then(function (o) { S.opc = o; S.opcT = Date.now(); S.opcP = null; return o; },
+      function (e) { S.opcP = null; throw e; });
+    return S.opcP;
+  }
   window.addEventListener('hac:sesionVencida', olvidar);
 
   /* ══════════════ la vista ══════════════ */
@@ -178,6 +187,7 @@
     S.tipo = tipo;
     montarVista(tipo);
     if (typeof window.showView === 'function') window.showView(VISTAS[tipo]);
+    if (tipo === 'MKT') setTimeout(function () { if (activa(tipo)) opciones().catch(function () {}); }, 0);
     if (S.cargado) { pintar(tipo); sondear(); return; }
     pintarEsqueleto(tipo);
     cargar().then(function () { if (activa(tipo)) { pintar(tipo); sondear(); } }, function (e) {
@@ -547,7 +557,7 @@
     function filtrosBd() {
       var z = m.q('[data-filtros]'); if (!z) return;
       if (W.opciones) { pintarFiltros(z, W.opciones); return; }
-      llamar('masopciones', {}).then(function (o) { W.opciones = o; pintarFiltros(z, o); },
+      opciones().then(function (o) { W.opciones = o; pintarFiltros(z, o); },
         function (e) { z.innerHTML = '<p class="ica-err">' + esc(e.message) + '</p>'; });
     }
     function pintarFiltros(z, o) {
