@@ -37,7 +37,11 @@
   if (window.__HACDSC_LISTO) return;      /* guarda contra doble montaje */
   window.__HACDSC_LISTO = true;
 
+  /* 17/11 — la librería de Excel viaja con la app (misma versión): no
+     depende de que la red de la Alcaldía deje pasar cdn.jsdelivr.net. */
+  var LOCAL_XLSX = 'vendor/xlsx-0.18.5.full.min.js';
   var CDN_XLSX  = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+  var ultimoArchivo = null;    /* 17/11 — { url, nombre } del último Excel armado */
   var CLAVE_COLS = 'hac.descargas.v1';    /* últimas columnas marcadas */
   var VIDA_OPCIONES_MS = 10 * 60 * 1000;  /* refrescar opciones cada 10 min */
 
@@ -390,6 +394,7 @@
 
   function abrir(fuente) {
     if (!FUENTES[fuente]) return;
+    cargarXLSX();   /* 17/11 — de fondo: cuando toque DESCARGAR ya estará */
 
     traerOpciones(false).then(function (op) {
       if (!op) {
@@ -639,15 +644,31 @@
     bajando = true;
     $('btn-dsc-descargar').disabled = true;
     avance('Preparando…');
+    var t0 = Date.now();
+
+    /* 17/11 — EXPORTANDO, no GUARDANDO: el cohete dice lo que de verdad
+       pasa. La petición va en silencio (__HAC_SILENCIO) para que el loader
+       general no abra su "Guardando · Guardando en la hoja…". */
+    var cohete = (window.KIT && window.KIT.piezas && window.KIT.piezas.guardado) || null;
+    if (cohete) cohete.abrir({
+      titulo: 'Exportando',
+      sub: 'Estamos armando tu Excel. No cierres esta ventana.',
+      pasos: ['Pidiendo los datos…', 'Armando el Excel…', 'Descargando…']
+    });
 
     var encabezados = null;
     var filas = [];
     var titulo = FUENTES[fuente].titulo;
 
     function pagina(n) {
-      return window.apiPost('descargar', {
-        uid: u, fuente: fuente, columnas: cols, filtros: filtros, pagina: n
-      }).then(function (res) {
+      var p;
+      window.__HAC_SILENCIO = true;
+      try {
+        p = window.apiPost('descargar', {
+          uid: u, fuente: fuente, columnas: cols, filtros: filtros, pagina: n
+        });
+      } finally { window.__HAC_SILENCIO = false; }
+      return p.then(function (res) {
         if (!encabezados) encabezados = res.encabezados || [];
         if (res.archivo) titulo = res.archivo;
         filas = filas.concat(res.filas || []);
@@ -660,8 +681,10 @@
       });
     }
 
+    var bien = false;
     pagina(1).then(function () {
       if (!filas.length) {
+        if (cohete) cohete.cerrar();
         avisar('info', 'No hay filas para descargar',
                porBitacora()
                  ? 'Tu archivo sale de los expedientes donde escribiste en la bitácora; con estos filtros no quedó ninguno.'
@@ -670,27 +693,75 @@
       }
       avance('Armando el archivo…');
       return escribirExcel(titulo, encabezados, filas).then(function () {
-        avance(filas.length.toLocaleString('es-CO') + ' filas descargadas.');
+        bien = true;
+        var seg = ((Date.now() - t0) / 1000).toFixed(1).replace('.', ',');
+        try { console.info('[descargas] ' + fuente + ': ' + filas.length + ' filas en ' + seg + ' s'); } catch (_) {}
+        listoConRespaldo(filas.length);
+        if (cohete) return cohete.listo({ titulo: 'Excel listo', sub: filas.length.toLocaleString('es-CO') + ' filas.', paso: 'Descargado' });
       });
     }).catch(function (e) {
+      if (cohete) cohete.fallo();
       avisar('error', 'No se pudo descargar', (e && e.message) ? e.message : String(e));
     }).then(function () {
       bajando = false;
-      pintarConteo();
+      if (bien) { var b = $('btn-dsc-descargar'); if (b) b.disabled = false; }
+      else pintarConteo();
     });
   }
 
   /* ══════════════ el archivo ══════════════ */
 
-  function cargarXLSX() {
-    if (window.XLSX) return Promise.resolve(true);
+  var promXLSX = null;
+  function guion(src) {
     return new Promise(function (ok) {
       var s = document.createElement('script');
-      s.src = CDN_XLSX;
+      s.src = src;
       s.onload = function () { ok(!!window.XLSX); };
       s.onerror = function () { ok(false); };
       document.head.appendChild(s);
     });
+  }
+  /* 17/11 — una sola carga (la de fondo al abrir el modal y la del botón
+     comparten la promesa); primero la copia de la app, luego el CDN. */
+  function cargarXLSX() {
+    if (window.XLSX) return Promise.resolve(true);
+    if (promXLSX) return promXLSX;
+    promXLSX = guion(LOCAL_XLSX).then(function (ok) { return ok || guion(CDN_XLSX); })
+      .then(function (ok) { if (!ok) promXLSX = null; return ok; });
+    return promXLSX;
+  }
+
+  /* 17/11 — bajar un Blob con un enlace. Se guarda el último para el botón
+     "¿No se descargó?": si el navegador bloqueó la descarga automática
+     (Chrome lo hace cuando la página ya bajó otro archivo sin un toque, o
+     cuando pasó mucho rato desde el clic), el toque nuevo la permite. */
+  function bajarBlob(blob, nombre) {
+    if (ultimoArchivo) { try { URL.revokeObjectURL(ultimoArchivo.url); } catch (_) {} }
+    ultimoArchivo = { url: URL.createObjectURL(blob), nombre: nombre };
+    dispararEnlace();
+  }
+  function dispararEnlace() {
+    if (!ultimoArchivo) return;
+    var a = document.createElement('a');
+    a.href = ultimoArchivo.url;
+    a.download = ultimoArchivo.nombre;
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+  function listoConRespaldo(n) {
+    var el = $('dsc-avance');
+    if (!el || !ultimoArchivo) return;
+    el.className = 'dsc-avance';
+    el.innerHTML = '';
+    el.appendChild(document.createTextNode('Listo: ' + n.toLocaleString('es-CO') + ' filas en ' + ultimoArchivo.nombre + '. '));
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'dsc-mini';
+    b.textContent = '¿No se descargó? Tócalo aquí';
+    b.addEventListener('click', dispararEnlace);
+    el.appendChild(b);
   }
 
   function anchos(encabezados, filas) {
@@ -724,7 +795,11 @@
       var libro = window.XLSX.utils.book_new();
       var nombreHoja = String(titulo).substring(0, 28) || 'Datos';
       window.XLSX.utils.book_append_sheet(libro, hoja, nombreHoja);
-      window.XLSX.writeFile(libro, nombreArchivo(titulo, 'xlsx'));
+      /* 17/11 — se arma el archivo en memoria y se baja con bajarBlob (antes
+         writeFile, que no deja repetir la descarga si el navegador la frena) */
+      var bytes = window.XLSX.write(libro, { bookType: 'xlsx', type: 'array', compression: true });
+      bajarBlob(new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
+                nombreArchivo(titulo, 'xlsx'));
       return true;
     });
   }
@@ -739,15 +814,8 @@
     var lineas = [encabezados.map(esc).join(';')];
     for (var i = 0; i < filas.length; i++) lineas.push(filas[i].map(esc).join(';'));
 
-    var blob = new Blob(['\ufeff' + lineas.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url;
-    a.download = nombreArchivo(titulo, 'csv');
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    bajarBlob(new Blob(['\ufeff' + lineas.join('\r\n')], { type: 'text/csv;charset=utf-8;' }),
+              nombreArchivo(titulo, 'csv'));
 
     avisar('info', 'Se descargó en CSV',
            'No se pudo cargar la librería de Excel. El CSV abre en Excel con doble clic.');
