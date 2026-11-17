@@ -616,7 +616,8 @@
         W.prep = d; W.filtros = f; medir('masdestinos:pantalla', t0); pintarPrep(d);
         if (!d.conCorreo) return;
         var p = W.prepP = llamar('masbdref', { ref: d.ref }, { post: true }).catch(function (e) {
-          if (/acci[oó]n( get)? no v[aá]lida/i.test(e.message || '') || e.codigo === 'ACCION') return llamar('masbd', { filtros: f }, { post: true });
+          /* ruta aún no desplegada, o la referencia no llegó a la caché de HACIENDA: el camino de antes */
+          if (/acci[oó]n( get)? no v[aá]lida/i.test(e.message || '') || e.codigo === 'ACCION' || e.codigo === 'PREP_VENCIDA') return llamar('masbd', { filtros: f }, { post: true });
           throw e;
         }).then(function (r) {
           if (W.prepP !== p) return W.prep;
