@@ -69,8 +69,9 @@
   function llamar(accion, datos, op) {
     op = op || {};
     datos = datos || {};
-    var u = url();
-    if (!u) return Promise.reject(error('SIN_URL', 'Falta la dirección del backend ICA. Recarga la app.'));
+    /* 17/11 — op.hac: la petición va a HACIENDA (backend principal) con la misma sesión */
+    var u = op.hac ? ((window.MARCA && window.MARCA.API_URL) || '') : url();
+    if (!u) return Promise.reject(error('SIN_URL', 'Falta la dirección del backend. Recarga la app.'));
     var llave = tk();
     var t0 = (window.performance && performance.now()) || Date.now();
     function una(n) {
@@ -533,7 +534,7 @@
       var ex = m.q('.mas-excel'), bd = m.q('.mas-bd');
       if (ex) ex.hidden = o !== 'EXCEL';
       if (bd) bd.hidden = o !== 'BD';
-      W.prep = null; m.q('[data-res]').innerHTML = ''; m.q('[data-seguir]').disabled = true;
+      W.prep = null; W.prepP = null; m.q('[data-res]').innerHTML = ''; m.q('[data-seguir]').disabled = true;
       if (o === 'BD') filtrosBd();
     }
     m.querySelectorAll('[data-origen]').forEach(function (b) { b.addEventListener('click', function () { ponerOrigen(b.getAttribute('data-origen')); }); });
@@ -550,7 +551,7 @@
         return llamar('masvalidar', { tipo: tipo, filas: x.filas }, { post: true }).then(function (d) {
           d.hoja = x.hoja; d.archivo = file.name; return d;
         });
-      }).then(function (d) { W.prep = d; medir('validar:pantalla', t0); pintarPrep(d); },
+      }).then(function (d) { W.prepP = null; W.prep = d; medir('validar:pantalla', t0); pintarPrep(d); },
         function (e) { res.innerHTML = '<p class="ica-err">' + esc(e.message) + '</p>'; sonar('error'); });
     });
 
@@ -602,12 +603,39 @@
       calc.disabled = true; calc.classList.add('ica-ocupado');
       var res = m.q('[data-res]'); res.innerHTML = '<div class="ica-cargando">' + ico('reloj', 16) + ' Buscando en BD Predial…</div>';
       var t0 = Date.now();
-      llamar('masbd', { filtros: f }, { post: true }).then(function (d) { W.prep = d; W.filtros = f; medir('masbd:pantalla', t0); pintarPrep(d); },
-        function (e) { res.innerHTML = '<p class="ica-err">' + esc(e.message) + '</p>'; sonar('error'); })
+      /* 17/11 — un solo salto: HACIENDA da el resumen y la muestra al instante; ICA
+         arma de fondo la lista de envío (quita los dados de baja) con la referencia. */
+      W.prepP = null;
+      /* respaldo: si HACIENDA aún no tiene la ruta (o ICA no tiene masbdref), el camino de antes */
+      var viejo = function () { return llamar('masbd', { filtros: f }, { post: true }).then(function (d) { W.prepP = null; d.__viejo = 1; return d; }); };
+      llamar('masdestinos', { f: JSON.stringify(f) }, { hac: true }).catch(function (e) {
+        if (/acci[oó]n( get)? no v[aá]lida/i.test(e.message || '') || e.codigo === 'ACCION') return viejo();
+        throw e;
+      }).then(function (d) {
+        if (d.__viejo) { W.prep = d; W.filtros = f; medir('masbd:pantalla', t0); pintarPrep(d); return; }
+        W.prep = d; W.filtros = f; medir('masdestinos:pantalla', t0); pintarPrep(d);
+        if (!d.conCorreo) return;
+        var p = W.prepP = llamar('masbdref', { ref: d.ref }, { post: true }).catch(function (e) {
+          if (/acci[oó]n( get)? no v[aá]lida/i.test(e.message || '') || e.codigo === 'ACCION') return llamar('masbd', { filtros: f }, { post: true });
+          throw e;
+        }).then(function (r) {
+          if (W.prepP !== p) return W.prep;
+          W.prep = r; medir('masbdref:fondo', t0);
+          if (r.conCorreo !== d.conCorreo || r.bajas) pintarPrep(r, true);
+          return r;
+        });
+        p.catch(function () {});
+      }, function (e) { res.innerHTML = '<p class="ica-err">' + esc(e.message) + '</p>'; sonar('error'); })
         .then(function () { calc.disabled = false; calc.classList.remove('ica-ocupado'); });
     });
 
-    function pintarPrep(d) {
+    /* La lista de envío lista en ICA (con la búsqueda de BD Predial llega de fondo). */
+    function listo() {
+      if (W.prep && W.prep.prep) return Promise.resolve(W.prep);
+      if (W.prepP) return W.prepP.then(function (r) { if (r && r.prep) return r; throw error('PREP', 'Vuelve a buscar los destinatarios.'); });
+      return Promise.reject(error('PREP', 'Vuelve a buscar los destinatarios.'));
+    }
+    function pintarPrep(d, callado) {
       var malos = (d.errores || []).filter(function (x) { return !x.aviso; }).length;
       var avisos = (d.errores || []).length - malos;
       m.q('[data-res]').innerHTML =
@@ -628,7 +656,7 @@
               x.fichas.map(function (f) { return esc(f[0]) + (tipo === 'PERS' ? ' · ' + esc(f[1] || '—') + ' · ' + esc(desde(f[2])) : ''); }).join('<br>') + (x.nf > x.fichas.length ? '<br><small>y ' + (x.nf - x.fichas.length) + ' más</small>' : '') + '</td></tr>';
           }).join('') + '</tbody></table><p class="ica-nota">Muestra de los primeros ' + d.muestra.length + '.</p></div>' : '');
       m.q('[data-seguir]').disabled = !d.conCorreo;
-      if (!d.conCorreo) falla('Ningún destinatario tiene un correo válido.'); else { falla(''); sonar('success'); }
+      if (!d.conCorreo) falla('Ningún destinatario tiene un correo válido.'); else { falla(''); if (!callado) sonar('success'); }
     }
 
     /* ── paso 2: imagen ── */
@@ -663,6 +691,11 @@
     /* ── paso 3: vista previa con contribuyentes reales ── */
     var pdfActual = null;
     function previa(i) {
+      if (!(W.prep && W.prep.prep)) {
+        m.q('[data-pasunto]').textContent = 'Terminando de preparar la lista…';
+        listo().then(function () { previa(i); }, function (e) { m.q('[data-pasunto]').innerHTML = '<span class="mas-mal">' + esc(e.message) + '</span>'; });
+        return;
+      }
       var muestra = (W.prep && W.prep.muestra) || [];
       if (!muestra.length) return;
       W.muestraI = (i + muestra.length) % muestra.length;
@@ -712,12 +745,15 @@
       var b = this; if (m.__ocupado) return;
       var para = m.q('[data-prueba]').value.trim();
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(para)) { falla('Escribe un correo válido para la prueba.'); return; }
-      var f = valores(), x = W.prep.muestra[W.muestraI];
+      var f = valores();
       ocupado(m, b, true); falla('');
-      var t0 = Date.now();
-      var cuerpo = { tipo: tipo, prep: W.prep.prep, i: x.i, asunto: f.asunto, cuerpo: f.cuerpo, fechaLimite: f.fl, para: para };
-      if (tipo === 'MKT') cuerpo.img = { b64: W.img.b64, mime: W.img.mime, nombre: W.img.nombre };
-      guardando(llamar('masprueba', cuerpo, { post: true, rid: nuevoRid() }), 'Enviando la prueba').then(function (d) {
+      var t0 = Date.now(), rid = nuevoRid();
+      guardando(listo().then(function () {
+        var x = W.prep.muestra[W.muestraI] || W.prep.muestra[0];
+        var cuerpo = { tipo: tipo, prep: W.prep.prep, i: x.i, asunto: f.asunto, cuerpo: f.cuerpo, fechaLimite: f.fl, para: para };
+        if (tipo === 'MKT') cuerpo.img = { b64: W.img.b64, mime: W.img.mime, nombre: W.img.nombre };
+        return llamar('masprueba', cuerpo, { post: true, rid: rid });
+      }), 'Enviando la prueba').then(function (d) {
         ocupado(m, b, false); W.hechaPrueba = true; medir('prueba:pantalla', t0); sonar('success');
         aviso('Prueba enviada a ' + d.para + ' con los datos de ' + d.nom + '. Revisa tu bandeja (y spam).', 'ok', 6000);
       }, function (e) { ocupado(m, b, false); falla(e.message); });
@@ -735,9 +771,11 @@
         ocupado(m, b, true); falla('');
         var rid = b.__rid || (b.__rid = nuevoRid());
         var t0 = Date.now();
-        var cuerpo = { tipo: tipo, prep: W.prep.prep, nombre: f.nombre, asunto: f.asunto, cuerpo: f.cuerpo, fechaLimite: f.fl };
-        if (tipo === 'MKT') cuerpo.img = { b64: W.img.b64, mime: W.img.mime, nombre: W.img.nombre };
-        guardando(llamar('mascrear', cuerpo, { post: true, rid: rid }), 'Poniendo la campaña en cola').then(function (d) {
+        guardando(listo().then(function () {
+          var cuerpo = { tipo: tipo, prep: W.prep.prep, nombre: f.nombre, asunto: f.asunto, cuerpo: f.cuerpo, fechaLimite: f.fl };
+          if (tipo === 'MKT') cuerpo.img = { b64: W.img.b64, mime: W.img.mime, nombre: W.img.nombre };
+          return llamar('mascrear', cuerpo, { post: true, rid: rid });
+        }), 'Poniendo la campaña en cola').then(function (d) {
           W.creada = true; ocupado(m, b, false); medir('crear:pantalla', t0);
           parchar(d.camp); if (d.cuota) S.cuota = d.cuota;
           if (tipo === 'PERS') { try { S.cfg.of.sig = Number(S.cfg.of.sig || 1) + n; } catch (e) {} }
