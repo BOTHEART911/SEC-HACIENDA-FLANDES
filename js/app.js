@@ -6512,7 +6512,8 @@ function bdpBlob_(r) {
     r.debe_desde, r.deuda_hasta, r.valor_deuda, r.clasificacion,
     r.no_exp_fisico, r.actuacion, r.sustanciador, r.asistente,
     r.bitacora, r.estado_proceso, r.asignador,
-    (window.NOTIF ? window.NOTIF.blob(r) : '')   /* 21/10 — factura notificada */
+    (window.NOTIF ? window.NOTIF.blob(r) : ''),  /* 21/10 — factura notificada */
+    (window.MASIVO && window.MASIVO.malos(r).length ? 'correo malo' : '')
   ].join(' '));
 }
 function bdpAplicarFila_(fila, idBorrado) {
@@ -6894,6 +6895,7 @@ function bdpCardHTML_(row, idx, puedeEliminar, puedeDecision) {
         '</div>' +
       '</div>' +
       (window.NOTIF ? window.NOTIF.tarjeta(row) : '') +
+      (window.MASIVO ? window.MASIVO.chipBd(row) : '') +   /* 17/11 — correo malo (rebote de masificación) */
       '<div class="bdp-actions">' + acciones + '</div>' +
     '</div>'
   );
@@ -8493,6 +8495,7 @@ function abrirBDPDetalle_(row) {
   if (notif) body.appendChild(notif);
   /* 21/10 — NOTIFICACIÓN ELECTRÓNICA: envíos, reloj y respuestas (de fondo) */
   if (window.NOTIF) window.NOTIF.detalle(row, body);
+  if (window.MASIVO) window.MASIVO.detalleBd(row, body);   /* 17/11 — comunicaciones persuasivas del expediente */
 
   /* Sección: Coactivo */
   const coac = bdpDetSection_(ICO_('aviso',18) + ' Coactivo', [

@@ -1,0 +1,83 @@
+/* ============================================================
+   MASIFICACIÓN MAIL — 17/11/2026 (js/masivo.js)
+   Reutiliza las piezas de Requerimientos (ica.css) y del kit.
+   ============================================================ */
+.mas { display: flex; flex-direction: column; gap: 14px; }
+.mas-intro { margin: 0; font-size: .9rem; color: var(--k-tinta-2); line-height: 1.5; }
+.mas-cuota { display: flex; flex-direction: column; gap: 6px; padding: 10px 14px; border-radius: 14px; background: var(--k-papel-2); border: 1px solid var(--k-linea); font-size: .84rem; color: var(--k-tinta-2); }
+.mas-cuota:empty { display: none; }
+.mas-cuota span { display: block; line-height: 1.6; }
+.mas-cuota span svg { vertical-align: -2px; margin-right: 4px; }
+.mas-cuota__barra, .mas-prog { height: 8px; border-radius: 99px; background: color-mix(in srgb, var(--k-linea) 70%, transparent); overflow: hidden; }
+.mas-cuota__barra i, .mas-prog i { display: block; height: 100%; border-radius: 99px; background: var(--k-marca); transition: width .5s ease; }
+.mas-mal { color: var(--k-malo); }
+
+/* tarjeta de campaña */
+.mas-card { display: flex; flex-direction: column; gap: 8px; }
+.mas-est { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 99px; font: 700 .74rem/1.4 var(--k-fuente); background: var(--k-papel-2); color: var(--k-tinta-2); border: 1px solid var(--k-linea); }
+.mas-est--EN_COLA { background: rgba(var(--k-marca-rgb), .1); color: var(--k-marca); border-color: color-mix(in srgb, var(--k-marca) 35%, transparent); }
+.mas-est--EN_COLA svg { animation: mas-latido 1.6s ease-in-out infinite; }
+.mas-est--PAUSADA { color: var(--k-aviso); border-color: color-mix(in srgb, var(--k-aviso) 40%, transparent); }
+.mas-est--TERMINADA { color: var(--k-ok); }
+.mas-est--CANCELADA { color: var(--k-apagado); }
+@keyframes mas-latido { 50% { opacity: .35; } }
+.mas-asunto { margin: 0; display: flex; gap: 6px; align-items: flex-start; font-size: .86rem; color: var(--k-tinta-2); line-height: 1.4; word-break: break-word; }
+.mas-asunto svg { flex: 0 0 auto; margin-top: 2px; }
+.mas-prog__t { margin: 0; font-size: .82rem; color: var(--k-tinta-2); }
+.mas-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.mas-chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px; border-radius: 99px; font-size: .74rem; font-weight: 600; background: var(--k-papel-2); color: var(--k-tinta-2); border: 1px solid var(--k-linea); }
+.mas-chip--ok { color: var(--k-ok); }
+.mas-chip--malo { color: var(--k-malo); border-color: color-mix(in srgb, var(--k-malo) 35%, var(--k-linea)); }
+
+/* asistente */
+.mas-hoja { width: min(920px, 100%) !important; }
+.mas-pasos { list-style: none; margin: 0 0 6px; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; counter-reset: p; }
+.mas-pasos li { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 8px; border-radius: 12px; font: 600 .82rem/1.2 var(--k-fuente); color: var(--k-apagado); background: var(--k-papel-2); border: 1px solid var(--k-linea); text-align: center; }
+.mas-pasos li.on { color: #fff; background: var(--k-marca); border-color: var(--k-marca); }
+.mas-pasos li.hecho { color: var(--k-ok); }
+.mas-paso { display: flex; flex-direction: column; gap: 12px; }
+.mas-paso[hidden] { display: none !important; }
+.mas-origen { margin-bottom: 4px; }
+.mas-filtros { display: flex; flex-direction: column; gap: 12px; }
+.mas-chk { flex-direction: row !important; align-items: center; gap: 8px !important; align-self: end; }
+.mas-chk input { width: auto !important; margin: 0; }
+.mas-multi { border: 1px solid var(--k-linea); border-radius: 12px; padding: 8px 12px; background: var(--k-papel-2); }
+.mas-multi summary { cursor: pointer; font: 600 .84rem/1.4 var(--k-fuente); color: var(--k-tinta-2); }
+.mas-multi__l { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 4px 12px; margin-top: 8px; max-height: 220px; overflow: auto; }
+.mas-multi__l label { display: flex !important; align-items: center; gap: 6px; margin: 0 !important; font-weight: 500 !important; font-size: .8rem !important; }
+.mas-multi__l input { width: auto !important; margin: 0; }
+.mas-errores summary { cursor: pointer; font-weight: 600; font-size: .86rem; color: var(--k-tinta-2); margin-bottom: 6px; }
+.mas-errores .ica-tabla { max-height: 260px; overflow: auto; }
+.mas-muestra { max-height: 320px; overflow: auto; }
+tr.mas-mal td { color: var(--k-malo); }
+.mas-drop { display: grid; place-items: center; text-align: center; gap: 8px; min-height: 160px; }
+.mas-drop img { max-width: 100%; max-height: 320px; border-radius: 10px; border: 1px solid var(--k-linea); }
+.mas-mini { padding: 6px 12px !important; font-size: .8rem !important; }
+.mas-btn-peligro { background: var(--k-malo) !important; color: #fff !important; border-color: var(--k-malo) !important; }
+
+/* vista previa */
+.mas-resumen p { margin: 0 0 6px; font-size: .88rem; line-height: 1.5; color: var(--k-tinta-2); }
+.mas-previa { border: 1px solid var(--k-linea); border-radius: 14px; overflow: hidden; background: var(--k-papel-2); }
+.mas-previa__barra { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 10px; border-bottom: 1px solid var(--k-linea); font-size: .84rem; }
+.mas-previa__barra span { flex: 1 1 160px; }
+.mas-previa__asunto { margin: 0; padding: 8px 12px; font-size: .82rem; line-height: 1.5; border-bottom: 1px solid var(--k-linea); background: var(--k-papel); word-break: break-word; }
+.mas-previa__marco { display: block; width: 100%; height: min(58dvh, 560px); border: 0; background: #fff; }
+.mas-prueba { display: flex; flex-wrap: wrap; align-items: end; gap: 10px; }
+.mas-prueba .ica-campo { flex: 1 1 260px; }
+
+/* detalle */
+.mas-buscar { margin: 8px 0; }
+.mas-dest { max-height: min(56dvh, 520px); overflow: auto; }
+.mas-dest td { vertical-align: top; }
+.mas-dest__est { font-weight: 700; font-size: .78rem; }
+tr.mas-dest--ENVIADO .mas-dest__est { color: var(--k-ok); }
+tr.mas-dest--FALLO .mas-dest__est, tr.mas-dest--reb .mas-dest__est { color: var(--k-malo); }
+tr.mas-dest--PEND .mas-dest__est { color: var(--k-aviso); }
+tr.mas-dest--OMITIDO .mas-dest__est, tr.mas-dest--CANCELADO .mas-dest__est { color: var(--k-apagado); }
+
+@media (max-width: 640px) {
+  .mas-pasos { grid-template-columns: 1fr 1fr 1fr; }
+  .mas-pasos li { font-size: .72rem; padding: 7px 4px; }
+  .mas-pasos li svg { display: none; }
+  .mas-previa__marco { height: 62dvh; }
+}

@@ -58,7 +58,8 @@
     'view-drive-anexos': 'drive', 'view-drive-editar': 'drive', 'view-da-form': 'drive',
     'view-atenciones': 'atenciones', 'view-estadisticas': 'estadisticas',
     'view-soportes': 'soportes',
-    'view-asesorias': 'asesorias'
+    'view-asesorias': 'asesorias',
+    'view-mas-pers': 'masivo', 'view-mas-mkt': 'masivo'
   };
 
   function familiaDe(id) { return FAMILIAS[id] || id || ''; }

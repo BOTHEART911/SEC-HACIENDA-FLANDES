@@ -221,11 +221,13 @@
   var OPC = [
     ['ALL', 'Todas'], ['SIN', 'Sin notificar'], ['NOTIFICADO', 'Notificados'],
     ['VIGENTE', 'Plazo corriendo'], ['PORVENCER', 'Plazo por vencer (≤ 10 días)'],
-    ['VENCIDO', 'Plazo vencido'], ['RESPONDIO', 'Respondieron'], ['REBOTE', 'Rebotes'], ['RECONSIDERACION', 'En reconsideración']
+    ['VENCIDO', 'Plazo vencido'], ['RESPONDIO', 'Respondieron'], ['REBOTE', 'Rebotes'], ['RECONSIDERACION', 'En reconsideración'],
+    ['CMALO', 'Correo malo']   /* 17/11 — rebote de una masificación (js/masivo.js) */
   ];
   function clave(row) {
     var st = estado(row);
     var k = { SIN: !st.notificado, NOTIFICADO: !!st.notificado };
+    try { k.CMALO = !!(window.MASIVO && window.MASIVO.malos(row).length); } catch (_) {}
     if (st.notificado) {
       k.RECONSIDERACION = !!st.rec;
       k.VIGENTE = !st.rec && st.dias != null && !st.vencido;

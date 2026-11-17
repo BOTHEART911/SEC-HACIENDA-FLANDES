@@ -61,6 +61,7 @@
   <link rel="stylesheet" href="css/anexos.css">     <!-- 18/10: Drive anexos = evidencias -->
   <!-- 04/10/2026: Industria y Comercio · Requerimientos -->
   <link rel="stylesheet" href="css/ica.css">
+  <link rel="stylesheet" href="css/masivo.css">
   <link rel="stylesheet" href="css/notificar.css">   <!-- 21/10: notificación electrónica -->
   <link rel="stylesheet" href="css/gerencial.css">
   <link rel="stylesheet" href="kit/soporte.css">     <!-- 22/10: soporte (kit) -->
@@ -238,6 +239,22 @@
             <button type="button" class="acceso" id="btn-drive-anexos" style="display:none;">
               <span class="acceso__img acceso__img--ico"><i class="hi" data-ico="carpeta" data-t="24"></i></span>
               <span class="acceso__txt"><span class="acceso__t">Drive anexos</span><span class="acceso__p">Evidencias de cada contrato, cuenta por cuenta</span></span>
+            </button>
+          </div>
+        </section>
+
+        <!-- 17/11/2026 — MASIFICACIÓN MAIL (todos los roles): correos masivos desde
+             cobrocoactivo@flandes-tolima.gov.co por el backend ICA · js/masivo.js -->
+        <section class="bloque" data-bloque="masivo">
+          <h3 class="bloque__t">Masificación mail</h3>
+          <div class="kit-rejilla kit-rejilla--auto accesos">
+            <button type="button" class="acceso" id="btn-mas-pers">
+              <span class="acceso__img acceso__img--ico"><i class="hi" data-ico="documento" data-t="24"></i></span>
+              <span class="acceso__txt"><span class="acceso__t">Predial · Comunicaciones persuasivas</span><span class="acceso__p">Una carta en PDF por contribuyente con todas sus fichas, en cola</span></span>
+            </button>
+            <button type="button" class="acceso" id="btn-mas-mkt">
+              <span class="acceso__img acceso__img--ico"><i class="hi" data-ico="megafono" data-t="24"></i></span>
+              <span class="acceso__txt"><span class="acceso__t">Predial · Marketing</span><span class="acceso__p">Correos masivos con imagen, por Excel o filtros de BD Predial</span></span>
             </button>
           </div>
         </section>
@@ -993,6 +1010,7 @@
             <button type="button" class="proc-status-pill" data-notif="RESPONDIO">Respondieron</button>
             <button type="button" class="proc-status-pill" data-notif="REBOTE">Rebotes</button>
             <button type="button" class="proc-status-pill" data-notif="RECONSIDERACION">En reconsideración</button>
+            <button type="button" class="proc-status-pill" data-notif="CMALO">Correo malo</button>
           </div>
         </div>
         <!-- pastillas rápidas (Solo las mías, Mi trabajo, No aperturados) -->
@@ -1572,6 +1590,7 @@
 <script src="js/mi-trabajo.js"></script>
 <script src="js/ica-municipios.js" defer></script>  <!-- 04/10: catálogo DIVIPOLA (estático) -->
 <script src="js/ica.js"></script>          <!-- 04/10: Industria y Comercio · Requerimientos (backend ICA) -->
+<script src="js/masivo.js"></script>       <!-- 17/11: MASIFICACIÓN MAIL (backend ICA, cuenta cobrocoactivo) -->
 <script src="js/gerencial.js"></script>
 <script src="kit/imagenes.js"></script>     <!-- 22/10: capturas a JPEG antes de subir -->
 <script src="kit/exportar.js"></script>     <!-- 22/10: PDF, Excel e informe gerencial de soportes -->

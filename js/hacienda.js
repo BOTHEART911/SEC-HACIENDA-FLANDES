@@ -152,6 +152,10 @@
     'view-bdp-panel': 'Panel base de datos',
     'view-config': 'Configuración',
     'view-ica-req': 'Requerimientos ICA',
+    'view-mas-pers': 'Comunicaciones persuasivas',
+    'view-mas-mkt': 'Marketing predial',
+    'view-mas-pers': 'Comunicaciones persuasivas',
+    'view-mas-mkt': 'Marketing predial',
     'view-soportes': 'Soportes',
     'view-asesorias': 'Asesorías',
     'view-asistente': 'Entrenamiento del asistente'

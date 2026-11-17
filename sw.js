@@ -81,6 +81,8 @@ var APP_SHELL = [
   './css/hacienda.css',
   './css/ica.css',
   './js/ica.js',
+  './js/masivo.js',
+  './css/masivo.css',
   './js/propietarios.js',
   './js/notificar.js',
   './css/notificar.css',

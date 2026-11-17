@@ -254,6 +254,23 @@
         ];
       }
     },
+    /* 17/11 — MASIFICACIÓN MAIL (js/masivo.js) */
+    {
+      id: 'masivo', ic: 'megafono', t: 'Masificación mail',
+      si: function () { return true; },
+      r: 'Correos masivos desde cobrocoactivo, en cola y al ritmo de la cuenta.',
+      b: function () {
+        return [
+          { k: 'flujo', p: [['excel', 'Destinatarios', 'Excel o filtros de BD Predial'], ['sobre', 'Correo', 'Asunto, cuerpo e imagen'], ['ojo', 'Revisa', 'Datos reales y prueba a tu correo'], ['cohete', 'En cola', 'Sale sola, 350 por hora']] },
+          { k: 'tips', p: [
+            ['documento', '**Comunicaciones persuasivas**: una carta en PDF por contribuyente con todas sus fichas; oficio consecutivo automático.'],
+            ['base-datos', 'La dirección y «en mora desde» de cada ficha salen de **BD Predial**; el envío queda en la bitácora del expediente con su PDF.'],
+            ['aviso', 'Si un correo **rebota**, queda como **Correo malo** en BD Predial: corrígelo en Editar.'],
+            ['pausa', '**Pausa, reanuda o cancela** cuando quieras; el informe en Excel trae enviados, rebotes y respuestas.']
+          ] }
+        ];
+      }
+    },
     {
       id: 'anexos', ic: 'clip', t: 'Drive anexos · tus evidencias',
       si: function (c) { return !!c.ax.c; },
