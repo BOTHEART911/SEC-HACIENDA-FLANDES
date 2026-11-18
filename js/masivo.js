@@ -1090,7 +1090,8 @@
       falla(''); env.disabled = true; m.q('[data-uprev]').hidden = true;
       if (correo) est.innerHTML = '<div class="ica-cargando">Armando la vista previa…</div>';
       var pi = tipo === 'MKT' ? imgCfg().catch(function () { return null; }) : Promise.resolve(null);
-      Promise.all([llamar('masunico', { tipo: tipo, id_predial: row.id_predial, fila: row.rowIndex || '', correo: correo || '' }, { post: true }), pi]).then(function (r) {
+      /* el correo se pinta en cuanto llega; la carta en PDF se pide aparte (segundo viaje) */
+      Promise.all([llamar('masunico', { tipo: tipo, id_predial: row.id_predial, fila: row.rowIndex || '', correo: correo || '', sinPdf: 1 }, { post: true }), pi]).then(function (r) {
         if (!document.body.contains(m)) return;
         var d = r[0], im = r[1];
         U.d = d; medir('unico:previa', t0);
@@ -1126,9 +1127,22 @@
         m.q('[data-umarco]').srcdoc = '<!DOCTYPE html><html><head><meta charset="utf-8"><base target="_blank"></head><body style="margin:12px;background:#fff">' + html + '</body></html>';
         m.q('[data-uprev]').hidden = false;
         U.pdf = d.pdf || null;
-        var bp = m.q('[data-updf]'); if (bp) bp.hidden = !U.pdf;
         env.disabled = false;
         env.innerHTML = ico('enviar') + ' Enviar' + (tipo === 'PERS' ? ' la carta' : '');
+        var bp = m.q('[data-updf]');
+        if (bp && !U.pdf) {
+          bp.hidden = false; bp.disabled = true; bp.classList.add('ica-ocupado'); bp.innerHTML = ico('pdf') + ' Armando la carta…';
+          var t1 = Date.now(), tok = d.tok;
+          llamar('masunico', { tok: tok, pdf: 1 }, { post: true }).then(function (x) {
+            if (!document.body.contains(m) || !U.d || U.d.tok !== tok) return;
+            U.pdf = x.pdf; medir('unico:pdf', t1);
+            bp.disabled = false; bp.classList.remove('ica-ocupado'); bp.innerHTML = ico('pdf') + ' Ver la carta (PDF)';
+          }, function (e) {
+            if (!document.body.contains(m)) return;
+            bp.disabled = true; bp.classList.remove('ica-ocupado'); bp.innerHTML = ico('aviso') + ' La carta no se pudo armar';
+            bp.title = e.message + ' · al enviar se arma de nuevo';
+          });
+        } else if (bp) bp.hidden = !U.pdf;
       }, function (e) {
         if (!document.body.contains(m)) return;
         est.innerHTML = '';
