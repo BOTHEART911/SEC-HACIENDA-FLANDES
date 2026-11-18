@@ -222,12 +222,14 @@
     ['ALL', 'Todas'], ['SIN', 'Sin notificar'], ['NOTIFICADO', 'Notificados'],
     ['VIGENTE', 'Plazo corriendo'], ['PORVENCER', 'Plazo por vencer (≤ 10 días)'],
     ['VENCIDO', 'Plazo vencido'], ['RESPONDIO', 'Respondieron'], ['REBOTE', 'Rebotes'], ['RECONSIDERACION', 'En reconsideración'],
-    ['CMALO', 'Correo malo']   /* 17/11 — rebote de una masificación (js/masivo.js) */
+    ['CMALO', 'Correo malo'],   /* 17/11 — rebote de una masificación (js/masivo.js) */
+    ['PERSUASIVA', 'Con persuasiva'], ['MARKETING', 'Con marketing'], ['SINCOM', 'Sin persuasiva ni marketing']   /* 18/11 — Masificación mail */
   ];
   function clave(row) {
     var st = estado(row);
     var k = { SIN: !st.notificado, NOTIFICADO: !!st.notificado };
     try { k.CMALO = !!(window.MASIVO && window.MASIVO.malos(row).length); } catch (_) {}
+    try { if (window.MASIVO && window.MASIVO.comunic) { var cm = window.MASIVO.comunic(row); k.PERSUASIVA = cm.PERSUASIVA; k.MARKETING = cm.MARKETING; k.SINCOM = cm.SINCOM; } } catch (_) {}
     if (st.notificado) {
       k.RECONSIDERACION = !!st.rec;
       k.VIGENTE = !st.rec && st.dias != null && !st.vencido;

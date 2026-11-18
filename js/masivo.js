@@ -31,7 +31,12 @@
   var VISTAS = { PERS: 'view-mas-pers', MKT: 'view-mas-mkt' };
   var NOMBRE = { PERS: 'Comunicaciones persuasivas', MKT: 'Marketing' };
   var LOCAL_XLSX = 'vendor/xlsx-0.18.5.full.min.js';
-  var ESTADOS = { EN_COLA: ['En cola', 'reloj'], PAUSADA: ['Pausada', 'pausa'], TERMINADA: ['Terminada', 'check'], CANCELADA: ['Cancelada', 'cerrar'] };
+  var ESTADOS = { EN_COLA: ['En cola', 'reloj'], PAUSADA: ['Pausada', 'pausa'], TERMINADA: ['Terminada', 'check'], CANCELADA: ['Cancelada', 'cerrar'],
+    INDIVIDUAL: ['Envíos individuales', 'persona'] };   /* 18/11 — los enviados desde la tarjeta de BD Predial, una por día */
+  /** El asunto guardado es la plantilla: la fecha límite se muestra ya puesta. */
+  function asuntoVer(c) { return String(c.asunto || '').replace(/\{\{\s*fechaLimite\s*\}\}/g, c.fl ? fLarga(c.fl) : '{{fechaLimite}}'); }
+  /** NIT/CC que no es documento (vacío o puros ceros). */
+  function docVer(v) { var t = String(v == null ? '' : v).trim(); return /^0*$/.test(t.replace(/\D/g, '')) && !/[A-Za-z]/.test(t) ? '' : t; }
   var DEST_EST = { PEND: 'Pendiente', ENVIADO: 'Enviado', FALLO: 'Falló', OMITIDO: 'Omitido', CANCELADO: 'Cancelado' };
   var MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 
@@ -125,7 +130,7 @@
     p.then(function () { S.cargando = null; }, function () { S.cargando = null; });
     return p;
   }
-  function olvidar() { S.camps = null; S.cfg = null; S.cargado = false; S.opc = null; parar(); }
+  function olvidar() { S.camps = null; S.cfg = null; S.cargado = false; S.opc = null; S.imgP = null; parar(); }
   /* 17/11 — conteos de BD Predial para los filtros: se piden de fondo al abrir
      Marketing y se reutilizan 10 min (el asistente los pinta al instante). */
   function opciones() {
@@ -253,8 +258,8 @@
       '<div class="ica-card__top"><span class="mas-est mas-est--' + esc(c.est) + '">' + ico(e[1], 14) + ' ' + esc(e[0]) + '</span>' +
         (c.of ? '<span class="ica-of">Oficios ' + esc(c.of) + '</span>' : '') + '</div>' +
       '<h4 class="ica-nom">' + esc(c.nom) + '</h4>' +
-      '<p class="ica-id">' + esc(fCorta(c.cre)) + ' · ' + esc(c.por) + (c.origen === 'BD' ? ' · desde BD Predial' : (c.origen ? ' · desde Excel' : '')) + (c.fl ? ' · beneficio hasta el ' + esc(fLarga(c.fl)) : '') + '</p>' +
-      '<p class="mas-asunto">' + ico('sobre', 14) + esc(c.asunto) + '</p>' +
+      '<p class="ica-id">' + esc(fCorta(c.cre)) + ' · ' + esc(c.por) + (c.origen === 'BD' ? ' · desde BD Predial' : (c.origen === 'UNICO' ? '' : (c.origen ? ' · desde Excel' : ''))) + (c.fl ? ' · beneficio hasta el ' + esc(fLarga(c.fl)) : '') + '</p>' +
+      '<p class="mas-asunto">' + ico('sobre', 14) + esc(asuntoVer(c)) + '</p>' +
       '<div class="mas-prog" title="' + pct + ' %"><i style="width:' + pct + '%"></i></div>' +
       '<p class="mas-prog__t"><b>' + num(n.env) + '</b> enviados de <b>' + num(total) + '</b>' + esc(eta) + '</p>' +
       '<div class="mas-chips">' +
@@ -430,6 +435,23 @@
       lector.onerror = function () { mal(new Error('No se pudo leer el archivo.')); };
       lector.readAsDataURL(file);
     });
+  }
+
+  /** 18/11 — imagen ya guardada { b64, mime, nombre } → la misma forma que prepararImagen. */
+  function deB64(o) {
+    return new Promise(function (ok, mal) {
+      var url = 'data:' + (o.mime || 'image/jpeg') + ';base64,' + o.b64;
+      var img = new Image();
+      img.onload = function () { ok({ b64: o.b64, mime: o.mime || 'image/jpeg', nombre: o.nombre || 'imagen.jpg', url: url, w: img.naturalWidth, h: img.naturalHeight, kb: Math.round(o.b64.length * 0.75 / 1024) }); };
+      img.onerror = function () { mal(new Error('No se pudo leer la imagen guardada.')); };
+      img.src = url;
+    });
+  }
+  /** La imagen fija de marketing (Configuración), una vez por sesión. */
+  function imgCfg() {
+    if (!S.imgP) S.imgP = llamar('masimg', {}).then(function (d) { return d && d.img ? deB64(d.img) : null; });
+    S.imgP.catch(function () { S.imgP = null; });
+    return S.imgP;
   }
 
   /* ══════════════ NUEVA CAMPAÑA (asistente de 3 pasos) ══════════════ */
@@ -663,15 +685,16 @@
     /* ── paso 2: imagen ── */
     if (tipo === 'MKT') {
       var drop = m.q('[data-drop]');
-      var tomar = function (file) {
-        prepararImagen(file).then(function (im) {
-          W.img = im;
-          m.q('[data-img-vacio]').hidden = true; m.q('[data-img-lleno]').hidden = false;
-          m.q('[data-img-prev]').src = im.url;
-          m.q('[data-img-info]').textContent = im.w + ' × ' + im.h + ' px · ' + im.kb + ' KB (aligerada para el correo)';
-          drop.classList.add('ica-drop--lleno'); falla('');
-        }, function (e) { falla(e.message); });
+      var poner = function (im, nota) {
+        W.img = im;
+        m.q('[data-img-vacio]').hidden = true; m.q('[data-img-lleno]').hidden = false;
+        m.q('[data-img-prev]').src = im.url;
+        m.q('[data-img-info]').textContent = im.w + ' × ' + im.h + ' px · ' + im.kb + ' KB' + (nota || ' (aligerada para el correo)');
+        drop.classList.add('ica-drop--lleno'); falla('');
       };
+      var tomar = function (file) { prepararImagen(file).then(function (im) { poner(im); }, function (e) { falla(e.message); }); };
+      /* 18/11 — la imagen fija de Configuración entra sola (se puede cambiar solo para esta campaña) */
+      if (S.cfg && S.cfg.img) imgCfg().then(function (im) { if (im && !W.img && document.body.contains(m)) poner(im, ' · imagen de Configuración'); }, function () {});
       m.q('[data-imgfile]').addEventListener('change', function () { var f = this.files[0]; this.value = ''; if (f) tomar(f); });
       m.q('[data-img-quitar]').addEventListener('click', function () {
         W.img = null; m.q('[data-img-vacio]').hidden = false; m.q('[data-img-lleno]').hidden = true; drop.classList.remove('ica-drop--lleno');
@@ -803,11 +826,11 @@
     var D = { f: 'TODOS', q: '', pag: 0, filas: [], total: 0, ctrl: null };
     var n = c.n || {};
     var m = modal({ titulo: c.nom, icono: 'persona', ancha: true,
-      cuerpo: '<p class="ica-nota">' + esc(c.asunto) + '</p>' +
+      cuerpo: '<p class="ica-nota">' + esc(asuntoVer(c)) + '</p>' +
         '<div class="ica-pills" data-pills>' + FILTROS.filter(function (x) { return x[0] === 'TODOS' || n[x[2]]; }).map(function (x) {
           return '<button type="button" class="proc-status-pill' + (x[0] === 'TODOS' ? ' active' : '') + '" data-f="' + x[0] + '">' + esc(x[1]) + '<span class="bit-num">' + num(x[0] === 'TODOS' ? (n.t || c.total) : n[x[2]]) + '</span></button>';
         }).join('') + '</div>' +
-        '<label class="hf-buscar mas-buscar"><i class="hi" data-ico="buscar"></i><input type="search" data-q placeholder="Buscar por nombre, NIT/CC, correo, oficio o ficha…"></label>' +
+        '<label class="hf-buscar mas-buscar">' + ico('buscar', 18) + '<input type="search" data-q placeholder="Buscar por nombre, NIT/CC, correo, oficio o ficha…"></label>' +
         '<div class="ica-tabla mas-dest" data-tabla><div class="ica-cargando">Cargando…</div></div>' +
         '<div class="ica-mas"><button type="button" class="kit-btn" data-mas-pag hidden>Ver más</button></div>',
       pie: '<button type="button" class="kit-btn" data-informe>' + ico('excel') + ' Informe en Excel</button><button type="button" class="kit-btn kit-btn--marca" data-cerrar>Cerrar</button>',
@@ -837,7 +860,7 @@
           if (x.err && x.est !== 'ENVIADO') det.push(x.err);
           if (x.omit) det.push('No se usó: ' + x.omit);
           return '<tr class="mas-dest--' + esc(x.est) + (x.reb ? ' mas-dest--reb' : '') + '">' + (c.tipo === 'PERS' ? '<td>' + esc(x.of) + '</td>' : '') +
-            '<td><b>' + esc(x.nom) + '</b><br><small>' + esc(x.doc) + (x.fichas ? ' · ' + esc(String(x.fichas).split(', ').length === 1 ? 'Ficha ' + x.fichas : String(x.fichas).split(', ').length + ' fichas') : '') + '</small></td>' +
+            '<td><b>' + esc(x.nom) + '</b><br><small>' + esc(docVer(x.doc)) + (x.fichas ? (docVer(x.doc) ? ' · ' : '') + esc(String(x.fichas).split(', ').length === 1 ? 'Ficha ' + x.fichas : String(x.fichas).split(', ').length + ' fichas') : '') + '</small></td>' +
             '<td>' + esc(String(x.correos || '').split(',').join(', ')) + '</td>' +
             '<td><span class="mas-dest__est">' + esc(est) + '</span><br><small>' + esc(det.join(' · ')) + '</small></td>' +
             '<td>' + (x.pdf ? '<button type="button" class="bdp-icon-btn" data-pdf="' + esc(x.n) + '" title="Ver la carta enviada">' + ico('pdf', 18) + '</button>' : '') + '</td></tr>';
@@ -915,11 +938,17 @@
     var c = S.cfg;
     if (!c) { aviso('Espera a que cargue la vista.', 'info'); return; }
     var propios = tipo === 'PERS' ? /^mas\.(pers|fechaLimite|plantilla|of|ritmo|tope)/ : /^mas\.(mkt|fechaLimite|baja|ritmo|tope)/;
-    var campos = c.campos.filter(function (x) { return propios.test(x.k); });
+    var campos = c.campos.filter(function (x) { return propios.test(x.k) && !x.oculto; });
+    var nuevaImg = null;   /* 18/11 — imagen fija de marketing */
     var m = modal({ fijo: true, ancha: true, icono: 'engranaje', titulo: 'Configuración · ' + NOMBRE[tipo],
       cuerpo: (tipo === 'PERS' ? '<div class="ica-cfg-plant"><button type="button" class="kit-btn" data-plant' + (c.plantilla ? '' : ' disabled') + '>' + ico('documento') + ' Ir a la plantilla de la carta</button></div>' +
           '<p class="ica-nota">Marcadores de la plantilla: <code>{{fecha}} {{numOficio}} {{nombre}} {{documento}} {{correo}} {{refFichas}} {{textoMora}} {{fechaLimite}}</code> y en la fila de la tabla <code>{{ficha}} {{direccionFicha}} {{moraDesde}}</code> (la fila se repite sola por cada ficha).</p>' : '') +
         '<p class="ica-nota">El asunto y el cuerpo de aquí son el texto sugerido de cada campaña nueva; en cada campaña se pueden ajustar.' + (c.jefe ? '' : ' Plantilla, ritmo, tope y oficio los cambian ADMIN o DEV.') + '</p>' +
+        (tipo === 'MKT' ? '<div class="ica-campo"><span class="ica-campo__t">Imagen de marketing</span>' +
+          '<div class="ica-drop mas-drop" tabindex="0" data-drop><div data-img-vacio>' + ico('imagen', 28) + '<p><b>Adjunta, arrastra o pega (Ctrl+V)</b> la imagen. La usan los envíos desde la tarjeta de BD Predial y sale por defecto en cada campaña nueva.</p>' +
+            '<label class="kit-btn">' + ico('subir') + ' Adjuntar imagen<input type="file" accept="image/*" hidden data-imgfile></label></div>' +
+            '<div data-img-lleno hidden><img alt="Imagen de marketing" data-img-prev><p class="ica-nota" data-img-info></p><label class="kit-btn">' + ico('recargar') + ' Cambiar imagen<input type="file" accept="image/*" hidden data-imgfile2></label></div>' +
+          '</div></div>' : '') +
         campos.map(function (x) {
           var inp = x.largo ? '<textarea rows="10" data-k="' + esc(x.k) + '">' + esc(x.v) + '</textarea>' :
             (x.k === 'mas.fechaLimite' ? '<input type="date" data-k="' + esc(x.k) + '" value="' + esc(x.v) + '">' :
@@ -930,14 +959,41 @@
     });
     var pl = m.q('[data-plant]');
     if (pl) pl.addEventListener('click', function () { window.open('https://docs.google.com/document/d/' + c.plantilla + '/edit', '_blank', 'noopener'); });
+    if (tipo === 'MKT') {
+      var drop = m.q('[data-drop]');
+      var poner = function (im, nota) {
+        m.q('[data-img-vacio]').hidden = true; m.q('[data-img-lleno]').hidden = false;
+        m.q('[data-img-prev]').src = im.url;
+        m.q('[data-img-info]').textContent = im.w + ' × ' + im.h + ' px · ' + im.kb + ' KB' + (nota || '');
+        drop.classList.add('ica-drop--lleno');
+      };
+      var tomar = function (file) {
+        prepararImagen(file).then(function (im) { nuevaImg = im; poner(im, ' · sin guardar'); },
+          function (e) { var er = m.q('[data-err]'); er.hidden = false; er.textContent = e.message; });
+      };
+      if (c.img) { m.q('[data-img-info]').textContent = 'Cargando la imagen…'; imgCfg().then(function (im) { if (im && !nuevaImg) poner(im, c.img.f ? ' · guardada el ' + fCorta(c.img.f) : ''); }, function () {}); }
+      ['data-imgfile', 'data-imgfile2'].forEach(function (a) { var i = m.q('[' + a + ']'); if (i) i.addEventListener('change', function () { var f = this.files[0]; this.value = ''; if (f) tomar(f); }); });
+      ['dragenter', 'dragover'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add('ica-drop--sobre'); }); });
+      ['dragleave', 'drop'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove('ica-drop--sobre'); }); });
+      drop.addEventListener('drop', function (e) { var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if (f) tomar(f); });
+      var pegar = function (e) {
+        if (!document.body.contains(m)) return;
+        var it = Array.prototype.filter.call((e.clipboardData && e.clipboardData.items) || [], function (x) { return /^image\//.test(x.type); })[0];
+        if (it) { e.preventDefault(); tomar(it.getAsFile()); }
+      };
+      document.addEventListener('paste', pegar);
+      var obs = new MutationObserver(function () { if (!document.body.contains(m)) { document.removeEventListener('paste', pegar); obs.disconnect(); } });
+      obs.observe(document.body, { childList: true });
+    }
     m.q('[data-guardar]').addEventListener('click', function () {
       var btn = this, cambios = {}, n = 0;
       campos.forEach(function (x) { if (x.bloq) return; var el = m.q('[data-k="' + x.k + '"]'); if (el && String(el.value) !== String(x.v)) { cambios[x.k] = el.value; n++; } });
+      if (nuevaImg) { cambios['mas.mkt.img'] = { b64: nuevaImg.b64, mime: nuevaImg.mime, nombre: nuevaImg.nombre }; n++; }
       if (!n) { m.cerrar(); return; }
       ocupado(m, btn, true);
       var rid = btn.__rid || (btn.__rid = nuevoRid());
       guardando(llamar('mascfg', { cambios: cambios }, { post: true, rid: rid }), 'Guardando configuración').then(function (cfg) {
-        S.cfg = cfg; ocupado(m, btn, false); m.cerrar(true); sonar('success'); aviso('Configuración guardada.', 'ok');
+        S.cfg = cfg; if (nuevaImg) { S.imgP = Promise.resolve(nuevaImg); } ocupado(m, btn, false); m.cerrar(true); sonar('success'); aviso('Configuración guardada.', 'ok');
         if (cambios['mas.ritmo'] || cambios['mas.tope']) refrescar();
       }, function (e) { ocupado(m, btn, false); if (e.codigo !== 'RED') btn.__rid = null; var er = m.q('[data-err]'); er.hidden = false; er.textContent = e.message; });
     });
@@ -958,22 +1014,42 @@
     var hoy = String(row.correo_electronico || '').toLowerCase();
     return o.cm.map(function (x) { return String(x.c || '').toLowerCase(); }).filter(function (c) { return c && hoy.indexOf(c) !== -1; });
   }
+  /** 18/11 — envíos de Masificación mail del expediente: { cp: [...], mk: [...] } (lo más nuevo al final). */
+  function envios(row) {
+    var o = arDe(row) || {};
+    return { cp: Array.isArray(o.cp) ? o.cp : [], mk: Array.isArray(o.mk) ? o.mk : [] };
+  }
+  function ddmm(f) { var m = String(f || '').match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? m[3] + '/' + m[2] : ''; }
+  /** Claves para el filtro de BD Predial (pastillas de NOTIFICACIÓN). */
+  function comunic(row) { var e = envios(row); return { PERSUASIVA: !!e.cp.length, MARKETING: !!e.mk.length, SINCOM: !e.cp.length && !e.mk.length }; }
   function chipBd(row) {
-    var ml = malos(row);
-    return ml.length ? '<div class="ntf-linea"><span class="ntf-chip ntf-chip--reb" title="Rebotó: ' + esc(ml.join(', ')) + ' · corrígelo en Editar">' + ico('aviso', 14) + ' Correo malo</span></div>' : '';
+    var ml = malos(row), e = envios(row), h = '';
+    var cp = e.cp[e.cp.length - 1], mk = e.mk[e.mk.length - 1];
+    if (cp) h += '<span class="ntf-chip mas-chip-bd mas-chip-bd--pers" title="Comunicación persuasiva Oficio ' + esc(cp.of) + ' · ' + esc(fCorta(cp.f)) + (e.cp.length > 1 ? ' · ' + e.cp.length + ' en total' : '') + '">' + ico('documento', 14) + ' Persuasiva ' + esc(ddmm(cp.f)) + '</span>';
+    if (mk) h += '<span class="ntf-chip mas-chip-bd mas-chip-bd--mkt" title="Marketing · ' + esc(fCorta(mk.f)) + (mk.camp ? ' · ' + esc(mk.camp) : '') + (e.mk.length > 1 ? ' · ' + e.mk.length + ' en total' : '') + '">' + ico('megafono', 14) + ' Marketing ' + esc(ddmm(mk.f)) + '</span>';
+    if (ml.length) h += '<span class="ntf-chip ntf-chip--reb" title="Rebotó: ' + esc(ml.join(', ')) + ' · corrígelo en Editar">' + ico('aviso', 14) + ' Correo malo</span>';
+    return h ? '<div class="ntf-linea">' + h + '</div>' : '';
+  }
+  /** Botones de la tarjeta: comunicación persuasiva y marketing a ESTE contribuyente. */
+  function botones(row) {
+    if (!row || !row.id_predial) return '';
+    return '<button type="button" class="bdp-icon-btn mas-tb" data-bdp-act="maspers" title="Comunicación persuasiva por correo" aria-label="Comunicación persuasiva por correo">' + ico('documento', 22) + '</button>' +
+      '<button type="button" class="bdp-icon-btn mas-tb" data-bdp-act="masmkt" title="Marketing por correo" aria-label="Marketing por correo">' + ico('megafono', 22) + '</button>';
   }
   function detalleBd(row, cont) {
     if (!cont) return;
-    var o = arDe(row) || {};
-    var cp = Array.isArray(o.cp) ? o.cp : [], ml = malos(row);
-    if (!cp.length && !ml.length) return;
+    var e = envios(row), cp = e.cp, mk = e.mk, ml = malos(row);
+    if (!cp.length && !mk.length && !ml.length) return;
     var w = document.createElement('div');
     w.className = 'bdp-det-section mas-det';
-    w.innerHTML = '<div class="bdp-det-section-title">' + ico('documento', 18) + ' Comunicaciones persuasivas</div>' +
+    w.innerHTML = '<div class="bdp-det-section-title">' + ico('sobre', 18) + ' Masificación mail</div>' +
       (ml.length ? '<div class="ntf-det__estado ntf-reloj--malo">' + ico('aviso', 16) + ' Correo malo (rebotó): <b>' + esc(ml.join(', ')) + '</b>. Corrígelo en Editar.</div>' : '') +
-      (cp.length ? '<ul class="ntf-det__envios">' + cp.slice().reverse().map(function (x) {
+      (cp.length ? '<p class="mas-det__t">' + ico('documento', 14) + ' Comunicaciones persuasivas</p><ul class="ntf-det__envios">' + cp.slice().reverse().map(function (x) {
         return '<li><b>Oficio ' + esc(x.of) + '</b> · ' + esc(fCorta(x.f)) + (x.h ? ' ' + esc(x.h) : '') + (x.camp ? ' · ' + esc(x.camp) : '') +
           (x.pdf ? ' <button type="button" class="kit-btn mas-mini" data-pdf="' + esc(x.pdf) + '" data-of="' + esc(x.of) + '">' + ico('pdf', 14) + ' Ver PDF</button>' : '') + '</li>';
+      }).join('') + '</ul>' : '') +
+      (mk.length ? '<p class="mas-det__t">' + ico('megafono', 14) + ' Marketing</p><ul class="ntf-det__envios">' + mk.slice().reverse().map(function (x) {
+        return '<li>' + esc(fCorta(x.f)) + (x.h ? ' ' + esc(x.h) : '') + (x.camp ? ' · ' + esc(x.camp) : '') + '</li>';
       }).join('') + '</ul>' : '');
     cont.appendChild(w);
     w.addEventListener('click', function (e) {
@@ -982,6 +1058,116 @@
       verPdf({ id: 'mas-exp-' + pdf, titulo: 'Comunicación persuasiva Oficio ' + b.getAttribute('data-of'),
         fuente: function () { return llamar('masexp', { id_predial: row.id_predial, fila: row.rowIndex || '', pdf: pdf }); } });
     });
+  }
+
+  /* ══════════════ ENVÍO INDIVIDUAL desde la tarjeta de BD Predial (18/11) ══════════════ */
+  /**
+   * Vista previa con la configuración del bloque (asunto, cuerpo, plantilla, imagen fija)
+   * y los datos reales del contribuyente; al confirmar sale de una vez desde cobrocoactivo.
+   * La persuasiva lleva todas las fichas con el mismo NIT/CC. Si la tarjeta no tiene
+   * ningún correo, se pide y queda guardado al enviar. No se repite antes de 7 días.
+   */
+  function unico(row, tipo) {
+    tipo = tipo === 'MKT' ? 'MKT' : 'PERS';
+    var U = { d: null, pdf: null };
+    var corr = String(row.correo_electronico || '').trim().split(/\n+/).map(function (x) { return x.trim(); }).filter(Boolean).join(' · ');
+    var ficha = String(row.ficha_catastral || '').replace(/^'+/, '');
+    var m = modal({ ancha: true, icono: tipo === 'PERS' ? 'documento' : 'megafono',
+      titulo: (tipo === 'PERS' ? 'Comunicación persuasiva' : 'Marketing') + ' · ' + (row.nombres || ''),
+      cuerpo: '<div class="mas-u-cab"><div><small>Contribuyente</small><b>' + esc(row.nombres || '—') + '</b></div><div><small>NIT / CC</small><b>' + esc(docVer(row.nit_cedula) || '—') + '</b></div>' +
+          '<div><small>Ficha</small><b>' + esc(ficha || '—') + '</b></div><div><small>Correo</small><b data-ucorreo>' + esc(corr || 'Sin correo') + '</b></div></div>' +
+        '<div class="mas-u-estado" data-uestado><div class="ica-cargando">Armando la vista previa con la configuración de Masificación mail…</div></div>' +
+        '<div class="mas-previa" data-uprev hidden><p class="mas-previa__asunto" data-uasunto></p><iframe class="mas-previa__marco" data-umarco title="Vista previa del correo" sandbox=""></iframe></div>' +
+        '<p class="ica-err" data-uerr hidden></p>',
+      pie: '<button type="button" class="kit-btn" data-cerrar>Cancelar</button>' +
+        (tipo === 'PERS' ? '<button type="button" class="kit-btn" data-updf hidden>' + ico('pdf') + ' Ver la carta (PDF)</button>' : '') +
+        '<button type="button" class="kit-btn kit-btn--marca" data-uenviar disabled>' + ico('enviar') + ' Enviar</button>' });
+    var est = m.q('[data-uestado]'), env = m.q('[data-uenviar]'), errEl = m.q('[data-uerr]');
+    function falla(t) { errEl.hidden = !t; errEl.textContent = t || ''; if (t) sonar('error'); }
+    function aviso2(icono, html) { est.innerHTML = '<div class="mas-u-aviso">' + ico(icono, 18) + '<div>' + html + '</div></div>'; }
+    function previa(correo) {
+      var t0 = Date.now();
+      falla(''); env.disabled = true; m.q('[data-uprev]').hidden = true;
+      if (correo) est.innerHTML = '<div class="ica-cargando">Armando la vista previa…</div>';
+      var pi = tipo === 'MKT' ? imgCfg().catch(function () { return null; }) : Promise.resolve(null);
+      Promise.all([llamar('masunico', { tipo: tipo, id_predial: row.id_predial, fila: row.rowIndex || '', correo: correo || '' }, { post: true }), pi]).then(function (r) {
+        if (!document.body.contains(m)) return;
+        var d = r[0], im = r[1];
+        U.d = d; medir('unico:previa', t0);
+        var quien = d.nf > 1 ? 'Las <b>' + d.nf + ' fichas</b> de este NIT/CC van en ' + (tipo === 'PERS' ? 'la carta' : 'el registro del envío') + '.' : '';
+        if (d.estado === 'BLOQUEADO') {
+          aviso2('reloj', 'Este contribuyente ya recibió ' + (tipo === 'PERS' ? 'la comunicación persuasiva' : 'el marketing') + ' el <b>' + esc(fCorta(d.ultimo)) + '</b>' + (d.camp ? ' («' + esc(d.camp) + '»)' : '') +
+            '. Se puede volver a enviar desde el <b>' + esc(fLarga(d.hasta)) + '</b>.');
+          return;
+        }
+        if (d.estado === 'MALOS') { aviso2('aviso', 'Los correos guardados rebotaron (correo malo): <b>' + esc((d.malos || []).join(', ')) + '</b>. Corrígelos en Editar y vuelve a intentar.'); return; }
+        if (d.estado === 'BAJA') { aviso2('prohibido', 'Este contribuyente se dio de baja de los mensajes de marketing. No se le envía.'); return; }
+        if (d.estado === 'SIN_CORREO') {
+          est.innerHTML = '<div class="mas-u-aviso">' + ico('sobre', 18) + '<div>La tarjeta no tiene ningún correo. Escríbelo para ver la vista previa: al enviar, <b>queda guardado en la tarjeta</b>.</div></div>' +
+            '<div class="mas-prueba"><label class="ica-campo"><span class="ica-campo__t">Correo del contribuyente</span><input type="email" data-unuevo autocomplete="off"></label>' +
+            '<button type="button" class="kit-btn kit-btn--marca" data-uver>' + ico('ojo') + ' Ver vista previa</button></div>';
+          var inp = m.q('[data-unuevo]'), ver = function () {
+            var c = inp.value.trim().toLowerCase();
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(c)) { falla('Escribe un correo válido.'); inp.focus(); return; }
+            previa(c);
+          };
+          m.q('[data-uver]').addEventListener('click', ver);
+          inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') ver(); });
+          setTimeout(function () { try { inp.focus(); } catch (e) {} }, 50);
+          return;
+        }
+        est.innerHTML = '<p class="ica-nota">' + ico('enviar', 14) + ' Para: <b>' + esc((d.para || []).join(', ')) + '</b>' + (d.of ? ' · Oficio No. <b>' + esc(d.of) + '</b>' : '') +
+          (d.nuevo ? ' · este correo queda guardado en la tarjeta al enviar' : '') + '</p>' +
+          (quien ? '<p class="ica-nota">' + quien + '</p>' : '') +
+          ((d.malos || []).length ? '<p class="ica-nota mas-mal">No se usa el correo malo: ' + esc(d.malos.join(', ')) + '</p>' : '');
+        m.q('[data-uasunto]').innerHTML = '<small>Asunto</small> ' + esc(d.asunto);
+        var html = d.html || '';
+        if (im) html = html.replace('cid:imagen-hacienda', im.url);
+        m.q('[data-umarco]').srcdoc = '<!DOCTYPE html><html><head><meta charset="utf-8"><base target="_blank"></head><body style="margin:12px;background:#fff">' + html + '</body></html>';
+        m.q('[data-uprev]').hidden = false;
+        U.pdf = d.pdf || null;
+        var bp = m.q('[data-updf]'); if (bp) bp.hidden = !U.pdf;
+        env.disabled = false;
+        env.innerHTML = ico('enviar') + ' Enviar' + (tipo === 'PERS' ? ' la carta' : '');
+      }, function (e) {
+        if (!document.body.contains(m)) return;
+        est.innerHTML = '';
+        falla(e.message);
+      });
+    }
+    var bp = m.q('[data-updf]');
+    if (bp) bp.addEventListener('click', function () {
+      if (!U.pdf) return;
+      var p = U.pdf;
+      verPdf({ id: 'mas-u-' + row.id_predial, titulo: p.nombre.replace(/\.pdf$/i, ''), fuente: function () { return Promise.resolve({ nombre: p.nombre, mime: 'application/pdf', b64: p.b64 }); } });
+    });
+    env.addEventListener('click', function () {
+      var b = this; if (m.__ocupado || !U.d || !U.d.tok) return;
+      ocupado(m, b, true); falla('');
+      var rid = b.__rid || (b.__rid = nuevoRid());
+      var t0 = Date.now();
+      guardando(llamar('masunico', { tok: U.d.tok }, { post: true, rid: rid }), tipo === 'PERS' ? 'Enviando la comunicación' : 'Enviando el correo').then(function (r) {
+        medir('unico:envio', t0);
+        /* la tarjeta se parcha en memoria; la bitácora y la marca en BD Predial las escribe HACIENDA de fondo */
+        try {
+          var o = arDe(row) || {};
+          var k = r.entrada.t === 'mk' ? 'mk' : 'cp';
+          o[k] = (Array.isArray(o[k]) ? o[k] : []).concat([r.entrada]);
+          row.notificacion = JSON.stringify(o); row.__masTxt = null;
+          if (r.nuevo && !String(row.correo_electronico || '').trim()) row.correo_electronico = r.nuevo;
+        } catch (e) {}
+        S.cargado = false;   /* la lista de campañas cambió (envíos individuales del día) */
+        llamar('massync', {}, { post: true }).catch(function () {});
+        ocupado(m, b, false); m.cerrar(true); sonar('success');
+        aviso((tipo === 'PERS' ? 'Comunicación persuasiva' + (r.of ? ' Oficio ' + r.of : '') : 'Marketing') + ' enviada a ' + (r.para || []).join(', ') + '.', 'ok', 6000);
+        try { if (typeof applyBDPredialFilters_ === 'function') applyBDPredialFilters_(); } catch (e) {}
+      }, function (e) {
+        ocupado(m, b, false);
+        if (e.codigo !== 'RED') b.__rid = null;
+        falla(e.message);
+      });
+    });
+    previa('');
   }
 
   /* ══════════════ arranque ══════════════ */
@@ -996,6 +1182,7 @@
 
   window.MASIVO = {
     abrir: abrir, cargar: cargar, olvidar: olvidar, chipBd: chipBd, detalleBd: detalleBd, malos: malos,
+    botones: botones, unico: unico, comunic: comunic,
     _S: S, _columnas: columnas, _leerExcel: leerExcel, _tarjeta: tarjeta
   };
 }());

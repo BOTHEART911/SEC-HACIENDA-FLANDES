@@ -6833,6 +6833,8 @@ function bdpCardHTML_(row, idx, puedeEliminar, puedeDecision) {
     /* 21/10 — NOTIFICAR la factura por correo (js/notificar.js) */
     if (window.NOTIF) acciones += window.NOTIF.boton(row);
   }
+  /* 18/11 — MASIFICACIÓN MAIL: comunicación persuasiva y marketing a este contribuyente (js/masivo.js) */
+  if (window.MASIVO && window.MASIVO.botones) acciones += window.MASIVO.botones(row);
   if (puedeDecision) {
     acciones +=
       '<button type="button" class="bdp-icon-btn bdp-icon-btn--marca" data-bdp-act="decision" title="Actuación y seguimiento">' +
@@ -7127,6 +7129,13 @@ document.getElementById('bdp-list')?.addEventListener('click', async (e) => {
     playSoundOnce(SOUNDS.menu);
     if (window.NOTIF) window.NOTIF.abrir(row);
     else Swal.fire({ icon: 'warning', title: 'No se pudo abrir', text: 'Falta js/notificar.js. Recarga la app.' });
+    return;
+  }
+  if (act === 'maspers' || act === 'masmkt') {
+    /* 18/11 — la tarjeta ya trae id, nombre, NIT, ficha y correo; el resto lo arma ICA */
+    playSoundOnce(SOUNDS.menu);
+    if (window.MASIVO && window.MASIVO.unico) window.MASIVO.unico(row, act === 'masmkt' ? 'MKT' : 'PERS');
+    else Swal.fire({ icon: 'warning', title: 'No se pudo abrir', text: 'Falta js/masivo.js. Recarga la app.' });
     return;
   }
   if (act === 'solexp') {

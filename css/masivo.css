@@ -66,7 +66,10 @@ tr.mas-mal td { color: var(--k-malo); }
 .mas-prueba .ica-campo { flex: 1 1 260px; }
 
 /* detalle */
-.mas-buscar { margin: 8px 0; }
+/* 18/11 · .hf-buscar trae flex-basis 260px pensado para una barra en fila; en la
+   columna del modal se volvía 260 px de ALTO (el óvalo gigante) */
+.mas-buscar { flex: 0 0 auto; width: 100%; height: auto; margin: 8px 0; }
+.mas-buscar input { padding: 10px 0 !important; }
 .mas-dest { max-height: min(56dvh, 520px); overflow: auto; }
 .mas-dest td { vertical-align: top; }
 .mas-dest__est { font-weight: 700; font-size: .78rem; }
@@ -81,3 +84,22 @@ tr.mas-dest--OMITIDO .mas-dest__est, tr.mas-dest--CANCELADO .mas-dest__est { col
   .mas-pasos li svg { display: none; }
   .mas-previa__marco { height: 62dvh; }
 }
+
+/* 18/11 · envío individual desde la tarjeta de BD Predial */
+.mas-u-cab { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px 14px; padding: 12px 14px; border-radius: 14px;
+  background: var(--k-papel-2); border: 1px solid var(--k-linea); margin-bottom: 10px; }
+.mas-u-cab > div { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.mas-u-cab small { font-size: .72rem; color: var(--k-apagado); text-transform: uppercase; letter-spacing: .4px; }
+.mas-u-cab b { font-size: .88rem; overflow-wrap: anywhere; }
+.mas-u-estado { margin-bottom: 10px; }
+.mas-u-estado .ica-nota { margin: 4px 0; }
+.mas-u-aviso { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 14px; margin-bottom: 10px;
+  background: rgba(var(--k-marca-rgb), .07); border: 1px solid var(--k-linea); line-height: 1.5; }
+.mas-u-aviso > svg, .mas-u-aviso > i { flex: 0 0 auto; margin-top: 2px; color: var(--k-marca); }
+.mas-chip-bd--pers { background: rgba(var(--k-marca-rgb), .10); color: var(--k-marca); }
+.mas-chip-bd--mkt { background: rgba(214, 140, 20, .14); color: #8a5a00; }
+:root[data-tema="oscuro"] .mas-chip-bd--pers { color: var(--k-marca-clara); }
+:root[data-tema="oscuro"] .mas-chip-bd--mkt { color: #f0b54a; }
+.mas-det__t { display: flex; align-items: center; gap: 6px; margin: 8px 0 2px; font-weight: 700; font-size: .84rem; }
+.mas-est--INDIVIDUAL { background: rgba(var(--k-marca-rgb), .10); color: var(--k-marca); }
+@media (max-width: 640px) { .mas-u-cab { grid-template-columns: 1fr 1fr; } }

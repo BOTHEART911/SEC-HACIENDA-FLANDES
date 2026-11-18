@@ -265,6 +265,8 @@
           { k: 'tips', p: [
             ['documento', '**Comunicaciones persuasivas**: una carta en PDF por contribuyente con todas sus fichas; oficio consecutivo automático.'],
             ['base-datos', 'La dirección y «en mora desde» de cada ficha salen de **BD Predial**; el envío queda en la bitácora del expediente con su PDF.'],
+            ['persona', 'En cada **tarjeta de BD Predial** hay dos botones para enviarle a ese contribuyente la **persuasiva** o el **marketing** al momento, con vista previa. Si no tiene correo, lo escribes y queda guardado.'],
+            ['reloj', 'La misma comunicación **no se repite** al mismo contribuyente antes de **7 días**. La tarjeta muestra la marca «Persuasiva» o «Marketing» con la fecha.'],
             ['aviso', 'Si un correo **rebota**, queda como **Correo malo** en BD Predial: corrígelo en Editar.'],
             ['pausa', '**Pausa, reanuda o cancela** cuando quieras; el informe en Excel trae enviados, rebotes y respuestas.']
           ] }
