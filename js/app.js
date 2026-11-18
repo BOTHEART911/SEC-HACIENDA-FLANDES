@@ -8340,6 +8340,16 @@ document.getElementById('btn-bdp-form-guardar')?.addEventListener('click', async
   /* EDITAR */
   payload.id_predial = __bdpFormRow.id_predial;
   payload.rowIndex   = __bdpFormRow.rowIndex;
+  /* 18/11 — lo que traía la tarjeta al abrir: el backend solo escribe lo que se cambió
+     (un envío de Masificación mail que llegó mientras tanto no se pisa) */
+  payload._orig = {
+    actuacion: __bdpFormRow.actuacion || 'NINGUNA',
+    estado_proceso: __bdpFormRow.estado_proceso || 'NINGUNO',
+    oficio_persuas: String(__bdpFormRow.oficio_persuas || '').trim(),
+    fecha_oficio_persuas: String(__bdpFormRow.fecha_oficio_persuas || '').trim(),
+    fecha_entrega: String(__bdpFormRow.fecha_entrega || '').trim(),
+    correo_electronico: String(__bdpFormRow.correo_electronico || '').trim()
+  };
   try {
     const ok = await Swal.fire({
       icon:'question', title:'Guardar cambios',

@@ -1117,7 +1117,11 @@
           setTimeout(function () { try { inp.focus(); } catch (e) {} }, 50);
           return;
         }
-        est.innerHTML = '<p class="ica-nota">' + ico('enviar', 14) + ' Para: <b>' + esc((d.para || []).join(', ')) + '</b>' + (d.of ? ' · Oficio No. <b>' + esc(d.of) + '</b>' : '') +
+        U.of = d.of || '';
+        est.innerHTML = (tipo === 'PERS' ? '<div class="mas-prueba mas-u-of"><label class="ica-campo"><span class="ica-campo__t">Número de oficio <span class="hf-oblig">*</span></span>' +
+            '<input type="text" maxlength="40" data-uof value="' + esc(U.of) + '" autocomplete="off"></label>' +
+            '<p class="ica-nota">Sugerido: el siguiente consecutivo. Si lo cambias, la carta se arma de nuevo con ese número. Queda en <b>Oficio persuasivo</b> de la tarjeta.</p></div>' : '') +
+          '<p class="ica-nota">' + ico('enviar', 14) + ' Para: <b>' + esc((d.para || []).join(', ')) + '</b>' +
           (d.nuevo ? ' · este correo queda guardado en la tarjeta al enviar' : '') + '</p>' +
           (quien ? '<p class="ica-nota">' + quien + '</p>' : '') +
           ((d.malos || []).length ? '<p class="ica-nota mas-mal">No se usa el correo malo: ' + esc(d.malos.join(', ')) + '</p>' : '');
@@ -1130,18 +1134,27 @@
         env.disabled = false;
         env.innerHTML = ico('enviar') + ' Enviar' + (tipo === 'PERS' ? ' la carta' : '');
         var bp = m.q('[data-updf]');
-        if (bp && !U.pdf) {
-          bp.hidden = false; bp.disabled = true; bp.classList.add('ica-ocupado'); bp.innerHTML = ico('pdf') + ' Armando la carta…';
-          var t1 = Date.now(), tok = d.tok;
-          llamar('masunico', { tok: tok, pdf: 1 }, { post: true }).then(function (x) {
-            if (!document.body.contains(m) || !U.d || U.d.tok !== tok) return;
-            U.pdf = x.pdf; medir('unico:pdf', t1);
+        /* la carta se arma con el oficio escrito; si lo cambian, se rehace (la última gana) */
+        var armar = function () {
+          var tok = d.tok, of = U.of, t1 = Date.now(), turno = U.turno = (U.turno || 0) + 1;
+          U.pdf = null;
+          bp.hidden = false; bp.disabled = true; bp.classList.add('ica-ocupado'); bp.innerHTML = ico('pdf') + ' Armando la carta…'; bp.title = '';
+          llamar('masunico', { tok: tok, pdf: 1, of: of }, { post: true }).then(function (x) {
+            if (!document.body.contains(m) || !U.d || U.d.tok !== tok || U.turno !== turno) return;
+            U.pdf = x.pdf; U.pdfOf = of; medir('unico:pdf', t1);
             bp.disabled = false; bp.classList.remove('ica-ocupado'); bp.innerHTML = ico('pdf') + ' Ver la carta (PDF)';
           }, function (e) {
-            if (!document.body.contains(m)) return;
+            if (!document.body.contains(m) || U.turno !== turno) return;
             bp.disabled = true; bp.classList.remove('ica-ocupado'); bp.innerHTML = ico('aviso') + ' La carta no se pudo armar';
             bp.title = e.message + ' · al enviar se arma de nuevo';
           });
+        };
+        if (bp && tipo === 'PERS') {
+          var inOf = m.q('[data-uof]');
+          var cambio = function () { var v = inOf.value.replace(/\s+/g, ' ').trim(); if (v && v !== U.of) { U.of = v; armar(); } else if (!v) inOf.value = U.of; };
+          inOf.addEventListener('change', cambio);
+          inOf.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); inOf.blur(); } });
+          if (!U.pdf) armar(); else U.pdfOf = U.of;
         } else if (bp) bp.hidden = !U.pdf;
       }, function (e) {
         if (!document.body.contains(m)) return;
@@ -1157,10 +1170,17 @@
     });
     env.addEventListener('click', function () {
       var b = this; if (m.__ocupado || !U.d || !U.d.tok) return;
+      var inOf = m.q('[data-uof]');
+      if (tipo === 'PERS' && inOf) {
+        var v = inOf.value.replace(/\s+/g, ' ').trim();
+        if (!v) { falla('Escribe el número de oficio.'); inOf.focus(); return; }
+        if (v !== U.of) { U.of = v; b.__rid = null; }
+      }
       ocupado(m, b, true); falla('');
       var rid = b.__rid || (b.__rid = nuevoRid());
       var t0 = Date.now();
-      guardando(llamar('masunico', { tok: U.d.tok }, { post: true, rid: rid }), tipo === 'PERS' ? 'Enviando la comunicación' : 'Enviando el correo').then(function (r) {
+      var cuerpoEnv = { tok: U.d.tok }; if (tipo === 'PERS') cuerpoEnv.of = U.of;
+      guardando(llamar('masunico', cuerpoEnv, { post: true, rid: rid }), tipo === 'PERS' ? 'Enviando la comunicación' : 'Enviando el correo').then(function (r) {
         medir('unico:envio', t0);
         /* la tarjeta se parcha en memoria; la bitácora y la marca en BD Predial las escribe HACIENDA de fondo */
         try {
@@ -1169,6 +1189,14 @@
           o[k] = (Array.isArray(o[k]) ? o[k] : []).concat([r.entrada]);
           row.notificacion = JSON.stringify(o); row.__masTxt = null;
           if (r.nuevo && !String(row.correo_electronico || '').trim()) row.correo_electronico = r.nuevo;
+          if (k === 'cp') {
+            /* lo mismo que escribe HACIENDA: oficio, fechas y, si no va más adelante, actuación y estado */
+            var fe = String(r.entrada.f || '').replace(/^(\d{4})-(\d{2})-(\d{2})$/, '$3/$2/$1');
+            row.oficio_persuas = r.of; row.fecha_oficio_persuas = fe; row.fecha_entrega = fe;
+            var act = String(row.actuacion || '').trim().toUpperCase(), es = String(row.estado_proceso || '').trim().toUpperCase();
+            if (!act || act === 'NINGUNA') row.actuacion = 'COMUNICACION PERSUASIVA';
+            if (!es || es === 'NINGUNO' || es === 'PENDIENTE') row.estado_proceso = 'COBRO PERSUASIVO/LIQUIDACION';
+          }
         } catch (e) {}
         S.cargado = false;   /* la lista de campañas cambió (envíos individuales del día) */
         llamar('massync', {}, { post: true }).catch(function () {});
