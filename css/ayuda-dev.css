@@ -44,7 +44,7 @@
 .ayd-probar { display: flex; flex-direction: column; gap: 12px; padding: 16px; }
 .ayd-probar .ayd-q { width: 100%; box-sizing: border-box; min-height: 44px; }
 .ayd-probar__res p { margin: 6px 0; }
-.ayd-probar__resp { border-left: 4px solid var(--k-marca, #06402B); padding: 8px 12px; border-radius: 6px; background: var(--k-fondo-2, rgba(6, 64, 43, .06)); }
+.ayd-probar__resp { border: 1px solid var(--k-linea, rgba(6, 64, 43, .14)); padding: 8px 12px; border-radius: 6px; background: var(--k-fondo-2, rgba(6, 64, 43, .06)); }
 .ayd-probar__tt i, .ayd-probar__cand i { font-style: normal; font-size: .78rem; color: var(--k-texto-2, #5b6b63); }
 .ayd-probar__acc { display: flex; align-items: center; gap: 6px; font-size: .85rem; }
 .ayd-probar__cand { margin: 6px 0 0; padding-left: 20px; font-size: .86rem; }

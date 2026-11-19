@@ -223,7 +223,7 @@ div.ica-doc { cursor: default; }
 
 /* 05/10 — respuesta del contribuyente (texto del correo) */
 .ica-resps { display: flex; flex-direction: column; gap: 10px; }
-.ica-resp { border: 1px solid var(--k-linea); border-left: 4px solid var(--k-ok, #2e7d4f); border-radius: 12px; padding: 12px 14px; background: var(--k-ok-fondo); display: flex; flex-direction: column; gap: 6px; }
+.ica-resp { border: 1px solid var(--k-linea); border-radius: 12px; padding: 12px 14px; background: var(--k-ok-fondo); display: flex; flex-direction: column; gap: 6px; }
 .ica-resp--auto { border-left-color: var(--k-apagado); background: var(--k-papel); opacity: .85; }
 .ica-resp__cab { display: flex; gap: 10px; align-items: flex-start; color: var(--k-marca); }
 .ica-resp__cab div { display: flex; flex-direction: column; min-width: 0; }

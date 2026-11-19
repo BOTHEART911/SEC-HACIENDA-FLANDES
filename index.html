@@ -62,6 +62,7 @@
   <!-- 04/10/2026: Industria y Comercio · Requerimientos -->
   <link rel="stylesheet" href="css/ica.css">
   <link rel="stylesheet" href="css/masivo.css">
+  <link rel="stylesheet" href="css/inicio.css">     <!-- 18/11: nuevo inicio -->
   <link rel="stylesheet" href="css/notificar.css">   <!-- 21/10: notificación electrónica -->
   <link rel="stylesheet" href="css/gerencial.css">
   <link rel="stylesheet" href="kit/soporte.css">     <!-- 22/10: soporte (kit) -->
@@ -162,6 +163,16 @@
           <button type="button" class="hf-cara" id="hf-cara" aria-label="Cambiar foto de perfil"></button>
         </section>
 
+        <!-- 18/11/2026 — NUEVO INICIO (js/inicio.js + css/inicio.css). Arriba, la
+             tarea del rol con el cielo del kit, lo próximo que vence, cuatro
+             accesos y lo que pide acción; debajo, las listas de siempre (mismos
+             id). En celular es una sola columna; en PC, dos. -->
+        <div class="hf-ini">
+        <div class="hf-ini__a">
+          <section class="hf-tarea" id="hf-tarea" aria-label="Tu tarea principal" hidden><div class="hf-tarea__in" data-ini-cuerpo></div></section>
+          <section class="hf-rapidos" id="hf-rapidos" aria-label="Accesos rápidos" hidden></section>
+          <div class="hf-ini__listas">
+
         <!-- Los botones de siempre (mismos id): app.js y alcance.js los
              encienden o apagan según lo que diga el servidor. -->
         <section class="bloque" data-bloque="predial">
@@ -199,7 +210,7 @@
         <!-- 04/10/2026 — INDUSTRIA Y COMERCIO (backend ICA en la cuenta cobrocoactivo).
              Lo ven TRIBUTARIO, ADMIN y DEV (app.js · aplicarPermisosVistas_). -->
         <section class="bloque" data-bloque="ica">
-          <h3 class="bloque__t">Industria y Comercio</h3>
+          <h3 class="bloque__t">Industria y comercio</h3>
           <div class="kit-rejilla kit-rejilla--auto accesos">
             <button type="button" class="acceso" id="btn-ica-req" style="display:none;">
               <span class="acceso__img acceso__img--ico"><i class="hi" data-ico="sobre" data-t="24"></i></span>
@@ -207,21 +218,24 @@
             </button>
             <button type="button" class="acceso" id="btn-ica-empl" data-ica-pronto="Emplazamientos" style="display:none;">
               <span class="acceso__img acceso__img--ico"><i class="hi" data-ico="vencido" data-t="24"></i></span>
-              <span class="acceso__txt"><span class="acceso__t">Emplazamientos <span class="acceso__pronto">Próximamente</span></span><span class="acceso__p">Emplazamiento para declarar a quien no respondió</span></span>
+              <span class="acceso__txt"><span class="acceso__t">Emplazamientos</span><span class="acceso__p">Emplazamiento para declarar a quien no respondió</span></span>
             </button>
             <button type="button" class="acceso" id="btn-ica-rev" data-ica-pronto="Revisión técnica de declaraciones" style="display:none;">
               <span class="acceso__img acceso__img--ico"><i class="hi" data-ico="buscar" data-t="24"></i></span>
-              <span class="acceso__txt"><span class="acceso__t">Revisión técnica declaraciones <span class="acceso__pronto">Próximamente</span></span><span class="acceso__p">Revisión de las declaraciones de ICA</span></span>
+              <span class="acceso__txt"><span class="acceso__t">Revisión técnica declaraciones</span><span class="acceso__p">Revisión de las declaraciones de ICA</span></span>
             </button>
             <button type="button" class="acceso" id="btn-ica-has" data-ica-pronto="Auditorio HAS SQL" style="display:none;">
               <span class="acceso__img acceso__img--ico"><i class="hi" data-ico="base-datos" data-t="24"></i></span>
-              <span class="acceso__txt"><span class="acceso__t">Auditorio HAS SQL <span class="acceso__pronto">Próximamente</span></span><span class="acceso__p">Cruces con la base de HAS SQL</span></span>
+              <span class="acceso__txt"><span class="acceso__t">Auditorio HAS SQL</span><span class="acceso__p">Cruces con la base de HAS SQL</span></span>
             </button>
             <button type="button" class="acceso" id="btn-ica-bal" data-ica-pronto="Balance" style="display:none;">
               <span class="acceso__img acceso__img--ico"><i class="hi" data-ico="grafica" data-t="24"></i></span>
-              <span class="acceso__txt"><span class="acceso__t">Balance <span class="acceso__pronto">Próximamente</span></span><span class="acceso__p">Resultados de la fiscalización de ICA</span></span>
+              <span class="acceso__txt"><span class="acceso__t">Balance</span><span class="acceso__p">Resultados de la fiscalización de ICA</span></span>
             </button>
           </div>
+          <!-- 18/11: lo que viene va como texto, no como botones que no hacen nada
+               (los cuatro botones siguen en el HTML para app.js, escondidos por css/inicio.css) -->
+          <p class="hf-pronto">Próximamente: emplazamientos, revisión técnica de declaraciones, auditorio HAS SQL y balance.</p>
         </section>
 
         <section class="bloque" data-bloque="gestion">
@@ -259,6 +273,15 @@
           </div>
         </section>
 
+          </div>
+        </div>
+        <div class="hf-ini__b">
+          <div class="hf-reciente-z" id="hf-reciente" hidden></div>
+          <section class="hf-avisos" id="hf-avisos-z" aria-label="Piden tu acción">
+            <h3 class="bloque__t hf-avisos__t" id="hf-avisos-t">Piden tu acción</h3>
+            <div class="hf-avisos__l" id="hf-avisos" hidden></div>
+          </section>
+          <div id="hf-ase-z"></div>
         <section class="bloque" data-bloque="app">
           <h3 class="bloque__t">La app</h3>
           <div class="kit-rejilla kit-rejilla--auto accesos">
@@ -292,6 +315,9 @@
             </button>
           </div>
         </section>
+
+        </div>
+        </div>
 
         <p class="hf-vacio" id="hf-vacio" hidden>Tu usuario todavía no tiene un rol con accesos. Pide a un administrador que te asigne uno desde Configuración.</p>
 
@@ -1561,6 +1587,7 @@
 
 <script src="js/assets.js"></script>      <!-- resolvedor único de imágenes y sonidos (ANTES de app.js) -->
 <script src="js/app.js"></script>
+<script src="js/inicio.js"></script>    <!-- 18/11: nuevo inicio (HAC_INI: datos de entrada sin viajes nuevos) -->
 <script src="js/proc-ligero.js"></script>
 <script src="js/fin-reloj.js"></script>      <!-- 30/10: EJECUTADO POR FINALIZAR (reloj del asignador y línea de tiempo) -->
 <script src="js/pred-sync.js"></script>     <!-- 24/10: BD Predial al instante desde el equipo; solo baja lo que cambió -->   <!-- 24/10: semáforo liviano (activas primero, historia por bloques, guardados que parchan) -->

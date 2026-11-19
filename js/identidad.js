@@ -510,7 +510,10 @@
 
   async function entrarConPin_() {
     try {
-      var data = await apiGet('loginpin', { uid: uidElegido, pin: pinBuf, sa: selloAyuda_() });
+      /* 18/11 — ini=1: el resumen del nuevo inicio viaja en esta misma respuesta (js/inicio.js) */
+      if (window.HAC_INI) window.HAC_INI.pedido();
+      var data = await apiGet('loginpin', { uid: uidElegido, pin: pinBuf, sa: selloAyuda_(), ini: '1' });
+      if (window.HAC_INI) window.HAC_INI.poner(data && data.inicio, data && data.uid);
       pinBuf = ''; pintarPuntos_();
 
       if (data && data.encontrado) { procesarLoginExitoso_(data, data.documento || ''); return; }
@@ -644,7 +647,10 @@
   async function revalidar_() {
     if (!perfil || !perfil.uid) return;
     try {
-      var p = await apiGet('perfil', { uid: perfil.uid, sa: selloAyuda_() });
+      /* 18/11 — ini=1: el resumen del nuevo inicio viaja con la revalidación (js/inicio.js) */
+      if (window.HAC_INI) window.HAC_INI.pedido();
+      var p = await apiGet('perfil', { uid: perfil.uid, sa: selloAyuda_(), ini: '1' });
+      if (window.HAC_INI) window.HAC_INI.poner(p && p.inicio, p && p.uid);
       if (!p || !p.encontrado) {
         await Swal.fire({
           icon: 'warning',

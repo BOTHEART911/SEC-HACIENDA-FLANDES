@@ -739,8 +739,11 @@
     if (!z) {
       z = K.nodo('<section class="kit-tarjeta ase-hoyc" id="ase-hoy" hidden><div class="ase-hoyc__cab">' + ico('telefono', 20) +
         '<b>Asesorías de hoy</b><button type="button" class="kit-btn kit-btn--plano ase-mini" id="ase-hoy-ver">Ver todas</button></div><div class="ase-hoyc__l"></div></section>');
+      /* 18/11 — nuevo inicio: va en la columna de "lo que pide acción" */
+      var zona = $('hf-ase-z');
       var saludo = ini.querySelector('.saludo');
-      if (saludo && saludo.nextSibling) ini.insertBefore(z, saludo.nextSibling); else ini.appendChild(z);
+      if (zona) zona.appendChild(z);
+      else if (saludo && saludo.nextSibling) ini.insertBefore(z, saludo.nextSibling); else ini.appendChild(z);
       z.querySelector('#ase-hoy-ver').addEventListener('click', function () { if (!F) F = filtrosIniciales(); F.estado = 'HOY'; abrir(); });
       z.addEventListener('click', function (e) { var b = e.target.closest('[data-ase]'); if (!b) return; var id = b.getAttribute('data-ase'); if (!F) F = filtrosIniciales(); F.estado = 'HOY'; abrir(); setTimeout(function () { var x = porId(id); if (x) gestionar(x); }, D ? 50 : 1500); });
     }
@@ -775,7 +778,15 @@
   }
   function cargarHoy() {
     if (D) { pintarHoyLocal(); return; }
-    llamar('asesoriashoy', {}).then(function (h) { if (!D) { HOY = h; pintarHoy(); } }, function () {});
+    /* 18/11 — la tarjeta de hoy llega con la entrada (js/inicio.js · HAC_INI):
+       sin el viaje 'asesoriashoy'. Si el backend aún no la trae, como antes. */
+    var viejo = function () { llamar('asesoriashoy', {}).then(function (h) { if (!D) { HOY = h; pintarHoy(); } }, function () {}); };
+    if (!window.HAC_INI) return viejo();
+    window.HAC_INI.esperar().then(function (ini) {
+      if (D) return;
+      if (ini && ini.ase) { HOY = ini.ase; pintarHoy(); return; }
+      viejo();
+    });
   }
 
   /* ══════════════ Configuración → Asesorías (solo DEV) ══════════════ */

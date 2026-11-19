@@ -689,7 +689,9 @@ document.getElementById('btn-login')?.addEventListener('click', async ()=>{
   }
 
   try{
-    const res = await apiGet('login', { documento: doc });
+    if (window.HAC_INI) window.HAC_INI.pedido();
+    const res = await apiGet('login', { documento: doc, ini: '1' });   /* 18/11: ini=1 → nuevo inicio en el mismo viaje */
+    if (window.HAC_INI) window.HAC_INI.poner(res && res.inicio, res && res.uid);
 
     if(!res?.encontrado){
       await Swal.fire({ icon:'info', title:'NO TIENES ACCESO AÚN', text:'Solicitar acceso a Secretaría de Hacienda.', timer:6000, showConfirmButton:false });

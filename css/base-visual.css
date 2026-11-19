@@ -158,13 +158,9 @@ html[data-tema="oscuro"] img.brand { filter: brightness(.94); }
   border: 1.5px solid var(--card-border);
   border-radius: var(--radius-md);
 }
-.sk::after {
-  content: ''; position: absolute; inset: 0;
-  transform: translateX(-100%);
-  background: linear-gradient(90deg, transparent, rgba(var(--surface-rgb),.85), transparent);
-  animation: skShine 1.25s infinite;
-}
-@keyframes skShine { 100% { transform: translateX(100%); } }
+/* 18/11: sin brillo que cruza (DESIGN.md §6): el esqueleto respira con opacidad */
+.sk { animation: skRespira 1.4s ease-in-out infinite alternate; }
+@keyframes skRespira { from { opacity: 1; } to { opacity: .6; } }
 .sk-line { height: 12px; border-radius: 6px; margin: 9px 0; }
 .sk-line.w40 { width: 40%; } .sk-line.w60 { width: 60%; }
 .sk-line.w80 { width: 80%; } .sk-line.w95 { width: 95%; }
@@ -179,7 +175,7 @@ body.hac-esqueleto #loader { opacity: 0 !important; pointer-events: none !import
 /* El esqueleto ocupa el ancho de las tarjetas reales, también cuando el
    contenedor es una rejilla (#bdp-list son 2 columnas en PC). */
 .sk-card { grid-column: auto; }
-@media (prefers-reduced-motion: reduce) { .sk::after { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .sk { animation: none; } }
 
 /* ═══════════════════════════════════════════════════════════════════
    4) RIPPLE
@@ -194,12 +190,12 @@ body.hac-esqueleto #loader { opacity: 0 !important; pointer-events: none !import
 @media (prefers-reduced-motion: reduce) { .rip { display: none; } }
 
 /* Micro-animaciones de pulsación */
-button:where(:not([class*="kit-"]):not(.acceso):not(.hf-cara):not(.hf-tema)):active, .chip:active, .icon-btn:active,
+button:where(:not([class*="kit-"]):not(.acceso):not(.hf-cara):not(.hf-tema):not([data-ini])):active, .chip:active, .icon-btn:active,
 .cat-pill:active, .panel-tab:active, .login-tab:active {
   transform: scale(.97);
 }
-button:where(:not([class*="kit-"]):not(.acceso):not(.hf-cara):not(.hf-tema)), .chip, .icon-btn, .cat-pill, .panel-tab, .login-tab {
-  transition: transform .12s cubic-bezier(.34,1.56,.64,1),
+button:where(:not([class*="kit-"]):not(.acceso):not(.hf-cara):not(.hf-tema):not([data-ini])), .chip, .icon-btn, .cat-pill, .panel-tab, .login-tab {
+  transition: transform .12s cubic-bezier(.2,.8,.2,1),
               background .16s ease, box-shadow .16s ease;
 }
 

@@ -144,7 +144,7 @@ input:focus, select:focus, textarea:focus {
  
 /* ── Buttons ─────────────────────────────────────────────── */
 /* FLANDES: el botón de la app vieja NO se aplica a las piezas del kit */
-button:where(:not([class*="kit-"]):not(.acceso):not(.hf-cara):not(.hf-tema)) {
+button:where(:not([class*="kit-"]):not(.acceso):not(.hf-cara):not(.hf-tema):not([data-ini])) {
   cursor: pointer; width: 100%;
   padding: 13px 16px; box-sizing: border-box;
   border: 1.5px solid var(--input-border);
@@ -156,12 +156,12 @@ button:where(:not([class*="kit-"]):not(.acceso):not(.hf-cara):not(.hf-tema)) {
   letter-spacing: .3px;
   transition: background .18s, border-color .18s, color .18s, transform .1s, box-shadow .18s;
 }
-button:where(:not([class*="kit-"]):not(.acceso):not(.hf-cara):not(.hf-tema)):hover {
+button:where(:not([class*="kit-"]):not(.acceso):not(.hf-cara):not(.hf-tema):not([data-ini])):hover {
   background:rgba(var(--surface-rgb),.95);
   color: var(--primary); border-color: var(--primary);
   transform: translateY(-1px);
 }
-button:where(:not([class*="kit-"]):not(.acceso):not(.hf-cara):not(.hf-tema)):active { transform: translateY(0) scale(.98); }
+button:where(:not([class*="kit-"]):not(.acceso):not(.hf-cara):not(.hf-tema):not([data-ini])):active { transform: translateY(0) scale(.98); }
  
 .btn-primary {
   background:linear-gradient(135deg, #0a7a46 0%, #06402B 100%);
@@ -521,12 +521,7 @@ button:where(:not([class*="kit-"]):not(.acceso):not(.hf-cara):not(.hf-tema)):act
   margin-bottom: 14px;
   position: relative; overflow: hidden;
 }
-.estad-chart-premium::before {
-  content: '';
-  position: absolute; top: 0; left: 0; right: 0; height: 3px;
-  background:linear-gradient(90deg,#0a7a46,#06402B);
-  border-radius: 4px 4px 0 0;
-}
+/* 18/11: .estad-chart-premium sin raya de adorno arriba (quitada) */
 .estad-chart-label {
   font-family: 'Sora', sans-serif;
   font-weight: 800; font-size: .82rem;
@@ -725,11 +720,12 @@ button:where(:not([class*="kit-"]):not(.acceso):not(.hf-cara):not(.hf-tema)):act
    ============================================================ */
 
 /* ── Colores semáforo ─────────────────────────────────────── */
-.semaforo-verde    { background:linear-gradient(135deg,#16a34a,#15803d); color:#fff; }
-.semaforo-naranja  { background:linear-gradient(135deg,#f97316,#ea580c); color:#fff; }
-.semaforo-rojo     { background:linear-gradient(135deg,#dc2626,#b91c1c); color:#fff; }
-.semaforo-rojo-claro { background:linear-gradient(135deg,#f87171,#ef4444); color:#fff; }
-.semaforo-gris     { background:linear-gradient(135deg,#6b7280,#4b5563); color:#fff; }
+/* 18/11: color sólido y con 4,5:1 para la letra blanca (antes degradados que no pasaban) */
+.semaforo-verde    { background:#15803d; color:#fff; }
+.semaforo-naranja  { background:#c2410c; color:#fff; }
+.semaforo-rojo     { background:#b91c1c; color:#fff; }
+.semaforo-rojo-claro { background:#dc2626; color:#fff; }
+.semaforo-gris     { background:#4b5563; color:#fff; }
 .proc-card.color-naranja  { border-left-color: #f97316; }
 .proc-card.color-rojo     { border-left-color: #dc2626; }
 .proc-card.color-rojo-claro { border-left-color: #ef4444; }
@@ -739,8 +735,7 @@ button:where(:not([class*="kit-"]):not(.acceso):not(.hf-cara):not(.hf-tema)):act
   background:rgba(var(--surface-rgb),.88);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border: 1.5px solid rgba(6,64,43,.12);
-  border-left: 6px solid #16a34a;
+  border: 1.5px solid rgba(6,64,43,.12);   /* 18/11: sin franja lateral (el color va en css/hacienda.css) */
   border-radius: var(--radius-lg);
   padding: 16px 14px 12px;
   box-shadow: 0 4px 18px rgba(6,64,43,.10);
@@ -1834,14 +1829,7 @@ button:where(:not([class*="kit-"]):not(.acceso):not(.hf-cara):not(.hf-tema)):act
   position: relative;
   overflow: hidden;
 }
-.kpi-card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 3px;
-  background:var(--kpi-color, var(--primary));
-  border-radius: 4px 4px 0 0;
-}
+/* 18/11: .kpi-card sin raya de adorno arriba (quitada) */
 .kpi-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(6,64,43,.14);
@@ -2096,17 +2084,17 @@ button:where(:not([class*="kit-"]):not(.acceso):not(.hf-cara):not(.hf-tema)):act
   align-items: center;
   gap: 10px;
   background:rgba(var(--surface-rgb),.88);
-  border-left: 4px solid #16a34a;
-  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  border: 1px solid rgba(6,64,43,.12);   /* 18/11: borde completo, sin franja */
+  border-radius: var(--radius-sm);
   padding: 8px 12px;
   box-shadow: 0 2px 6px rgba(6,64,43,.06);
   transition: transform .14s;
 }
 .timeline-item:hover { transform: translateX(2px); }
-.timeline-item.tl-rojo       { border-left-color: #dc2626; }
-.timeline-item.tl-rojo-claro { border-left-color: #ef4444; }
-.timeline-item.tl-naranja     { border-left-color: #f97316; }
-.timeline-item.tl-gris        { border-left-color: #6b7280; }
+.timeline-item.tl-rojo       { border-color: #dc2626; }
+.timeline-item.tl-rojo-claro { border-color: #ef4444; }
+.timeline-item.tl-naranja     { border-color: #f97316; }
+.timeline-item.tl-gris        { border-color: #6b7280; }
 .timeline-date {
   font-family: 'Sora', sans-serif;
   font-weight: 900;
@@ -2403,8 +2391,7 @@ button:where(:not([class*="kit-"]):not(.acceso):not(.hf-cara):not(.hf-tema)):act
 /* Tarjeta de expediente */
 .bdp-card {
   background:rgb(var(--surface-rgb));
-  border: 1.5px solid rgba(6,64,43,.12);
-  border-left: 6px solid #16a34a;
+  border: 1.5px solid rgba(6,64,43,.12);   /* 18/11: sin franja lateral */
   border-radius: var(--radius-lg);
   padding: 14px;
   box-shadow: 0 4px 18px rgba(6,64,43,.10);

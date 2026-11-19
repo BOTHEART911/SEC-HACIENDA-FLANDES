@@ -1,0 +1,171 @@
+/* ============================================================
+   SEC-HACIENDA-FLANDES · NUEVO INICIO (pareja de js/inicio.js)
+   18/11/2026 · patrón de inicio de Flandes Core, DESIGN.md §7
+
+   Celular: una columna (tarea → próximo vencimiento → accesos → avisos →
+   asesorías de hoy → listas → la app). PC (1024 px o más): dos columnas,
+   tarea, accesos y listas de trabajo a la izquierda; lo próximo, lo que
+   pide acción y "La app" a la derecha.
+
+   Sin franjas laterales, sin texto en degradado, sin rebotes, sombras
+   neutras. Solo transform y opacity en lo que se mueve.
+   ============================================================ */
+
+/* ══════════════ 1) Columnas ══════════════ */
+.hf-ini { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.hf-ini__a, .hf-ini__b, .hf-ini__listas { display: contents; }
+/* orden en celular */
+.hf-tarea      { order: 1; }
+.hf-reciente-z { order: 2; }
+.hf-rapidos    { order: 3; }
+.hf-avisos     { order: 4; }
+#hf-ase-z      { order: 5; }
+.hf-ini__listas > .bloque { order: 6; }
+.hf-ini__b > .bloque[data-bloque="app"] { order: 7; }
+#hf-ase-z:empty { display: none; }
+
+@media (min-width: 1024px) {
+  .hf-ini { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(320px, 1fr); gap: 20px; align-items: start; }
+  .hf-ini__a, .hf-ini__b { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+  .hf-ini__listas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+  .hf-ini__listas > .bloque[hidden] { display: none; }
+  /* en PC cada columna va en el orden del HTML (el orden de arriba es solo para celular) */
+  .hf-ini__a > *, .hf-ini__b > *, .hf-ini__listas > * { order: 0 !important; }
+}
+
+/* ══════════════ 2) La tarea del rol (con el cielo del kit) ══════════════ */
+.hf-tarea {
+  border-radius: 22px; padding: 22px 20px; color: #fff;
+  background: #06402B;   /* la marca fija también en oscuro: el blanco encima pasa 4,5:1 */
+}
+:root[data-tema="oscuro"] .hf-tarea { background: #0f3d2b; box-shadow: 0 0 0 1px rgba(255, 255, 255, .08); }
+.hf-tarea[hidden] { display: none; }
+.hf-tarea__in { display: flex; flex-direction: column; gap: 16px; }
+.hf-tarea__cab { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.hf-tarea__eti { font: 600 12px/1.3 var(--k-fuente); letter-spacing: .08em; color: #cfe5da; }
+.hf-tarea__pas {
+  font: 600 12px/1 var(--k-fuente); color: #06402B; background: #fde68a;
+  padding: 6px 10px; border-radius: var(--k-r-pill);
+}
+.hf-tarea__pas--ok { background: #dcfce7; }
+.hf-tarea__t { margin: 0 !important; font: 600 1.4rem/1.25 var(--k-fuente-titulo) !important; color: #fff !important; text-align: left !important; }
+.hf-tarea__p { margin: 0; font-size: .92rem; line-height: 1.45; color: #e3efe8; }
+.hf-tarea__cifras { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.hf-tarea__cifras--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.hf-tarea__cifra {
+  appearance: none; border: 0; margin: 0; width: auto; cursor: pointer; font: inherit; color: #fff; text-align: left;
+  display: flex; flex-direction: column; gap: 2px; min-height: 64px;
+  padding: 10px 12px; border-radius: 14px; background: rgba(255, 255, 255, .1);
+  transition: background-color .15s ease;
+}
+.hf-tarea__cifra:hover { background: rgba(255, 255, 255, .18); }
+.hf-tarea__cifra:focus-visible { outline: 2px solid #fde68a; outline-offset: 2px; }
+.hf-tarea__cifra b { font: 600 1.5rem/1.1 var(--k-fuente-titulo); }
+.hf-tarea__cifra span { font-size: .78rem; color: #e3efe8; }
+.hf-tarea__barra { display: flex; gap: 2px; height: 8px; border-radius: 4px; overflow: hidden; }
+.hf-tarea__seg { display: block; min-width: 4px; }
+.hf-tarea__ley { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: .78rem; color: #e3efe8; }
+.hf-tarea__ley i { display: inline-block; width: 8px; height: 8px; border-radius: 4px; margin-right: 6px; vertical-align: 1px; }
+.hf-est--a { background: #fde68a; }
+.hf-est--b { background: #86efac; }
+.hf-est--c { background: #ffffff; }
+.hf-est--d { background: rgba(255, 255, 255, .45); }
+.hf-tarea__btns { display: flex; flex-direction: column; gap: 10px; }
+@media (min-width: 560px) { .hf-tarea__btns { flex-direction: row; } .hf-tarea__btns > * { flex: 1 1 0; } }
+.hf-tarea__bp, .hf-tarea__bs {
+  appearance: none; margin: 0; width: auto; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 50px; padding: 0 16px; border-radius: 14px; font: 600 15px/1.2 var(--k-fuente);
+  transition: transform .15s cubic-bezier(.2, .8, .2, 1), background-color .15s ease;
+}
+.hf-tarea__bp { border: 0; background: #fff; color: #06402B; }
+.hf-tarea__bs { border: 1.5px solid rgba(255, 255, 255, .45); background: transparent; color: #fff; }
+.hf-tarea__bp:hover { background: #eef7f2; }
+.hf-tarea__bs:hover { background: rgba(255, 255, 255, .1); }
+.hf-tarea__bp:active, .hf-tarea__bs:active { transform: scale(.98); }
+.hf-tarea__bp:focus-visible, .hf-tarea__bs:focus-visible { outline: 2px solid #fde68a; outline-offset: 2px; }
+/* esqueleto con la forma de lo que llega */
+.hf-esq { border-radius: 10px; background: rgba(255, 255, 255, .12); }
+.hf-esq--t { height: 30px; width: 70%; }
+.hf-esq--c { height: 64px; border-radius: 14px; }
+.hf-esq--b { height: 50px; border-radius: 14px; }
+
+/* ══════════════ 3) Lo próximo que vence ══════════════ */
+.hf-reciente-z[hidden] { display: none; }
+.hf-reciente {
+  appearance: none; margin: 0; width: 100%; cursor: pointer; font: inherit; text-align: left; color: var(--k-tinta);
+  display: flex; align-items: center; gap: 14px; padding: 14px 16px; min-height: 64px;
+  background: var(--k-papel); border: 1px solid var(--k-linea); border-radius: 18px;
+  transition: background-color .15s ease;
+}
+.hf-reciente:hover { background: var(--k-papel-2); }
+.hf-reciente:focus-visible { outline: 2px solid var(--k-marca); outline-offset: 2px; }
+.hf-reciente > .kit-ico:last-child { flex: 0 0 auto; color: var(--k-apagado); }
+.hf-reciente__ic { flex: 0 0 auto; width: 44px; height: 44px; border-radius: 22px; display: grid; place-items: center; background: var(--k-ok-fondo); color: var(--k-ok); }
+.hf-reciente__ic--hoy { background: var(--k-aviso-fondo); color: #9a3412; }
+:root[data-tema="oscuro"] .hf-reciente__ic--hoy { color: #fdba74; }
+:root[data-tema="oscuro"] .hf-reciente__ic { color: #86efac; }
+.hf-reciente__tx { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 auto; }
+.hf-reciente__tx b { font-weight: 600; font-size: .95rem; }
+.hf-reciente__tx span { font-size: .82rem; color: var(--k-apagado); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ══════════════ 4) Accesos rápidos ══════════════ */
+.hf-rapidos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.hf-rapidos[hidden] { display: none; }
+@media (min-width: 1024px) { .hf-rapidos { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.hf-rapido {
+  appearance: none; margin: 0; width: auto; cursor: pointer; font: inherit; text-align: left; color: var(--k-tinta);
+  position: relative; display: flex; flex-direction: column; gap: 8px; min-height: 112px; padding: 16px;
+  background: var(--k-papel); border: 1px solid var(--k-linea); border-radius: 18px;
+  transition: background-color .15s ease, transform .15s cubic-bezier(.2, .8, .2, 1);
+}
+.hf-rapido:hover { background: var(--k-papel-2); }
+.hf-rapido:active { transform: scale(.98); }
+.hf-rapido:focus-visible { outline: 2px solid var(--k-marca); outline-offset: 2px; }
+.hf-rapido > .kit-ico { color: var(--k-marca); }
+:root[data-tema="oscuro"] .hf-rapido > .kit-ico { color: var(--k-marca-clara); }
+.hf-rapido__t { font-weight: 600; font-size: .95rem; line-height: 1.25; }
+.hf-rapido__p { font-size: .78rem; line-height: 1.35; color: var(--k-apagado); margin-top: -4px; }
+.hf-rapido__num {
+  position: absolute; top: 14px; right: 14px; min-width: 26px; height: 24px; padding: 0 7px; box-sizing: border-box;
+  border-radius: 12px; background: var(--k-tinta-2); color: #fff; font: 600 12px/24px var(--k-fuente); text-align: center;
+}
+.hf-rapido__num--rojo { background: #b91c1c; }
+
+/* ══════════════ 5) Piden tu acción ══════════════ */
+.hf-avisos { display: flex; flex-direction: column; gap: 8px; }
+.hf-avisos[hidden] { display: none; }
+.hf-avisos__l { display: flex; flex-direction: column; gap: 8px; }
+.hf-aviso {
+  appearance: none; margin: 0; width: 100%; cursor: pointer; font: inherit; text-align: left;
+  display: flex; align-items: center; gap: 12px; padding: 14px 16px; min-height: 56px;
+  border-radius: 18px; border: 1px solid transparent;
+  transition: transform .15s cubic-bezier(.2, .8, .2, 1);
+}
+.hf-aviso:active { transform: scale(.99); }
+.hf-aviso:focus-visible { outline: 2px solid var(--k-marca); outline-offset: 2px; }
+.hf-aviso > .kit-ico { flex: 0 0 auto; }
+.hf-aviso__tx { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.hf-aviso__tx b { font-weight: 600; font-size: .9rem; line-height: 1.3; }
+.hf-aviso__tx span { font-size: .82rem; line-height: 1.35; }
+.hf-aviso--malo  { background: var(--k-malo-fondo);  color: #7f1d1d; border-color: rgba(185, 28, 28, .18); }
+.hf-aviso--malo > .kit-ico { color: #b91c1c; }
+.hf-aviso--aviso { background: var(--k-aviso-fondo); color: #7c2d12; border-color: rgba(154, 52, 18, .18); }
+.hf-aviso--aviso > .kit-ico { color: #9a3412; }
+.hf-aviso--neutro { background: var(--k-papel); color: var(--k-tinta); border-color: var(--k-linea); }
+.hf-aviso--neutro > .kit-ico { color: var(--k-marca); }
+.hf-aviso--neutro .hf-aviso__tx span { color: var(--k-apagado); }
+:root[data-tema="oscuro"] .hf-aviso--malo  { color: #fecaca; }
+:root[data-tema="oscuro"] .hf-aviso--malo > .kit-ico { color: #f87171; }
+:root[data-tema="oscuro"] .hf-aviso--aviso { color: #fed7aa; }
+:root[data-tema="oscuro"] .hf-aviso--aviso > .kit-ico { color: #fdba74; }
+:root[data-tema="oscuro"] .hf-aviso--neutro > .kit-ico { color: var(--k-marca-clara); }
+
+/* ══════════════ 6) Lo que viene, en texto ══════════════ */
+#view-inicio [data-ica-pronto] { display: none !important; }
+.hf-pronto { margin: 0 4px; font-size: .82rem; line-height: 1.45; color: var(--k-apagado); }
+
+/* ══════════════ 7) Sin movimiento si así lo pide el teléfono ══════════════ */
+@media (prefers-reduced-motion: reduce) {
+  .hf-tarea__bp, .hf-tarea__bs, .hf-rapido, .hf-aviso, .hf-tarea__cifra { transition: none; }
+}

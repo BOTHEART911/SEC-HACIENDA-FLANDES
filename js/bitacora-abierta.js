@@ -359,6 +359,23 @@
     if (proc.length) pintarNumeroSilencioso('view-asignaciones', proc);
     if ((pred.length && proc.length) || pidiendo || Date.now() - ultimo < 60000) return;
     if (typeof window.apiGet !== 'function' || !yo()) return;
+    /* 18/11 — los dos conteos llegan con la entrada (js/inicio.js · HAC_INI):
+       sin el viaje 'bitpendientes' (13 s medidos). Si no vienen, como antes. */
+    if (window.HAC_INI && !contarInicio.__ini) {
+      contarInicio.__ini = true;
+      pidiendo = true;
+      window.HAC_INI.esperar().then(function (ini) {
+        pidiendo = false;
+        if (ini && ini.bit) {
+          ultimo = Date.now();
+          if (!leer('__bdpListCache').length && ini.bit.pred) ponerEnInicio('pred', ini.bit.pred);
+          if (!leer('__procListCache').length && ini.bit.proc) ponerEnInicio('proc', ini.bit.proc);
+          return;
+        }
+        contarInicio();
+      });
+      return;
+    }
     pidiendo = true; ultimo = Date.now();
     var p;
     window.__HAC_SILENCIO = true;
@@ -434,6 +451,9 @@
   setTimeout(arrancar, 4000);
   /* el inicio se pinta antes que showView exista envuelto: un primer conteo */
   window.addEventListener('load', function () { setTimeout(contarInicio, 2500); });
+
+  /* 18/11 — otra sesión: el conteo vuelve a tomar el dato de entrada */
+  window.addEventListener('hac:login', function () { contarInicio.__ini = false; ultimo = 0; });
 
   window.BITAB = {
     estado: estado, pendientes: pendientes, parse: parse, habiles: habiles, nivel: nivel,
