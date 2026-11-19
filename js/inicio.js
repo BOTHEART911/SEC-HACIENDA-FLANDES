@@ -53,6 +53,7 @@
       }
       var l = esperas; esperas = [];
       l.forEach(function (f) { try { f(HAC_INI.fresco()); } catch (_) {} });
+      setTimeout(function () { try { pintar(); } catch (_) {} }, 0);
     },
     /** El dato de entrada si llegó hace menos de un minuto; si no, null. */
     fresco: function () { return D && (Date.now() - recibido) < FRESCO_MS ? D : null; },
@@ -64,6 +65,7 @@
       });
     },
     datos: function () { return D; },
+    esperando: function () { return pidiendo; },
     pintar: function () { pintar(); }
   };
 
@@ -220,7 +222,14 @@
   function htmlTarea(m) {
     var s = sem(), b = bit(), admin = tiene('ADMIN') || tiene('DEV');
     if (m === 'sem') {
-      if (!s) return htmlEsqueleto('MI SEMÁFORO');
+      if (!s && pidiendo) return htmlEsqueleto('MI SEMÁFORO');
+      if (!s) {
+        /* sin conteos (backend anterior o sin red): la tarea igual queda a un toque */
+        return '<div class="hf-tarea__cab"><span class="hf-tarea__eti">MI SEMÁFORO</span></div>' +
+          '<h2 class="hf-tarea__t">Asignaciones y vencimientos por días hábiles</h2>' +
+          '<div class="hf-tarea__btns"><button type="button" class="hf-tarea__bp" data-ini="sem">' + ico('semaforo', 20) + ' Abrir mi semáforo</button>' +
+          (puedeAgregar() ? '<button type="button" class="hf-tarea__bs" data-ini="sem-agregar">' + ico('mas', 18) + ' Agregar asignación</button>' : '') + '</div>';
+      }
       var urg = n(s.venc) + n(s.hoy);
       var pas = n(s.hoy) ? plural(n(s.hoy), 'vence hoy', 'vencen hoy') : (n(s.venc) ? plural(n(s.venc), 'vencida', 'vencidas') : 'Al día');
       var est = s.est || {}, claves = Object.keys(est).sort(function (a, c) { return est[c] - est[a]; });
@@ -246,7 +255,8 @@
     }
     if (m === 'bit') {
       var p = (b && b.pred) || null;
-      if (!p) return htmlEsqueleto('BITÁCORAS POR RESPONDER');
+      if (!p && pidiendo) return htmlEsqueleto('BITÁCORAS POR RESPONDER');
+      if (!p) p = { n: 0, rojo: 0 };
       return '<div class="hf-tarea__cab"><span class="hf-tarea__eti">BASE DE DATOS PREDIAL</span>' +
           '<span class="hf-tarea__pas' + (n(p.rojo) ? '' : ' hf-tarea__pas--ok') + '">' + (n(p.rojo) ? plural(n(p.rojo), 'en rojo', 'en rojo') : 'Al día') + '</span></div>' +
         '<h2 class="hf-tarea__t">' + (n(p.n) ? plural(n(p.n), 'bitácora por responder', 'bitácoras por responder') : 'No tienes bitácoras por responder') + '</h2>' +
@@ -380,6 +390,8 @@
     var mo = new MutationObserver(luego);
     v.querySelectorAll('.acceso').forEach(function (b) { mo.observe(b, { attributes: true, attributeFilter: ['style', 'hidden'] }); });
     mo.observe(v, { attributes: true, attributeFilter: ['class'] });
+    /* el número de bitácoras que js/bitacora-abierta.js pone en la fila (si lo pidió por su cuenta) */
+    ['btn-bd-predial', 'btn-semaforo'].forEach(function (id) { var b = $(id); if (b) mo.observe(b, { childList: true, subtree: true, characterData: true }); });
   }
   /* Al volver al inicio se repinta con lo que haya en memoria (sin viajar). */
   function engancharVistas() {
