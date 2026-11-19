@@ -83,7 +83,8 @@
     var b = $(id);
     return !!b && b.style.display !== 'none' && !b.hidden;
   }
-  function usuario() { try { return window.currentUser || null; } catch (_) { return null; } }
+  /* currentUser es un 'let' global de app.js: no cuelga de window */
+  function usuario() { try { return window.currentUser || (0, eval)('typeof currentUser !== "undefined" ? currentUser : null'); } catch (_) { return null; } }
   function roles() { var u = usuario(); return (u && u.roles) || []; }
   function tiene(r) { return roles().indexOf(r) !== -1; }
   function uid() { var u = usuario(); return (u && u.uid) || ''; }
