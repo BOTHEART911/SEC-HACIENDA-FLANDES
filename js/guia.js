@@ -213,7 +213,7 @@
           bl.push({ k: 'tips', p: [['ojo', 'Todas las asignaciones, **solo lectura**.'], ['comentario', 'Respondes en **MENSAJE O BITÁCORA**.']] });
         } else {
           bl.push({ k: 'flujo', p: [['bandeja-entrada', 'Te llega', 'Con WhatsApp y push'], ['lapiz', 'Trabajas', 'Bitácora, etapa, documentos'], ['firma', 'Solicitas', 'Revisión, firma o finalizar']] });
-          var t = [['chat', '**Chat** en vivo de cada asignación.']];
+          var t = [['chat', '**Chat** en vivo de cada asignación.'], ['documento', 'Un **Word** que subas a una asignación abierta queda en línea: **Abrir para editar** (con tu Gmail de USUARIOS, con historial de versiones) y **Descargar Word**. Solo lo editan el abogado y el asistente.']];
           if (c.abogado) t.unshift(['devolver', '**Rebotar** si no es de tu competencia.']);
           if (c.asistente && !c.abogado) t.unshift(['equipo', 'Ves las asignaciones donde eres **apoyo**.']);
           bl.push({ k: 'tips', p: t });
@@ -267,9 +267,10 @@
             ['base-datos', 'La dirección y «en mora desde» de cada ficha salen de **BD Predial**; el envío queda en la bitácora del expediente con su PDF.'],
             ['persona', 'En cada **tarjeta de BD Predial** hay dos botones para enviarle a ese contribuyente la **persuasiva** o el **marketing** al momento, con vista previa. En la persuasiva escribes el **número de oficio** (viene sugerido). Si no tiene correo, lo escribes y queda guardado.'],
             ['base-datos', 'Al enviar la persuasiva quedan en la tarjeta el **oficio**, la **fecha del oficio** y la **fecha de entrega**; si estaba en NINGUNA/NINGUNO pasa a **COMUNICACION PERSUASIVA** y **COBRO PERSUASIVO/LIQUIDACION** (no retrocede un proceso más avanzado).'],
-            ['reloj', 'La misma comunicación **no se repite** al mismo contribuyente antes de **7 días**. La tarjeta muestra la marca «Persuasiva» o «Marketing» con la fecha.'],
+            ['reloj', 'Se puede enviar a cada predio aunque **comparta correo** con otros; solo se frena el **doble toque** (el mismo envío no sale dos veces). La tarjeta muestra la marca «Persuasiva» o «Marketing» con la fecha.'],
             ['aviso', 'Si un correo **rebota**, queda como **Correo malo** en BD Predial: corrígelo en Editar.'],
-            ['pausa', '**Pausa, reanuda o cancela** cuando quieras; el informe en Excel trae enviados, rebotes y respuestas.']
+            ['pausa', '**Pausa, reanuda o cancela** cuando quieras; el informe en Excel trae enviados, rebotes y respuestas.'],
+            ['imagen', '**ICA · Marketing** (TRIBUTARIO, ADMIN y DEV): correo con imagen por Excel o por filtros de **BD Requerimientos** (etapa, seguimiento, actividad y municipio). En cada tarjeta de Requerimientos hay un botón para enviarle a ese contribuyente. Cada envío queda en los **Envíos** y la **Bitácora** del requerimiento.']
           ] }
         ];
       }

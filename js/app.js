@@ -212,6 +212,7 @@ function agregarDocAsignacion_(row, api){
       const casilla = PROC_CASILLAS_.find(c => String(row[c[0]] || '').trim() === String(res.url || ''));
       api.sumar({ id: res.id, url: res.url, titulo: casilla ? casilla[1] : (res.nombre || 'Documento'), detalle: 'Agregado ahora' }, true);
       pintarDocsAsignacion_(row, document.getElementById('proc-ver-files'));
+      if (window.WORD_ASIG) window.WORD_ASIG.pintar(row, document.getElementById('proc-ver-files'));   /* 20/11 */
       try { playSoundOnce(SOUNDS.success); } catch(_){}
       avisa('Documento agregado.', 'ok', 2500);
       if (docsAsignacion_(row).length >= PROC_MAX_DOCS_ && btn) btn.classList.add('kit-oculto');
@@ -2949,6 +2950,8 @@ function abrirVerAsignacion_(row) {
   };
   addFileIcon_([row.recibido1, row.recibido2, row.recibido3], ICONO_INBOX,  'Recibido');
   addFileIcon_([row.respuesta1, row.respuesta2, row.respuesta3], ICONO_OUTBOX, 'Respuesta');
+  /* 20/11 — Word en línea (documento de Google compartido con abogado y asistente): js/word-asig.js */
+  if (window.WORD_ASIG) window.WORD_ASIG.pintar(row, filesWrap);
 
   // Creación
   const creacionEl = document.getElementById('proc-ver-creacion');

@@ -474,6 +474,8 @@
       var yaAmp = ampliado(r);
       acc += btn('ampliar', 'ampliar-fecha', yaAmp ? 'Ampliación de fecha ya concedida (' + (r.ins ? '2.º requerimiento' : 'requerimiento') + ')' : 'Ampliación de fecha', yaAmp ? '' : 'ica-btn--amp', yaAmp);
     }
+    /* 20/11 — ICA · Marketing con este contribuyente ya elegido (js/masivo.js) */
+    if ((r.c1 || r.c2) && window.MASIVO && window.MASIVO.icaMarketing) acc += btn('marketing', 'imagen', 'ICA · Marketing: correo con imagen a este contribuyente');
     acc += btn('evidencia', 'clip', 'Anexar evidencia');
     acc += btn('etapa', 'adelante', 'Cambiar etapa');
     if (puedeEliminar(r)) acc += btn('eliminar', 'basura', 'Eliminar contribuyente', 'danger-icon');
@@ -511,6 +513,7 @@
     else if (a === 'etapa') abrirEtapa(r);
     else if (a === 'ampliar') abrirAmpliacion(r);
     else if (a === 'eliminar') eliminar(r);
+    else if (a === 'marketing' && window.MASIVO && window.MASIVO.icaMarketing) window.MASIVO.icaMarketing(r);   /* 20/11 */
   }
 
   /* ══════════════ eliminar (04/10) ══════════════
@@ -874,8 +877,9 @@
       }).join('') : '<p class="ica-nada">Sin evidencias todavía.</p>';
       var en = d.envios || [];
       m.q('[data-envios]').innerHTML = en.length ? en.map(function (x) {
-        var t = { req: 'Requerimiento', ins: '2.º requerimiento', rec: 'Recordatorio', amp: 'Ampliación de fecha' + (x.s === 'ins' ? ' (2.º req.)' : '') }[x.t] || x.t;
-        return '<div class="ica-envio">' + ico(x.t === 'rec' ? 'campana' : (x.t === 'ins' ? 'megafono' : (x.t === 'amp' ? 'ampliar-fecha' : 'enviar')), 18) + '<span><b>' + esc(t) + '</b> · ' + esc(x.f) +
+        var t = { req: 'Requerimiento', ins: '2.º requerimiento', rec: 'Recordatorio', amp: 'Ampliación de fecha' + (x.s === 'ins' ? ' (2.º req.)' : ''),
+          mkt: 'ICA · Marketing' + (x.camp ? ' («' + x.camp + '»)' : ''), mktreb: 'ICA · Marketing rebotó' }[x.t] || x.t;   /* 20/11 */
+        return '<div class="ica-envio">' + ico(x.t === 'rec' ? 'campana' : (x.t === 'ins' ? 'megafono' : (x.t === 'amp' ? 'ampliar-fecha' : (x.t === 'mkt' ? 'imagen' : (x.t === 'mktreb' ? 'devolver' : 'enviar')))), 18) + '<span><b>' + esc(t) + '</b> · ' + esc(x.f) +
           '<small>Para: ' + esc(x.para || '') + (x.por ? ' · por ' + esc(titulo(x.por)) : '') + '</small></span></div>';
       }).join('') : '<p class="ica-nada">Aún no se ha enviado.</p>';
       pintarBit(d.bitacora);

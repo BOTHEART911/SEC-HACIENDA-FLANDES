@@ -85,6 +85,8 @@ var APP_SHELL = [
   './css/masivo.css',
   './js/inicio.js',
   './css/inicio.css',
+  './js/zonas.js',          // 20/11: residencias de la hoja ZONAS
+  './js/word-asig.js',      // 20/11: Word en línea en la asignación
   './js/propietarios.js',
   './js/notificar.js',
   './css/notificar.css',

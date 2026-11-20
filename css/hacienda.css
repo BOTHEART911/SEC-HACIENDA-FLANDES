@@ -843,3 +843,14 @@ html .kit-visor { z-index: 10030; }
 .fin-sello { font: 700 .66rem/1 var(--k-fuente, inherit); text-transform: uppercase; letter-spacing: .4px; padding: 3px 7px; border-radius: 999px; }
 .fin-sello.ok { background: rgba(22,163,74,.14); color: #15803d; }
 .fin-sello.tarde { background: rgba(220,38,38,.14); color: #b91c1c; }
+
+/* 20/11/2026 — Word en línea en la asignación (js/word-asig.js) */
+.proc-word { margin: 10px 0 4px; padding: 10px 12px; border: 1px solid var(--k-linea); border-radius: 14px; background: var(--k-papel-2); }
+.proc-word__t { margin: 0 0 6px; font: 600 .85rem/1.3 var(--k-fuente); color: var(--k-tinta); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; text-align: left; }
+.proc-word__t small { font-weight: 400; color: var(--k-apagado); }
+.proc-word__it { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 6px 0; border-top: 1px solid var(--k-linea); }
+.proc-word__it:first-of-type { border-top: 0; }
+.proc-word__n { flex: 1 1 120px; font-size: .85rem; color: var(--k-tinta); text-align: left; }
+a.proc-word__b { min-height: 44px; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
+.proc-word__nota, .proc-word__aviso { margin: 8px 0 0; font-size: .78rem; color: var(--k-apagado); text-align: left; }
+.proc-word__aviso { color: #9a3412; background: #ffedd5; padding: 6px 8px; border-radius: 10px; }

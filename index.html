@@ -270,6 +270,11 @@
               <span class="acceso__img acceso__img--ico"><i class="hi" data-ico="megafono" data-t="24"></i></span>
               <span class="acceso__txt"><span class="acceso__t">Predial · Marketing</span><span class="acceso__p">Correos masivos con imagen, por Excel o filtros de BD Predial</span></span>
             </button>
+            <!-- 20/11/2026 — ICA · Marketing (lo ven TRIBUTARIO, ADMIN y DEV: js/masivo.js · verIca) -->
+            <button type="button" class="acceso" id="btn-mas-ica" hidden>
+              <span class="acceso__img acceso__img--ico"><i class="hi" data-ico="imagen" data-t="24"></i></span>
+              <span class="acceso__txt"><span class="acceso__t">ICA · Marketing</span><span class="acceso__p">Correos masivos con imagen, por Excel o por filtros de BD Requerimientos</span></span>
+            </button>
           </div>
         </section>
 
@@ -424,10 +429,10 @@
           <option value="ARBOLEDA II">ARBOLEDA II</option>
           <option value="BALCONES DE ALEJANDRIA">BALCONES DE ALEJANDRIA</option>
           <option value="BILBAO">BILBAO</option>
-          <option value="CALA I">CALA I</option>
+          <option value="BRISAS DEL CARMEN">BRISAS DEL CARMEN</option>
+          <option value="CAMALA">CAMALA</option>
           <option value="CANALES">CANALES</option>
           <option value="CANCUN">CANCUN</option>
-          <option value="CAMALA">CAMALA</option>
           <option value="CASA DEL SOL I">CASA DEL SOL I</option>
           <option value="CASA DEL SOL II">CASA DEL SOL II</option>
           <option value="CENTRO">CENTRO</option>
@@ -438,9 +443,6 @@
           <option value="EL JORDAN">EL JORDAN</option>
           <option value="GAITAN">GAITAN</option>
           <option value="HANGARES">HANGARES</option>
-          <option value="BRISAS DEL CARMEN">BRISAS DEL CARMEN</option>
-          <option value="VILLA MAGDALENA">VILLA MAGDALENA</option>
-          <option value="VILLA MARIANA">VILLA MARIANA</option>
           <option value="IQUEIMA">IQUEIMA</option>
           <option value="JARDINES DE BABILONIA">JARDINES DE BABILONIA</option>
           <option value="LA CAPILLA">LA CAPILLA</option>
@@ -466,19 +468,19 @@
           <option value="MONACO">MONACO</option>
           <option value="OBRERO">OBRERO</option>
           <option value="OBRERO DELIRIO">OBRERO DELIRIO</option>
-          <option value="ORQUIDEAS I">ORQUÍDEAS I</option>
-          <option value="ORQUIDEAS II">ORQUÍDEAS II</option>
-          <option value="ORQUIDEAS REAL I">ORQUÍDEAS REAL I</option>
-          <option value="ORQUIDEAS REAL II">ORQUÍDEAS REAL II</option>
-          <option value="ORQUIDEAS REAL III">ORQUÍDEAS REAL III</option>
-          <option value="ORQUIDEAS REAL IV">ORQUÍDEAS REAL IV</option>
-          <option value="PARADERO I">PARADERO I</option>
-          <option value="PARADERO II">PARADERO II</option>
-          <option value="PARAISO">PARAISO</option>
+          <option value="ORQUIDEAS I">ORQUIDEAS I</option>
+          <option value="ORQUIDEAS II">ORQUIDEAS II</option>
+          <option value="ORQUIDEAS REAL I">ORQUIDEAS REAL I</option>
+          <option value="ORQUIDEAS REAL II">ORQUIDEAS REAL II</option>
+          <option value="ORQUIDEAS REAL III">ORQUIDEAS REAL III</option>
+          <option value="ORQUIDEAS REAL IV">ORQUIDEAS REAL IV</option>
           <option value="PAKISTAN I">PAKISTAN I</option>
           <option value="PAKISTAN II">PAKISTAN II</option>
           <option value="PAKISTAN III">PAKISTAN III</option>
           <option value="PALO VERDE">PALO VERDE</option>
+          <option value="PARADERO I">PARADERO I</option>
+          <option value="PARADERO II">PARADERO II</option>
+          <option value="PARAISO">PARAISO</option>
           <option value="PARQUES DE ALEJANDRIA I">PARQUES DE ALEJANDRIA I</option>
           <option value="PARQUES DE ALEJANDRIA II">PARQUES DE ALEJANDRIA II</option>
           <option value="PARQUES DE ALEJANDRIA III">PARQUES DE ALEJANDRIA III</option>
@@ -503,12 +505,15 @@
           <option value="RIVERAS DEL MAGDALENA">RIVERAS DEL MAGDALENA</option>
           <option value="SAN ANDRES">SAN ANDRES</option>
           <option value="SAN FELIPE DE BARAJAS">SAN FELIPE DE BARAJAS</option>
+          <option value="SAN FERNANDO DE SEGOVIA">SAN FERNANDO DE SEGOVIA</option>
           <option value="SAN FRANCISCO">SAN FRANCISCO</option>
           <option value="SAN LUIS">SAN LUIS</option>
           <option value="SANTA ANA">SANTA ANA</option>
+          <option value="SANTA HAGIA SOFIA">SANTA HAGIA SOFIA</option>
           <option value="SANTA MARTHA">SANTA MARTHA</option>
           <option value="SANTA MONICA I">SANTA MONICA I</option>
           <option value="SANTA MONICA II">SANTA MONICA II</option>
+          <option value="SANTORINI">SANTORINI</option>
           <option value="SINAI">SINAI</option>
           <option value="SOL Y BRISA">SOL Y BRISA</option>
           <option value="TARQUI">TARQUI</option>
@@ -537,6 +542,8 @@
           <option value="VILLA DEL SOL">VILLA DEL SOL</option>
           <option value="VILLA ESPERANZA">VILLA ESPERANZA</option>
           <option value="VILLA LAS PALMAS">VILLA LAS PALMAS</option>
+          <option value="VILLA MAGDALENA">VILLA MAGDALENA</option>
+          <option value="VILLA MARIANA">VILLA MARIANA</option>
           <option value="VILLA MEDINA">VILLA MEDINA</option>
           <option value="VILLAS DEL MEDITERANEO">VILLAS DEL MEDITERANEO</option>
         </select>
@@ -1587,7 +1594,9 @@
 
 <script src="js/assets.js"></script>      <!-- resolvedor único de imágenes y sonidos (ANTES de app.js) -->
 <script src="js/app.js"></script>
-<script src="js/inicio.js"></script>    <!-- 18/11: nuevo inicio (HAC_INI: datos de entrada sin viajes nuevos) -->
+<script src="js/inicio.js"></script>
+<script src="js/zonas.js"></script>
+<script src="js/word-asig.js"></script> <!-- 20/11: Word en línea en la asignación (abrir para editar, descargar Word) -->     <!-- 20/11: residencias de la hoja ZONAS (llegan con la entrada, sello zv) -->    <!-- 18/11: nuevo inicio (HAC_INI: datos de entrada sin viajes nuevos) -->
 <script src="js/proc-ligero.js"></script>
 <script src="js/fin-reloj.js"></script>      <!-- 30/10: EJECUTADO POR FINALIZAR (reloj del asignador y línea de tiempo) -->
 <script src="js/pred-sync.js"></script>     <!-- 24/10: BD Predial al instante desde el equipo; solo baja lo que cambió -->   <!-- 24/10: semáforo liviano (activas primero, historia por bloques, guardados que parchan) -->

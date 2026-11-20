@@ -154,6 +154,7 @@
     'view-ica-req': 'Requerimientos ICA',
     'view-mas-pers': 'Comunicaciones persuasivas',
     'view-mas-mkt': 'Marketing predial',
+    'view-mas-ica': 'ICA · Marketing',
     'view-mas-pers': 'Comunicaciones persuasivas',
     'view-mas-mkt': 'Marketing predial',
     'view-soportes': 'Soportes',

@@ -7,6 +7,11 @@
        consecutivo automático, constancia en la bitácora del expediente.
      · Predial · Marketing (view-mas-mkt): correo con la imagen en el cuerpo
        y adjunta; destinatarios por Excel o por filtros de BD Predial.
+     · ICA · Marketing (view-mas-ica, 20/11): igual que Marketing predial;
+       destinatarios por Excel o por filtros de BD Requerimientos (etapa,
+       seguimiento, actividad, municipio) que se aplican EN EL EQUIPO sobre la
+       lista que ya tiene la vista Requerimientos. Cada envío queda en la
+       línea de tiempo (Envíos y Bitácora) del requerimiento.
 
    Los correos salen de cobrocoactivo@flandes-tolima.gov.co por el backend
    ICA (Masivo.gs). El navegador NUNCA envía: arma la campaña y la pone en
@@ -28,8 +33,12 @@
   if (window.MASIVO) return;
 
   var K = window.KIT || {};
-  var VISTAS = { PERS: 'view-mas-pers', MKT: 'view-mas-mkt' };
-  var NOMBRE = { PERS: 'Comunicaciones persuasivas', MKT: 'Marketing' };
+  var VISTAS = { PERS: 'view-mas-pers', MKT: 'view-mas-mkt', ICA: 'view-mas-ica' };
+  var NOMBRE = { PERS: 'Comunicaciones persuasivas', MKT: 'Marketing', ICA: 'ICA · Marketing' };
+  var ICONO = { PERS: 'documento', MKT: 'megafono', ICA: 'imagen' };
+  /** 20/11 — Marketing predial y ICA · Marketing comparten imagen, baja y cola. */
+  function esMkt(t) { return t === 'MKT' || t === 'ICA'; }
+  function preDe(t) { return t === 'ICA' ? 'mas.ica.' : (t === 'MKT' ? 'mas.mkt.' : 'mas.pers.'); }
   var LOCAL_XLSX = 'vendor/xlsx-0.18.5.full.min.js';
   var ESTADOS = { EN_COLA: ['En cola', 'reloj'], PAUSADA: ['Pausada', 'pausa'], TERMINADA: ['Terminada', 'check'], CANCELADA: ['Cancelada', 'cerrar'],
     INDIVIDUAL: ['Envíos individuales', 'persona'] };   /* 18/11 — los enviados desde la tarjeta de BD Predial, una por día */
@@ -130,7 +139,7 @@
     p.then(function () { S.cargando = null; }, function () { S.cargando = null; });
     return p;
   }
-  function olvidar() { S.camps = null; S.cfg = null; S.cargado = false; S.opc = null; S.imgP = null; parar(); }
+  function olvidar() { S.camps = null; S.cfg = null; S.cargado = false; S.opc = null; S.imgP = {}; parar(); }
   /* 17/11 — conteos de BD Predial para los filtros: se piden de fondo al abrir
      Marketing y se reutilizan 10 min (el asistente los pinta al instante). */
   function opciones() {
@@ -159,7 +168,8 @@
         '</div>' +
         '<p class="mas-intro">' + (tipo === 'PERS'
           ? 'Una carta en PDF por contribuyente, con la tabla de todas sus fichas, desde <b>cobrocoactivo@flandes-tolima.gov.co</b>. Cada envío queda en la bitácora del expediente.'
-          : 'Correo con la imagen de la campaña (en el cuerpo y adjunta) desde <b>cobrocoactivo@flandes-tolima.gov.co</b>. Destinatarios por Excel o por filtros de BD Predial.') + '</p>' +
+          : (tipo === 'ICA' ? 'Correo con imagen desde <b>cobrocoactivo@flandes-tolima.gov.co</b>. Destinatarios por Excel o por filtros de BD Requerimientos. Cada envío queda en la línea de tiempo del requerimiento.'
+          : 'Correo con la imagen de la campaña (en el cuerpo y adjunta) desde <b>cobrocoactivo@flandes-tolima.gov.co</b>. Destinatarios por Excel o por filtros de BD Predial.')) + '</p>' +
         '<div class="mas-cuota" id="' + p + '-cuota"></div>' +
         '<div class="hf-rejilla mas-lista" id="' + p + '-lista"></div>' +
         '<button type="button" class="hf-atras" hidden>Regresar</button>' +
@@ -194,6 +204,7 @@
     montarVista(tipo);
     if (typeof window.showView === 'function') window.showView(VISTAS[tipo]);
     if (tipo === 'MKT') setTimeout(function () { if (activa(tipo)) opciones().catch(function () {}); }, 0);
+    if (tipo === 'ICA') setTimeout(function () { if (activa(tipo)) icaLista().catch(function () {}); }, 0);   /* la lista de Requerimientos (una vez por sesión) */
     if (S.cargado) { pintar(tipo); sondear(); return; }
     pintarEsqueleto(tipo);
     cargar().then(function () { if (activa(tipo)) { pintar(tipo); sondear(); } }, function (e) {
@@ -237,7 +248,7 @@
     var l = (S.camps || []).filter(function (c) { return c.tipo === tipo; });
     var cont = $(p + '-lista');
     if (!l.length) {
-      cont.innerHTML = '<div class="ica-vacio">' + ico(tipo === 'PERS' ? 'documento' : 'megafono', 30) + '<p>Aún no hay campañas de ' + esc(NOMBRE[tipo].toLowerCase()) + '. Crea la primera con <b>Nueva campaña</b>.</p></div>';
+      cont.innerHTML = '<div class="ica-vacio">' + ico(ICONO[tipo], 30) + '<p>Aún no hay campañas de ' + esc(NOMBRE[tipo].toLowerCase()) + '. Crea la primera con <b>Nueva campaña</b>.</p></div>';
       return;
     }
     cont.innerHTML = l.map(tarjeta).join('');
@@ -258,7 +269,7 @@
       '<div class="ica-card__top"><span class="mas-est mas-est--' + esc(c.est) + '">' + ico(e[1], 14) + ' ' + esc(e[0]) + '</span>' +
         (c.of ? '<span class="ica-of">Oficios ' + esc(c.of) + '</span>' : '') + '</div>' +
       '<h4 class="ica-nom">' + esc(c.nom) + '</h4>' +
-      '<p class="ica-id">' + esc(fCorta(c.cre)) + ' · ' + esc(c.por) + (c.origen === 'BD' ? ' · desde BD Predial' : (c.origen === 'UNICO' ? '' : (c.origen ? ' · desde Excel' : ''))) + (c.fl ? ' · beneficio hasta el ' + esc(fLarga(c.fl)) : '') + '</p>' +
+      '<p class="ica-id">' + esc(fCorta(c.cre)) + ' · ' + esc(c.por) + (c.origen === 'BD' ? ' · desde BD Predial' : (c.origen === 'REQ' ? ' · desde BD Requerimientos' : (c.origen === 'UNICO' ? '' : (c.origen ? ' · desde Excel' : '')))) + (c.fl ? ' · beneficio hasta el ' + esc(fLarga(c.fl)) : '') + '</p>' +
       '<p class="mas-asunto">' + ico('sobre', 14) + esc(asuntoVer(c)) + '</p>' +
       '<div class="mas-prog" title="' + pct + ' %"><i style="width:' + pct + '%"></i></div>' +
       '<p class="mas-prog__t"><b>' + num(n.env) + '</b> enviados de <b>' + num(total) + '</b>' + esc(eta) + '</p>' +
@@ -448,39 +459,81 @@
     });
   }
   /** La imagen fija de marketing (Configuración), una vez por sesión. */
-  function imgCfg() {
-    if (!S.imgP) S.imgP = llamar('masimg', {}).then(function (d) { return d && d.img ? deB64(d.img) : null; });
-    S.imgP.catch(function () { S.imgP = null; });
-    return S.imgP;
+  function imgCfg(tipo) {
+    var k = tipo === 'ICA' ? 'ICA' : 'MKT';
+    S.imgP = S.imgP || {};
+    if (!S.imgP[k]) S.imgP[k] = llamar('masimg', k === 'ICA' ? { tipo: 'ICA' } : {}).then(function (d) { return d && d.img ? deB64(d.img) : null; });
+    S.imgP[k].catch(function () { S.imgP[k] = null; });
+    return S.imgP[k];
   }
+  function imgGuardada(tipo) { return S.cfg ? (tipo === 'ICA' ? S.cfg.imgIca : S.cfg.img) : null; }
+
+  /* ══════════════ ICA · Marketing: BD Requerimientos en el equipo (20/11) ══════════════
+     Se usa la lista que ya trae la vista Requerimientos (js/ica.js, una vez por sesión):
+     los filtros se aplican aquí y al servidor solo viajan los ID elegidos. */
+  function icaLista() {
+    if (!window.ICA || !window.ICA.cargar) return Promise.reject(error('ICA', 'Falta el módulo de Industria y Comercio. Recarga la app.'));
+    if (window.ICA.puede && !window.ICA.puede()) return Promise.reject(error('ICA', 'Tu rol no ve BD Requerimientos: usa Excel.'));
+    return window.ICA.cargar().then(function () { return (window.ICA._S && window.ICA._S.lista) || []; });
+  }
+  var ICA_SEG = [['PEND', 'Vencidos sin respuesta'], ['PORVENCER', 'Por vencer'], ['PLAZO', 'En plazo'], ['RESP', 'Respondieron'], ['INSIST', '2.º requerimiento'], ['SIN', 'Sin enviar']];
+  var ICA_ACT = [['', 'Toda la actividad'], ['30', 'Con actividad en los últimos 30 días'], ['-30', 'Sin actividad hace más de 30 días'], ['-90', 'Sin actividad hace más de 90 días']];
+  function icaSeg(r) { try { return window.ICA._seg(r).k; } catch (e) { return ''; } }
+  function icaEtq(et) { try { return { CREADO: 'Creado', REQUERIMIENTO: 'Requerimiento', AMPLIACION: 'Ampliación de fechas', EVALUACION: 'Evaluación', DECISION: 'Decisión del caso', ACTUACION: 'Actuación tributaria', CIERRE: 'Cierre', TRASLADO: 'Traslado de cobro' }[et] || et; } catch (e) { return et; } }
+  function icaDias(r) {
+    var m = String(r.act || r.cre || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!m) return 99999;
+    return Math.floor((Date.now() - new Date(+m[1], +m[2] - 1, +m[3]).getTime()) / 86400000);
+  }
+  function icaTitulo(s) { return String(s || '').toLowerCase().replace(/(^|\s)\S/g, function (x) { return x.toUpperCase(); }); }
+  function icaFiltrar(l, f) {
+    return l.filter(function (r) {
+      if (f.ids && f.ids.length) return f.ids.indexOf(r.id) !== -1;
+      if (f.et.length && f.et.indexOf(r.et) === -1) return false;
+      if (f.seg.length && f.seg.indexOf(icaSeg(r)) === -1) return false;
+      if (f.mun.length && f.mun.indexOf(norm(r.mun) || '(SIN MUNICIPIO)') === -1) return false;
+      if (f.act) { var d = icaDias(r), n = Number(f.act); if (n > 0 ? d > n : d <= -n) return false; }
+      return true;
+    });
+  }
+  function icaConCorreo(r) { return /@/.test(String(r.c1 || '') + String(r.c2 || '')); }
 
   /* ══════════════ NUEVA CAMPAÑA (asistente de 3 pasos) ══════════════ */
-  function abrirNueva(tipo) {
+  function abrirNueva(tipo, op) {
     if (!S.cfg) { aviso('Espera a que cargue la vista.', 'info'); return; }
+    op = op || {};
     var cfg = {}; S.cfg.campos.forEach(function (x) { cfg[x.k] = x.v; });
-    var W = { tipo: tipo, paso: 1, prep: null, img: null, origen: tipo === 'PERS' ? 'EXCEL' : 'BD', opciones: null, muestraI: 0, hechaPrueba: false };
-    var pre = tipo === 'PERS' ? 'mas.pers.' : 'mas.mkt.';
+    var W = { tipo: tipo, paso: 1, prep: null, img: null, origen: tipo === 'PERS' ? 'EXCEL' : (tipo === 'ICA' ? 'REQ' : 'BD'), opciones: null, muestraI: 0, hechaPrueba: false,
+      ids: op.ids || null, idsNom: op.nombre || '' };   /* 20/11 — desde la tarjeta de un requerimiento: ese contribuyente ya elegido */
+    var pre = preDe(tipo);
     var m = modal({
-      fijo: true, ancha: true, icono: tipo === 'PERS' ? 'documento' : 'megafono',
+      fijo: true, ancha: true, icono: ICONO[tipo],
       titulo: 'Nueva campaña · ' + NOMBRE[tipo],
       sucio: function () { return !!W.prep && !W.creada; },
       cuerpo:
         '<ol class="mas-pasos"><li data-p="1" class="on">' + ico('persona', 16) + ' Destinatarios</li><li data-p="2">' + ico('sobre', 16) + ' Correo</li><li data-p="3">' + ico('ojo', 16) + ' Revisar y enviar</li></ol>' +
         /* ── paso 1 ── */
         '<section class="mas-paso" data-paso="1">' +
+          (tipo === 'ICA' ? '<div class="ica-seg2 mas-origen" role="radiogroup"><button type="button" data-origen="REQ" class="on">' + ico('base-datos', 18) + ' Desde BD Requerimientos</button>' +
+            '<button type="button" data-origen="EXCEL">' + ico('excel', 18) + ' Desde Excel</button></div>' : '') +
           (tipo === 'MKT' ? '<div class="ica-seg2 mas-origen" role="radiogroup"><button type="button" data-origen="BD" class="on">' + ico('base-datos', 18) + ' Desde BD Predial</button>' +
             '<button type="button" data-origen="EXCEL">' + ico('excel', 18) + ' Desde Excel</button></div>' : '') +
-          '<div class="mas-excel"' + (tipo === 'MKT' ? ' hidden' : '') + '>' +
-            '<ol class="ica-pasos"><li><b>Descarga la plantilla</b> y llénala: una fila por contribuyente con ' + (tipo === 'PERS' ? '<b>nombre, NIT o cédula, correo(s) y fichas</b>. La dirección y «en mora desde» de cada ficha salen de BD Predial; el número de oficio lo pone la app (consecutivo).' : '<b>nombre, NIT o cédula y correo(s)</b>.') +
+          '<div class="mas-excel"' + (esMkt(tipo) ? ' hidden' : '') + '>' +
+            '<ol class="ica-pasos"><li><b>Descarga la plantilla</b> y llénala: una fila por contribuyente con ' + (tipo === 'ICA' ? '<b>nombre o razón social, NIT o cédula y correo(s)</b>. Si el NIT/CC está en BD Requerimientos, el envío queda en su línea de tiempo.' : tipo === 'PERS' ? '<b>nombre, NIT o cédula, correo(s) y fichas</b>. La dirección y «en mora desde» de cada ficha salen de BD Predial; el número de oficio lo pone la app (consecutivo).' : '<b>nombre, NIT o cédula y correo(s)</b>.') +
               ' Si ya tienes el Excel con esas columnas (como «comunicaciones_persuasivas.xlsx»), súbelo tal cual.</li>' +
-              '<li><b>Súbelo aquí.</b> La app revisa cada fila contra BD Predial antes de seguir.</li></ol>' +
-            '<div class="ica-masiva-btns"><a class="kit-btn" href="plantillas/PLANTILLA_MASIVO_PREDIAL.xlsx" download>' + ico('descargar') + ' Descargar plantilla</a>' +
+              '<li><b>Súbelo aquí.</b> La app revisa cada fila ' + (tipo === 'ICA' ? '(correos válidos, repetidos y bajas)' : 'contra BD Predial') + ' antes de seguir.</li></ol>' +
+            '<div class="ica-masiva-btns"><a class="kit-btn" href="plantillas/' + (tipo === 'ICA' ? 'PLANTILLA_MASIVO_ICA.xlsx' : 'PLANTILLA_MASIVO_PREDIAL.xlsx') + '" download>' + ico('descargar') + ' Descargar plantilla</a>' +
               '<label class="kit-btn kit-btn--marca ica-subir">' + ico('subir') + ' Subir Excel<input type="file" accept=".xlsx,.xls,.csv" hidden data-file></label></div>' +
           '</div>' +
           (tipo === 'MKT' ? '<div class="mas-bd">' +
             '<p class="ica-nota">Contribuyentes de BD Predial con correo válido, agrupados por documento (un correo por contribuyente). No salen los correos malos ni los que se dieron de baja.</p>' +
             '<div class="mas-filtros" data-filtros><div class="ica-cargando">Cargando los filtros…</div></div>' +
             '<div class="ica-masiva-btns"><button type="button" class="kit-btn kit-btn--marca" data-calcular>' + ico('filtro') + ' Calcular destinatarios</button></div>' +
+          '</div>' : '') +
+          (tipo === 'ICA' ? '<div class="mas-req">' +
+            '<p class="ica-nota">Contribuyentes de BD Requerimientos con correo válido: un correo por NIT/CC, aunque tenga varios requerimientos. No salen los que se dieron de baja.</p>' +
+            '<div class="mas-filtros" data-rfiltros><div class="ica-cargando">Cargando BD Requerimientos…</div></div>' +
+            '<div class="ica-masiva-btns"><button type="button" class="kit-btn kit-btn--marca" data-rcalcular disabled>' + ico('filtro') + ' Calcular destinatarios</button></div>' +
           '</div>' : '') +
           '<div data-res></div>' +
         '</section>' +
@@ -490,15 +543,15 @@
             '<label class="ica-campo"><span class="ica-campo__t">Nombre de la campaña</span><input data-k="nombre" maxlength="80" placeholder="' + esc(NOMBRE[tipo] + ' · ' + fLarga(S.hoy)) + '"></label>' +
             '<label class="ica-campo"><span class="ica-campo__t">Fecha límite del beneficio</span><input type="date" data-k="fl" value="' + esc(cfg['mas.fechaLimite'] || '') + '"><small>Va en {{fechaLimite}}: «' + esc(fLarga(cfg['mas.fechaLimite'])) + '».</small></label>' +
           '</div>' +
-          (tipo === 'MKT' ? '<div class="ica-campo"><span class="ica-campo__t">Imagen de la campaña</span>' +
+          (esMkt(tipo) ? '<div class="ica-campo"><span class="ica-campo__t">Imagen de la campaña</span>' +
             '<div class="ica-drop mas-drop" tabindex="0" data-drop><div data-img-vacio>' + ico('imagen', 28) + '<p><b>Adjunta, arrastra o pega (Ctrl+V)</b> la imagen. Va dentro del correo y como adjunto.</p>' +
               '<label class="kit-btn">' + ico('subir') + ' Adjuntar imagen<input type="file" accept="image/*" hidden data-imgfile></label></div>' +
               '<div data-img-lleno hidden><img alt="Imagen de la campaña" data-img-prev><p class="ica-nota" data-img-info></p><button type="button" class="kit-btn" data-img-quitar>' + ico('cerrar') + ' Cambiar imagen</button></div>' +
             '</div></div>' : '') +
           '<label class="ica-campo"><span class="ica-campo__t">Asunto</span><input data-k="asunto" maxlength="300" value="' + esc(cfg[pre + 'asunto'] || '') + '"></label>' +
           '<label class="ica-campo"><span class="ica-campo__t">Cuerpo del correo</span><textarea data-k="cuerpo" rows="12">' + esc(cfg[pre + 'cuerpo'] || '') + '</textarea>' +
-            '<small>Marcadores: <code>{{nombre}} {{documento}} {{fechaLimite}}' + (tipo === 'PERS' ? ' {{numOficio}} {{textoFichas}} {{nFichas}}' : '') + '</code> · <b>**negrita**</b> · líneas que empiezan con «• » quedan en lista.' +
-            (tipo === 'MKT' ? ' Al final va sola la línea para darse de baja.' : ' El PDF de la carta va adjunto.') + '</small></label>' +
+            '<small>Marcadores: <code>{{nombre}} {{documento}} {{fechaLimite}}' + (tipo === 'PERS' ? ' {{numOficio}} {{textoFichas}} {{nFichas}}' : '') + '</code> · <b>**negrita**</b> · líneas que empiezan con «• » o «· » quedan en viñetas y «1. » en lista numerada · <code>[texto](https://…)</code> = enlace.' +
+            (esMkt(tipo) ? ' Al final va sola la línea para darse de baja.' : ' El PDF de la carta va adjunto.') + '</small></label>' +
           '<button type="button" class="kit-btn mas-mini" data-restaurar>' + ico('recargar') + ' Volver al texto sugerido</button>' +
         '</section>' +
         /* ── paso 3 ── */
@@ -536,7 +589,7 @@
         var f = valores();
         if (!f.asunto || !f.cuerpo) { falla('Escribe el asunto y el cuerpo del correo.'); return; }
         if (!/^\d{4}-\d{2}-\d{2}$/.test(f.fl)) { falla('Elige la fecha límite del beneficio.'); return; }
-        if (tipo === 'MKT' && !W.img) { falla('Adjunta la imagen de la campaña.'); return; }
+        if (esMkt(tipo) && !W.img) { falla('Adjunta la imagen de la campaña.'); return; }
         irA(3);
       }
     });
@@ -553,14 +606,72 @@
     function ponerOrigen(o) {
       W.origen = o;
       m.querySelectorAll('[data-origen]').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-origen') === o); });
-      var ex = m.q('.mas-excel'), bd = m.q('.mas-bd');
+      var ex = m.q('.mas-excel'), bd = m.q('.mas-bd'), rq = m.q('.mas-req');
       if (ex) ex.hidden = o !== 'EXCEL';
       if (bd) bd.hidden = o !== 'BD';
+      if (rq) rq.hidden = o !== 'REQ';
       W.prep = null; W.prepP = null; m.q('[data-res]').innerHTML = ''; m.q('[data-seguir]').disabled = true;
       if (o === 'BD') filtrosBd();
+      if (o === 'REQ') filtrosReq();
     }
     m.querySelectorAll('[data-origen]').forEach(function (b) { b.addEventListener('click', function () { ponerOrigen(b.getAttribute('data-origen')); }); });
     if (tipo === 'MKT') filtrosBd();
+    if (tipo === 'ICA') filtrosReq();
+
+    /* ── 20/11 · ICA: filtros de BD Requerimientos, en el equipo ── */
+    function filtrosReq() {
+      var z = m.q('[data-rfiltros]'); if (!z) return;
+      icaLista().then(function (l) { if (document.body.contains(m)) pintarReq(z, l); },
+        function (e) { z.innerHTML = '<p class="ica-err">' + esc(e.message) + '</p>'; });
+    }
+    function pintarReq(z, l) {
+      W.icaL = l;
+      var cEt = {}, cSeg = {}, cMun = {};
+      l.forEach(function (r) { cEt[r.et] = (cEt[r.et] || 0) + 1; var k = icaSeg(r); cSeg[k] = (cSeg[k] || 0) + 1; var mu = norm(r.mun) || '(SIN MUNICIPIO)'; cMun[mu] = (cMun[mu] || 0) + 1; });
+      var muns = Object.keys(cMun).sort(function (a, b) { return cMun[b] - cMun[a] || a.localeCompare(b); });
+      var pills = function (k, arr, cuenta) { return '<div class="ica-pills" data-rp="' + k + '">' + arr.filter(function (x) { return cuenta[x[0]]; }).map(function (x) {
+        return '<button type="button" class="proc-status-pill" data-v="' + esc(x[0]) + '">' + esc(x[1]) + '<span class="bit-num">' + num(cuenta[x[0]]) + '</span></button>'; }).join('') + '</div>'; };
+      var etapas = ['CREADO', 'REQUERIMIENTO', 'AMPLIACION', 'EVALUACION', 'DECISION', 'ACTUACION', 'CIERRE', 'TRASLADO'].map(function (e) { return [e, icaEtq(e)]; });
+      z.innerHTML =
+        (W.ids ? '<div class="mas-u-aviso" data-rsolo>' + ico('persona', 18) + '<div>Solo <b>' + esc(W.idsNom || W.ids.join(', ')) + '</b> (elegido desde su tarjeta). <button type="button" class="kit-btn mas-mini" data-rtodos>' + ico('filtro') + ' Usar filtros</button></div></div>' : '') +
+        '<div data-rcampos' + (W.ids ? ' hidden' : '') + '>' +
+          '<div class="ica-campo"><span class="ica-campo__t">Etapa</span>' + pills('et', etapas, cEt) + '</div>' +
+          '<div class="ica-campo"><span class="ica-campo__t">Seguimiento</span>' + pills('seg', ICA_SEG, cSeg) + '<small>Sin marcar = todos. «Vencidos sin respuesta» son los pendientes de seguimiento.</small></div>' +
+          '<div class="ica-rej2"><label class="ica-campo"><span class="ica-campo__t">Actividad</span><select data-ract>' + ICA_ACT.map(function (x) { return '<option value="' + x[0] + '">' + esc(x[1]) + '</option>'; }).join('') + '</select></label></div>' +
+          '<details class="mas-multi"><summary>Municipio <span data-rmcuenta>(todos)</span></summary><div class="mas-multi__l">' +
+            muns.map(function (k) { return '<label><input type="checkbox" data-rm value="' + esc(k) + '"> ' + esc(icaTitulo(k)) + ' <small>(' + num(cMun[k]) + ')</small></label>'; }).join('') + '</div></details>' +
+        '</div>' +
+        '<p class="ica-nota" data-rconteo></p>';
+      z.querySelectorAll('[data-rp] [data-v]').forEach(function (b) { b.addEventListener('click', function () { b.classList.toggle('active'); contar(); }); });
+      z.addEventListener('change', function () { var n = z.querySelectorAll('[data-rm]:checked').length; z.querySelector('[data-rmcuenta]').textContent = n ? '(' + n + ')' : '(todos)'; contar(); });
+      var todos = z.querySelector('[data-rtodos]');
+      if (todos) todos.addEventListener('click', function () { W.ids = null; z.querySelector('[data-rsolo]').remove(); z.querySelector('[data-rcampos]').hidden = false; W.prep = null; m.q('[data-res]').innerHTML = ''; m.q('[data-seguir]').disabled = true; contar(); });
+      contar();
+      if (W.ids) m.q('[data-rcalcular]').click();
+      function contar() {
+        var sel = filtroReq(), l2 = icaFiltrar(W.icaL || [], sel), cc = l2.filter(icaConCorreo).length;
+        z.querySelector('[data-rconteo]').innerHTML = ico('persona', 14) + ' <b>' + num(l2.length) + '</b> requerimiento(s) cumplen · <b>' + num(cc) + '</b> con correo';
+        m.q('[data-rcalcular]').disabled = !cc;
+      }
+    }
+    function filtroReq() {
+      var z = m.q('[data-rfiltros]');
+      var act = function (k) { return Array.prototype.map.call(z.querySelectorAll('[data-rp="' + k + '"] .active'), function (b) { return b.getAttribute('data-v'); }); };
+      return { ids: W.ids, et: act('et'), seg: act('seg'), act: (z.querySelector('[data-ract]') || {}).value || '',
+        mun: Array.prototype.map.call(z.querySelectorAll('[data-rm]:checked'), function (x) { return x.value; }) };
+    }
+    var rcalc = m.q('[data-rcalcular]');
+    if (rcalc) rcalc.addEventListener('click', function () {
+      if (rcalc.disabled) return;
+      var ids = icaFiltrar(W.icaL || [], filtroReq()).filter(icaConCorreo).map(function (r) { return r.id; });
+      if (!ids.length) { falla('Ningún requerimiento con correo cumple los filtros.'); return; }
+      rcalc.disabled = true; rcalc.classList.add('ica-ocupado');
+      var res = m.q('[data-res]'); res.innerHTML = '<div class="ica-cargando">' + ico('reloj', 16) + ' Armando la lista de envío…</div>';
+      var t0 = Date.now(); W.prepP = null;
+      llamar('masica', { ids: ids }, { post: true }).then(function (d) { W.prep = d; medir('masica:pantalla', t0); pintarPrep(d); },
+        function (e) { res.innerHTML = '<p class="ica-err">' + esc(e.message) + '</p>'; sonar('error'); })
+        .then(function () { rcalc.disabled = false; rcalc.classList.remove('ica-ocupado'); });
+    });
 
     m.q('[data-file]').addEventListener('change', function () {
       var file = this.files[0]; this.value = '';
@@ -668,22 +779,23 @@
           (d.sinCorreo ? '<div class="ica-kpi ica-kpi--aviso">' + ico('cerrar', 18) + '<b>' + num(d.sinCorreo) + '</b><span>sin correo válido (quedan omitidos)</span></div>' : '') +
           (malos ? '<div class="ica-kpi ica-kpi--malo">' + ico('aviso', 18) + '<b>' + num(malos) + '</b><span>filas que no se incluyen</span></div>' : '') +
           (d.origen === 'BD' ? '<div class="ica-kpi">' + ico('base-datos', 18) + '<b>' + num(d.filasBd) + '</b><span>expedientes cumplen los filtros' + (d.sinCorreoBd ? ' (' + num(d.sinCorreoBd) + ' sin correo útil)' : '') + '</span></div>' : '') +
+          (d.origen === 'REQ' ? '<div class="ica-kpi">' + ico('base-datos', 18) + '<b>' + num(d.filasBd) + '</b><span>requerimientos elegidos' + (d.sinCorreoBd ? ' (' + num(d.sinCorreoBd) + ' contribuyente(s) sin correo útil)' : '') + (d.bajas ? ' · ' + num(d.bajas) + ' se dieron de baja' : '') + '</span></div>' : '') +
         '</div>' +
         (d.archivo ? '<p class="ica-nota">' + ico('excel', 14) + ' ' + esc(d.archivo) + ' · hoja «' + esc(d.hoja) + '»' + (avisos ? ' · ' + num(avisos) + ' fila(s) con avisos (sí se incluyen)' : '') + '</p>' : '') +
         ((d.errores || []).length ? '<details class="mas-errores"' + (malos ? ' open' : '') + '><summary>Revisar ' + num(d.nErrores) + ' fila(s) con observaciones</summary><div class="ica-tabla"><table><thead><tr><th>Fila</th><th>Contribuyente</th><th>Qué pasa</th></tr></thead><tbody>' +
           d.errores.map(function (x) { return '<tr class="' + (x.aviso ? '' : 'mas-mal') + '"><td>' + esc(x.fila) + '</td><td>' + esc(x.nom) + '</td><td>' + esc(x.error) + '</td></tr>'; }).join('') +
           '</tbody></table></div></details>' : '') +
-        ((d.muestra || []).length ? '<div class="ica-tabla mas-muestra"><table><thead><tr><th>Contribuyente</th><th>Correo(s)</th>' + (tipo === 'PERS' ? '<th>Fichas (dirección · en mora desde)</th>' : '<th>Fichas</th>') + '</tr></thead><tbody>' +
+        ((d.muestra || []).length ? '<div class="ica-tabla mas-muestra"><table><thead><tr><th>Contribuyente</th><th>Correo(s)</th>' + (tipo === 'PERS' ? '<th>Fichas (dirección · en mora desde)</th>' : (tipo === 'ICA' ? '<th>Requerimientos</th>' : '<th>Fichas</th>')) + '</tr></thead><tbody>' +
           d.muestra.map(function (x) {
             return '<tr><td><b>' + esc(x.nom) + '</b><br><small>' + esc(x.doc) + '</small></td><td>' + esc(x.correos.join(', ')) + (x.omit && x.omit.length ? '<br><small class="mas-mal">' + esc(x.omit.join(' · ')) + '</small>' : '') + '</td><td>' +
-              x.fichas.map(function (f) { return esc(f[0]) + (tipo === 'PERS' ? ' · ' + esc(f[1] || '—') + ' · ' + esc(desde(f[2])) : ''); }).join('<br>') + (x.nf > x.fichas.length ? '<br><small>y ' + (x.nf - x.fichas.length) + ' más</small>' : '') + '</td></tr>';
+              x.fichas.map(function (f) { return esc(Array.isArray(f) ? f[0] : f) + (tipo === 'PERS' ? ' · ' + esc(f[1] || '—') + ' · ' + esc(desde(f[2])) : ''); }).join('<br>') + (x.nf > x.fichas.length ? '<br><small>y ' + (x.nf - x.fichas.length) + ' más</small>' : '') + '</td></tr>';
           }).join('') + '</tbody></table><p class="ica-nota">Muestra de los primeros ' + d.muestra.length + '.</p></div>' : '');
       m.q('[data-seguir]').disabled = !d.conCorreo;
       if (!d.conCorreo) falla('Ningún destinatario tiene un correo válido.'); else { falla(''); if (!callado) sonar('success'); }
     }
 
     /* ── paso 2: imagen ── */
-    if (tipo === 'MKT') {
+    if (esMkt(tipo)) {
       var drop = m.q('[data-drop]');
       var poner = function (im, nota) {
         W.img = im;
@@ -694,7 +806,7 @@
       };
       var tomar = function (file) { prepararImagen(file).then(function (im) { poner(im); }, function (e) { falla(e.message); }); };
       /* 18/11 — la imagen fija de Configuración entra sola (se puede cambiar solo para esta campaña) */
-      if (S.cfg && S.cfg.img) imgCfg().then(function (im) { if (im && !W.img && document.body.contains(m)) poner(im, ' · imagen de Configuración'); }, function () {});
+      if (imgGuardada(tipo)) imgCfg(tipo).then(function (im) { if (im && !W.img && document.body.contains(m)) poner(im, ' · imagen de Configuración'); }, function () {});
       m.q('[data-imgfile]').addEventListener('change', function () { var f = this.files[0]; this.value = ''; if (f) tomar(f); });
       m.q('[data-img-quitar]').addEventListener('click', function () {
         W.img = null; m.q('[data-img-vacio]').hidden = false; m.q('[data-img-lleno]').hidden = true; drop.classList.remove('ica-drop--lleno');
@@ -735,16 +847,17 @@
       m.q('[data-resumen]').innerHTML = '<p>' + ico('cohete', 16) + ' Se pondrán en cola <b>' + num(n) + '</b> ' + (tipo === 'PERS' ? 'cartas' : 'correos') +
         ' desde <b>cobrocoactivo@flandes-tolima.gov.co</b>. Salen solas al ritmo de <b>' + num(cu.ritmo) + '</b> por hora (≈ ' + (horas < 1 ? Math.max(10, Math.round(horas * 60)) + ' min' : (Math.round(horas * 10) / 10).toString().replace('.', ',') + ' h') + ')' +
         (dias > 1 ? ', en unos <b>' + dias + ' días</b> por el tope de ' + num(cu.tope) + ' destinatarios en 24 h' : '') + '. Puedes pausar o cancelar cuando quieras.</p>' +
-        (tipo === 'PERS' ? '<p class="ica-nota">Oficios desde el No. <b>' + esc(oficioDesde()) + '</b> (consecutivo automático). Cada envío queda en la bitácora del expediente y el PDF en su detalle.</p>' : '');
+        (tipo === 'PERS' ? '<p class="ica-nota">Oficios desde el No. <b>' + esc(oficioDesde()) + '</b> (consecutivo automático). Cada envío queda en la bitácora del expediente y el PDF en su detalle.</p>' :
+          (tipo === 'ICA' ? '<p class="ica-nota">Cada envío queda en la línea de tiempo (Envíos y Bitácora) de sus requerimientos.</p>' : ''));
       var t0 = Date.now();
       var cuerpo = { tipo: tipo, prep: W.prep.prep, i: x.i, asunto: f.asunto, cuerpo: f.cuerpo, fechaLimite: f.fl };
-      if (tipo === 'MKT' && W.img) cuerpo.img = { b64: '', mime: W.img.mime, nombre: W.img.nombre };   /* la imagen ya está en el equipo: no viaja para la vista previa */
+      if (esMkt(tipo) && W.img) cuerpo.img = { b64: '', mime: W.img.mime, nombre: W.img.nombre };   /* la imagen ya está en el equipo: no viaja para la vista previa */
       llamar('masprevia', cuerpo, { post: true }).then(function (d) {
         if (W.muestraI !== x.i && muestra[W.muestraI] !== x) return;
         medir('previa:pantalla', t0);
         m.q('[data-pasunto]').innerHTML = '<b>Asunto:</b> ' + esc(d.asunto) + '<br><b>Para:</b> ' + esc((d.para || []).join(', ')) + (d.omit && d.omit.length ? ' <small class="mas-mal">(no se usan: ' + esc(d.omit.join(' · ')) + ')</small>' : '');
         var html = d.html;
-        if (tipo === 'MKT' && W.img) html = html.replace('<div style="border:1px solid #d6dfda;border-top:0;padding:20px 18px;border-radius:0 0 8px 8px">',
+        if (esMkt(tipo) && W.img) html = html.replace('<div style="border:1px solid #d6dfda;border-top:0;padding:20px 18px;border-radius:0 0 8px 8px">',
           '<div style="border:1px solid #d6dfda;border-top:0;padding:20px 18px;border-radius:0 0 8px 8px"><p style="margin:0 0 16px;text-align:center"><img src="' + W.img.url + '" style="max-width:100%;width:560px;height:auto;border-radius:6px"></p>');
         marco.srcdoc = '<!DOCTYPE html><html><head><meta charset="utf-8"><base target="_blank"></head><body style="margin:12px;background:#fff">' + html + '</body></html>';
         if (d.pdf && d.pdf.b64) { pdfActual = d.pdf; m.q('[data-verpdf]').hidden = false; }
@@ -775,7 +888,7 @@
       guardando(listo().then(function () {
         var x = W.prep.muestra[W.muestraI] || W.prep.muestra[0];
         var cuerpo = { tipo: tipo, prep: W.prep.prep, i: x.i, asunto: f.asunto, cuerpo: f.cuerpo, fechaLimite: f.fl, para: para };
-        if (tipo === 'MKT') cuerpo.img = { b64: W.img.b64, mime: W.img.mime, nombre: W.img.nombre };
+        if (esMkt(tipo)) cuerpo.img = { b64: W.img.b64, mime: W.img.mime, nombre: W.img.nombre };
         return llamar('masprueba', cuerpo, { post: true, rid: rid });
       }), 'Enviando la prueba').then(function (d) {
         ocupado(m, b, false); W.hechaPrueba = true; medir('prueba:pantalla', t0); sonar('success');
@@ -797,7 +910,7 @@
         var t0 = Date.now();
         guardando(listo().then(function () {
           var cuerpo = { tipo: tipo, prep: W.prep.prep, nombre: f.nombre, asunto: f.asunto, cuerpo: f.cuerpo, fechaLimite: f.fl };
-          if (tipo === 'MKT') cuerpo.img = { b64: W.img.b64, mime: W.img.mime, nombre: W.img.nombre };
+          if (esMkt(tipo)) cuerpo.img = { b64: W.img.b64, mime: W.img.mime, nombre: W.img.nombre };
           return llamar('mascrear', cuerpo, { post: true, rid: rid });
         }), 'Poniendo la campaña en cola').then(function (d) {
           W.creada = true; ocupado(m, b, false); medir('crear:pantalla', t0);
@@ -937,15 +1050,16 @@
   function abrirConfig(tipo) {
     var c = S.cfg;
     if (!c) { aviso('Espera a que cargue la vista.', 'info'); return; }
-    var propios = tipo === 'PERS' ? /^mas\.(pers|fechaLimite|plantilla|of|ritmo|tope)/ : /^mas\.(mkt|fechaLimite|baja|ritmo|tope)/;
+    var propios = tipo === 'PERS' ? /^mas\.(pers|fechaLimite|plantilla|of|ritmo|tope)/ : (tipo === 'ICA' ? /^mas\.(ica|baja|ritmo|tope)/ : /^mas\.(mkt|fechaLimite|baja|ritmo|tope)/);
+    var kImg = tipo === 'ICA' ? 'mas.ica.img' : 'mas.mkt.img', guardada = imgGuardada(tipo);
     var campos = c.campos.filter(function (x) { return propios.test(x.k) && !x.oculto; });
     var nuevaImg = null;   /* 18/11 — imagen fija de marketing */
     var m = modal({ fijo: true, ancha: true, icono: 'engranaje', titulo: 'Configuración · ' + NOMBRE[tipo],
       cuerpo: (tipo === 'PERS' ? '<div class="ica-cfg-plant"><button type="button" class="kit-btn" data-plant' + (c.plantilla ? '' : ' disabled') + '>' + ico('documento') + ' Ir a la plantilla de la carta</button></div>' +
           '<p class="ica-nota">Marcadores de la plantilla: <code>{{fecha}} {{numOficio}} {{nombre}} {{documento}} {{correo}} {{refFichas}} {{textoMora}} {{fechaLimite}}</code> y en la fila de la tabla <code>{{ficha}} {{direccionFicha}} {{moraDesde}}</code> (la fila se repite sola por cada ficha).</p>' : '') +
         '<p class="ica-nota">El asunto y el cuerpo de aquí son el texto sugerido de cada campaña nueva; en cada campaña se pueden ajustar.' + (c.jefe ? '' : ' Plantilla, ritmo, tope y oficio los cambian ADMIN o DEV.') + '</p>' +
-        (tipo === 'MKT' ? '<div class="ica-campo"><span class="ica-campo__t">Imagen de marketing</span>' +
-          '<div class="ica-drop mas-drop" tabindex="0" data-drop><div data-img-vacio>' + ico('imagen', 28) + '<p><b>Adjunta, arrastra o pega (Ctrl+V)</b> la imagen. La usan los envíos desde la tarjeta de BD Predial y sale por defecto en cada campaña nueva.</p>' +
+        (esMkt(tipo) ? '<div class="ica-campo"><span class="ica-campo__t">Imagen de ' + (tipo === 'ICA' ? 'ICA · Marketing' : 'marketing') + '</span>' +
+          '<div class="ica-drop mas-drop" tabindex="0" data-drop><div data-img-vacio>' + ico('imagen', 28) + '<p><b>Adjunta, arrastra o pega (Ctrl+V)</b> la imagen. ' + (tipo === 'ICA' ? 'Sale por defecto en cada campaña nueva de ICA · Marketing.' : 'La usan los envíos desde la tarjeta de BD Predial y sale por defecto en cada campaña nueva.') + '</p>' +
             '<label class="kit-btn">' + ico('subir') + ' Adjuntar imagen<input type="file" accept="image/*" hidden data-imgfile></label></div>' +
             '<div data-img-lleno hidden><img alt="Imagen de marketing" data-img-prev><p class="ica-nota" data-img-info></p><label class="kit-btn">' + ico('recargar') + ' Cambiar imagen<input type="file" accept="image/*" hidden data-imgfile2></label></div>' +
           '</div></div>' : '') +
@@ -959,7 +1073,7 @@
     });
     var pl = m.q('[data-plant]');
     if (pl) pl.addEventListener('click', function () { window.open('https://docs.google.com/document/d/' + c.plantilla + '/edit', '_blank', 'noopener'); });
-    if (tipo === 'MKT') {
+    if (esMkt(tipo)) {
       var drop = m.q('[data-drop]');
       var poner = function (im, nota) {
         m.q('[data-img-vacio]').hidden = true; m.q('[data-img-lleno]').hidden = false;
@@ -971,7 +1085,7 @@
         prepararImagen(file).then(function (im) { nuevaImg = im; poner(im, ' · sin guardar'); },
           function (e) { var er = m.q('[data-err]'); er.hidden = false; er.textContent = e.message; });
       };
-      if (c.img) { m.q('[data-img-info]').textContent = 'Cargando la imagen…'; imgCfg().then(function (im) { if (im && !nuevaImg) poner(im, c.img.f ? ' · guardada el ' + fCorta(c.img.f) : ''); }, function () {}); }
+      if (guardada) { m.q('[data-img-info]').textContent = 'Cargando la imagen…'; imgCfg(tipo).then(function (im) { if (im && !nuevaImg) poner(im, guardada.f ? ' · guardada el ' + fCorta(guardada.f) : ''); }, function () {}); }
       ['data-imgfile', 'data-imgfile2'].forEach(function (a) { var i = m.q('[' + a + ']'); if (i) i.addEventListener('change', function () { var f = this.files[0]; this.value = ''; if (f) tomar(f); }); });
       ['dragenter', 'dragover'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add('ica-drop--sobre'); }); });
       ['dragleave', 'drop'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove('ica-drop--sobre'); }); });
@@ -988,12 +1102,12 @@
     m.q('[data-guardar]').addEventListener('click', function () {
       var btn = this, cambios = {}, n = 0;
       campos.forEach(function (x) { if (x.bloq) return; var el = m.q('[data-k="' + x.k + '"]'); if (el && String(el.value) !== String(x.v)) { cambios[x.k] = el.value; n++; } });
-      if (nuevaImg) { cambios['mas.mkt.img'] = { b64: nuevaImg.b64, mime: nuevaImg.mime, nombre: nuevaImg.nombre }; n++; }
+      if (nuevaImg) { cambios[kImg] = { b64: nuevaImg.b64, mime: nuevaImg.mime, nombre: nuevaImg.nombre }; n++; }
       if (!n) { m.cerrar(); return; }
       ocupado(m, btn, true);
       var rid = btn.__rid || (btn.__rid = nuevoRid());
       guardando(llamar('mascfg', { cambios: cambios }, { post: true, rid: rid }), 'Guardando configuración').then(function (cfg) {
-        S.cfg = cfg; if (nuevaImg) { S.imgP = Promise.resolve(nuevaImg); } ocupado(m, btn, false); m.cerrar(true); sonar('success'); aviso('Configuración guardada.', 'ok');
+        S.cfg = cfg; if (nuevaImg) { S.imgP = S.imgP || {}; S.imgP[tipo === 'ICA' ? 'ICA' : 'MKT'] = Promise.resolve(nuevaImg); } ocupado(m, btn, false); m.cerrar(true); sonar('success'); aviso('Configuración guardada.', 'ok');
         if (cambios['mas.ritmo'] || cambios['mas.tope']) refrescar();
       }, function (e) { ocupado(m, btn, false); if (e.codigo !== 'RED') btn.__rid = null; var er = m.q('[data-err]'); er.hidden = false; er.textContent = e.message; });
     });
@@ -1065,7 +1179,8 @@
    * Vista previa con la configuración del bloque (asunto, cuerpo, plantilla, imagen fija)
    * y los datos reales del contribuyente; al confirmar sale de una vez desde cobrocoactivo.
    * La persuasiva lleva todas las fichas con el mismo NIT/CC. Si la tarjeta no tiene
-   * ningún correo, se pide y queda guardado al enviar. No se repite antes de 7 días.
+   * ningún correo, se pide y queda guardado al enviar. 20/11: sin bloqueo de 7 días; solo
+   * el freno de doble toque (rid + mismo envío en los últimos 2 minutos, en ICA).
    */
   function unico(row, tipo) {
     tipo = tipo === 'MKT' ? 'MKT' : 'PERS';
@@ -1089,7 +1204,7 @@
       var t0 = Date.now();
       falla(''); env.disabled = true; m.q('[data-uprev]').hidden = true;
       if (correo) est.innerHTML = '<div class="ica-cargando">Armando la vista previa…</div>';
-      var pi = tipo === 'MKT' ? imgCfg().catch(function () { return null; }) : Promise.resolve(null);
+      var pi = tipo === 'MKT' ? imgCfg('MKT').catch(function () { return null; }) : Promise.resolve(null);
       /* el correo se pinta en cuanto llega; la carta en PDF se pide aparte (segundo viaje) */
       Promise.all([llamar('masunico', { tipo: tipo, id_predial: row.id_predial, fila: row.rowIndex || '', correo: correo || '', sinPdf: 1 }, { post: true }), pi]).then(function (r) {
         if (!document.body.contains(m)) return;
@@ -1214,17 +1329,32 @@
 
   /* ══════════════ arranque ══════════════ */
   function enchufar() {
-    [['btn-mas-pers', 'PERS'], ['btn-mas-mkt', 'MKT']].forEach(function (x) {
+    [['btn-mas-pers', 'PERS'], ['btn-mas-mkt', 'MKT'], ['btn-mas-ica', 'ICA']].forEach(function (x) {
       var b = $(x[0]);
       if (b && !b.__mas) { b.__mas = true; b.addEventListener('click', function () { sonar('back'); abrir(x[1]); }); }
     });
+    verIca();
   }
-  window.addEventListener('hac:login', function () { olvidar(); });
+  /* 20/11 — ICA · Marketing lo ven quienes ven Requerimientos (TRIBUTARIO, ADMIN, DEV) */
+  function verIca() { var b = $('btn-mas-ica'); if (b) b.hidden = !(window.ICA && window.ICA.puede && window.ICA.puede()); }
+  /** 20/11 — desde la tarjeta de un requerimiento: abre ICA · Marketing con ese contribuyente elegido. */
+  function icaMarketing(r) {
+    if (!r) return;
+    abrir('ICA');
+    var ids = ((window.ICA && window.ICA._S && window.ICA._S.lista) || []).filter(function (x) {
+      var a = String(x.ide || '').replace(/\D/g, ''), b = String(r.ide || '').replace(/\D/g, '');
+      return x.id === r.id || (a && a === b);
+    }).map(function (x) { return x.id; });
+    var ir = function () { if (activa('ICA')) abrirNueva('ICA', { ids: ids.length ? ids : [r.id], nombre: r.nom }); };
+    if (S.cargado) ir(); else (S.cargando || cargar()).then(ir, function (e) { if (!cancelada(e)) aviso(e.message, 'aviso', 5000); });
+  }
+  window.addEventListener('hac:login', function () { olvidar(); setTimeout(verIca, 0); });
+  setTimeout(verIca, 3000);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', enchufar); else enchufar();
 
   window.MASIVO = {
     abrir: abrir, cargar: cargar, olvidar: olvidar, chipBd: chipBd, detalleBd: detalleBd, malos: malos,
-    botones: botones, unico: unico, comunic: comunic,
+    botones: botones, unico: unico, comunic: comunic, icaMarketing: icaMarketing, verIca: verIca,
     _S: S, _columnas: columnas, _leerExcel: leerExcel, _tarjeta: tarjeta
   };
 }());
