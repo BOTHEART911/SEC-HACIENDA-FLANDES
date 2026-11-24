@@ -1181,6 +1181,8 @@
    * La persuasiva lleva todas las fichas con el mismo NIT/CC. Si la tarjeta no tiene
    * ningún correo, se pide y queda guardado al enviar. 20/11: sin bloqueo de 7 días; solo
    * el freno de doble toque (rid + mismo envío en los últimos 2 minutos, en ICA).
+   * 24/11: ese freno es POR TARJETA (tipo + expediente), no por correo ni por NIT/CC: otra
+   * tarjeta con el mismo correo sale; la misma tarjeta otra vez dentro de 2 minutos, no.
    */
   function unico(row, tipo) {
     tipo = tipo === 'MKT' ? 'MKT' : 'PERS';
@@ -1321,6 +1323,8 @@
       }, function (e) {
         ocupado(m, b, false);
         if (e.codigo !== 'RED') b.__rid = null;
+        /* 24/11 — doble toque real (misma tarjeta, otra vista previa): aviso, no error; Enviar queda apagado */
+        if (e.codigo === 'DOBLE') { aviso2('reloj', esc(e.message)); m.q('[data-uprev]').hidden = true; b.disabled = true; return; }
         falla(e.message);
       });
     });
