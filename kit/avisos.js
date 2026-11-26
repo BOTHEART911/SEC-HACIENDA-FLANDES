@@ -220,7 +220,7 @@
         if (p !== 'granted') { decir('No activaste los avisos.'); return false; }
 
         return firebaseListo(c.firebase).then(function (fb) {
-          return navigator.serviceWorker.register('firebase-messaging-sw.js', { scope: SW_SCOPE })
+          return navigator.serviceWorker.register('firebase-messaging-sw.js', { scope: SW_SCOPE, updateViaCache: 'none' })
             .then(function (reg) {
               var msg = fb.messaging();
               return msg.getToken({ vapidKey: c.vapid, serviceWorkerRegistration: reg })
@@ -255,10 +255,14 @@
       msg.onMessage(function (payload) {
         var d = (payload && payload.data) || {};
         var n = (payload && payload.notification) || {};
+        /* 26/11 · el backend manda solo `data` (titulo y cuerpo van ahí)
+           para que el teléfono pinte un único aviso; `notification` queda
+           para los mensajes viejos. */
+        var t = d.titulo || n.title || '', c = d.cuerpo || n.body || '';
         for (var i = 0; i < alLlegarFns.length; i++) {
-          try { alLlegarFns[i]({ titulo: n.title || '', cuerpo: n.body || '', datos: d }); } catch (e) {}
+          try { alLlegarFns[i]({ titulo: t, cuerpo: c, datos: d }); } catch (e) {}
         }
-        K.disparar('kit:aviso', { titulo: n.title || '', cuerpo: n.body || '', datos: d });
+        K.disparar('kit:aviso', { titulo: t, cuerpo: c, datos: d });
       });
     } catch (e) {}
   }
@@ -401,4 +405,23 @@
     alLlegar: alLlegar, olvidar: olvidar, configurar: configurar,
     plataforma: plataforma, instalada: instalada, esIOS: esIOS
   };
+
+  /* ── 26/11 · el service worker de los avisos al día (como KIT-FLANDES 21/10) ──
+     Vive en su propio scope, que nunca se navega: el navegador solo lo
+     revisa con update() o un push, y volver a llamar register() con la
+     misma dirección NO lo revisa. Sin esto, tras publicar uno nuevo los
+     teléfonos seguirían con el viejo. Por detrás, sin tocar el backend:
+     es una sola descarga del archivo. */
+  function refrescarServiceWorker() {
+    try {
+      if (!('serviceWorker' in navigator) || !navigator.serviceWorker.getRegistrations) return;
+      var scope = new URL(SW_SCOPE, location.href).href;
+      navigator.serviceWorker.getRegistrations().then(function (rs) {
+        rs.forEach(function (r) {
+          if (r.scope === scope || r.scope === scope + '/') { try { r.update()['catch'](function () {}); } catch (e) {} }
+        });
+      })['catch'](function () {});
+    } catch (e) {}
+  }
+  setTimeout(refrescarServiceWorker, 3000);
 }());
