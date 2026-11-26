@@ -97,7 +97,11 @@
     datos = datos || {};
     if (accion === 'soporte') {
       return llamar('soportecrear', { mensaje: datos.mensaje, contexto: datos.contexto, fotos: datos.fotos || [] }, { post: true, rid: datos.rid || nuevoRid() })
-        .then(function (r) { if (D) { D = null; } return r; });   /* la vista DEV lo vuelve a traer */
+        .then(function (r) {
+          if (D) { D = null; }                                     /* la vista DEV lo vuelve a traer */
+          if (esDev() && CONTEO) { CONTEO.abiertos++; CONTEO.pendientes++; pintarContador(); }
+          return r;
+        });
     }
     if (accion === 'soporteMios') return llamar('soportemios', {});
     if (accion === 'soporteCalificar') {
@@ -112,6 +116,64 @@
     var t = '';
     try { var b = K.piezas.banner && K.piezas.banner.elemento(); t = b ? (b.querySelector('.kit-banner__titulo') || {}).textContent || '' : ''; } catch (e) {}
     K.piezas.soporte.abrir({ vista: t || 'Inicio' });
+  }
+
+  /* ══════════════ 26/11 · CONTADOR del botón SOPORTES (solo DEV) ══════════════
+     Lo que hay por atender (PENDIENTE + EN PROCESO + REABIERTO). Llega con el
+     arranque (soporte.dev, SOP_arranque_ en el backend): sin otro viaje. Al
+     responder, cargar o cambiar el estado se recalcula con la lista en
+     memoria. Rojo si hay reabiertos o alguno lleva 2 días o más esperando.
+     Si el backend aún no lo manda, se cuenta de fondo con 'soportevista'
+     (una sola vez por sesión, y deja la vista lista para abrir al instante). */
+  var CONTEO = null;
+  var CONTEO_FONDO = false;
+  function conteoDe(l) {
+    var c = { abiertos: 0, pendientes: 0, enProceso: 0, reabiertos: 0, viejos: 0 };
+    (l || []).forEach(function (x) {
+      if (x.estado === 'PENDIENTE') c.pendientes++;
+      else if (x.estado === 'EN PROCESO') c.enProceso++;
+      else if (x.estado === 'REABIERTO') c.reabiertos++;
+      else return;
+      c.abiertos++;
+      if (x.estado !== 'EN PROCESO' && diasDesde(x.fecha) >= 2) c.viejos++;
+    });
+    return c;
+  }
+  function pintarContador() {
+    var b = $('btn-soportes');
+    if (!b) return;
+    var t = b.querySelector('.acceso__t') || b;
+    var s = t.querySelector('.ba-badge');
+    var c = esDev() ? CONTEO : null;
+    if (!c || !c.abiertos) { if (s) s.remove(); return; }
+    if (!s) { s = document.createElement('span'); s.className = 'ba-badge sop-badge'; t.appendChild(s); }
+    s.textContent = String(c.abiertos);
+    var rojo = c.reabiertos > 0 || c.viejos > 0;
+    s.classList.toggle('ba-badge--rojo', rojo);
+    s.title = c.abiertos + (c.abiertos === 1 ? ' soporte' : ' soportes') + ' por atender' +
+      (c.reabiertos ? ' · ' + c.reabiertos + (c.reabiertos === 1 ? ' reabierto' : ' reabiertos') : '') +
+      (c.viejos ? ' · ' + c.viejos + ' con 2 días o más' : '');
+    s.setAttribute('aria-label', s.title);
+  }
+  function ponerConteo(c, desde) {
+    CONTEO = c ? { abiertos: +c.abiertos || 0, pendientes: +c.pendientes || 0, enProceso: +c.enProceso || 0,
+                   reabiertos: +c.reabiertos || 0, viejos: +c.viejos || 0 } : null;
+    pintarContador();
+    try { window.__sopMed.push({ ruta: 'contador:' + (desde || 'lista'), n: CONTEO ? CONTEO.abiertos : 0 }); } catch (e) {}
+  }
+  /* Solo si el arranque no lo trajo (backend sin desplegar): de fondo, detrás de lo de primer plano. */
+  function contarDeFondo() {
+    if (CONTEO || CONTEO_FONDO || !esDev()) return;
+    CONTEO_FONDO = true;
+    var ir = function () {
+      if (CONTEO || !esDev()) return;
+      var t0 = performance.now();
+      traer().then(function () {
+        ponerConteo(conteoDe(lista()), 'fondo');
+        try { window.__sopMed.push({ ruta: 'fondo:soportevista', ms: Math.round(performance.now() - t0) }); } catch (e) {}
+      }, function () { CONTEO_FONDO = false; });
+    };
+    setTimeout(function () { if (window.requestIdleCallback) requestIdleCallback(ir, { timeout: 4000 }); else ir(); }, 2500);
   }
 
   /* ══════════════ SOPORTES (solo DEV) ══════════════ */
@@ -170,6 +232,7 @@
     for (i = 0; i < l.length; i++) if (l[i].id === x.id) { l[i] = x; break; }
     if (i === l.length) l.unshift(x);
     D.cifras = cifras(l);
+    ponerConteo(conteoDe(l));
   }
 
   function traer(fresco) {
@@ -177,7 +240,9 @@
     if (CTRL) { try { CTRL.abort(); } catch (e) {} }
     CTRL = window.AbortController ? new AbortController() : null;
     return llamar('soportevista', {}, { signal: CTRL && CTRL.signal }).then(function (d) {
-      D = d || { lista: [] }; D.cifras = cifras(D.lista || []); CTRL = null; return D;
+      D = d || { lista: [] }; D.cifras = cifras(D.lista || []); CTRL = null;
+      ponerConteo(conteoDe(D.lista));
+      return D;
     });
   }
 
@@ -719,15 +784,25 @@
     var b = $('btn-soportes'); if (b && !b.__sop) { b.__sop = true; b.addEventListener('click', abrir); }
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', enchufar); else enchufar();
-  window.addEventListener('hac:login', function () { D = null; PERSONAS = null; F = { estado: 'ABIERTOS', buscar: '', desde: '', hasta: '' }; });
-  window.addEventListener('hac:logout', function () { D = null; PERSONAS = null; });
-  window.addEventListener('hac:sesionVencida', function () { D = null; PERSONAS = null; });
-  /* soportes resueltos por calificar: llegan con el arranque (login o revalidación) */
+  window.addEventListener('hac:login', function () {
+    D = null; PERSONAS = null; F = { estado: 'ABIERTOS', buscar: '', desde: '', hasta: '' };
+    CONTEO = null; CONTEO_FONDO = false; pintarContador();
+    /* el arranque llega en este mismo tick (hac:soportePendiente); si no trae el conteo, de fondo */
+    setTimeout(contarDeFondo, 0);
+  });
+  window.addEventListener('hac:logout', function () { D = null; PERSONAS = null; CONTEO = null; CONTEO_FONDO = false; pintarContador(); });
+  window.addEventListener('hac:sesionVencida', function () { D = null; PERSONAS = null; CONTEO = null; CONTEO_FONDO = false; pintarContador(); });
+  /* soportes resueltos por calificar (y, al DEV, el conteo del botón): llegan con el arranque (login o revalidación) */
   window.addEventListener('hac:soportePendiente', function (e) {
-    var s = e && e.detail; if (!s || !s.pendientes || !s.pendientes.length) return;
+    var s = e && e.detail; if (!s) return;
+    if (s.dev && esDev()) ponerConteo(s.dev, 'arranque');
+    if (!s.pendientes || !s.pendientes.length) return;
     setTimeout(function () { K.disparar('kit:soporte', s); }, 1500);
   });
+  /* sesión guardada (revalidación): si el DEV ya está adentro y nada trajo el conteo, de fondo */
+  setTimeout(function () { if (esDev()) contarDeFondo(); }, 15000);
 
   window.SOPORTES = { contar: contar, abrir: abrir, insight: insight, _datos: function () { return D; }, _filtradas: filtradas,
+                      _conteo: function () { return CONTEO; }, _conteoDe: conteoDe,
                       _spec: function () { return specGerencial(filtradas()); }, _med: function () { return window.__sopMed.slice(); } };
 }());

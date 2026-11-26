@@ -758,6 +758,8 @@ function aplicarPermisosVistas_(){
     ['btn-ica-rev',                 function(){ return puedeICA_(); }],
     ['btn-ica-has',                 function(){ return puedeICA_(); }],
     ['btn-ica-bal',                 function(){ return puedeICA_(); }],
+    /* 26/11 — SOPORTE (crear solicitud): al DEV le sobra (él gestiona en SOPORTES); se esconde, no se quita */
+    ['btn-soporte',                 function(){ try{ return !(window.IDN && window.IDN.esDev()); }catch(_){ return true; } }],
     /* 22/10 — SOPORTES: solo el desarrollador (js/soportes.js) */
     ['btn-soportes',                function(){ try{ return !!(window.IDN && window.IDN.esDev()); }catch(_){ return false; } }],
     /* 24/10 — ENTRENAMIENTO DEL ASISTENTE: solo el desarrollador (js/ayuda-dev.js) */

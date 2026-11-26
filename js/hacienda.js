@@ -353,12 +353,14 @@
       foto: fotoActual(p),
       rol: rolesTexto(p),
       menu: [
-        { texto: 'Guía rápida', al: function () { if (window.GUIA) window.GUIA.abrir(); } },
-        /* 22/10 — SOPORTE para todos; SOPORTES (la gestión) solo DEV */
-        { texto: 'Soporte', al: function () { if (window.SOPORTES) window.SOPORTES.contar(); } }
+        { texto: 'Guía rápida', al: function () { if (window.GUIA) window.GUIA.abrir(); } }
       ].concat((window.IDN && window.IDN.esDev && window.IDN.esDev()) ? [
+        /* 26/11 — al DEV solo la gestión (SOPORTES); «Soporte» (crear solicitud) le sobra */
         { texto: 'Soportes (desarrollador)', al: function () { if (window.SOPORTES) window.SOPORTES.abrir(); } }
-      ] : []).concat([
+      ] : [
+        /* 22/10 — SOPORTE para todos los demás */
+        { texto: 'Soporte', al: function () { if (window.SOPORTES) window.SOPORTES.contar(); } }
+      ]).concat([
         { texto: 'Cambiar mi PIN', al: function () { abrirPin(); } },
         { texto: 'Cambiar foto de perfil', al: cambiarFoto },
         { texto: 'Avisos al teléfono', al: activarAvisos },

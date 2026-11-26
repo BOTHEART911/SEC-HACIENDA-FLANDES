@@ -97,3 +97,7 @@
    pensado para la barra en fila; dentro de una columna se volvía 260 px de ALTO */
 .sop-quien .sop-bus { flex: 0 0 auto; width: 100%; height: auto; }
 .sop-quien .sop-bus input { padding: 10px 0 !important; }
+
+/* 26/11 · contador del botón SOPORTES (DEV): reutiliza .ba-badge de bitácoras.
+   En oscuro el ámbar/rojo claro no llega a 4,5:1 con letra blanca: letra oscura. */
+:root[data-tema="oscuro"] .acceso .sop-badge { color: #1c0b02; }
