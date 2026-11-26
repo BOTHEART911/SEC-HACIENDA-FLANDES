@@ -784,20 +784,61 @@
     var b = $('btn-soportes'); if (b && !b.__sop) { b.__sop = true; b.addEventListener('click', abrir); }
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', enchufar); else enchufar();
-  window.addEventListener('hac:login', function () {
+  window.addEventListener('hac:login', function (e) {
+    /* 26/11 — sesión guardada (revalidando): la cinta sale de la copia del teléfono */
+    PEND_SERVIDOR = false;
+    if (window.__IDN_REVALIDANDO) desdeCopia((e && e.detail && e.detail.uid) || uidActual());
     D = null; PERSONAS = null; F = { estado: 'ABIERTOS', buscar: '', desde: '', hasta: '' };
     CONTEO = null; CONTEO_FONDO = false; pintarContador();
     /* el arranque llega en este mismo tick (hac:soportePendiente); si no trae el conteo, de fondo */
     setTimeout(contarDeFondo, 0);
   });
+  /* 26/11 — al salir no queda la cinta de la sesión anterior */
+  function limpiarPend() { borrarPend(); PEND_SERVIDOR = false; try { K.disparar('kit:soporte', { pendientes: [] }); } catch (e) {} }
+  window.addEventListener('hac:logout', limpiarPend);
   window.addEventListener('hac:logout', function () { D = null; PERSONAS = null; CONTEO = null; CONTEO_FONDO = false; pintarContador(); });
   window.addEventListener('hac:sesionVencida', function () { D = null; PERSONAS = null; CONTEO = null; CONTEO_FONDO = false; pintarContador(); });
   /* soportes resueltos por calificar (y, al DEV, el conteo del botón): llegan con el arranque (login o revalidación) */
   window.addEventListener('hac:soportePendiente', function (e) {
     var s = e && e.detail; if (!s) return;
     if (s.dev && esDev()) ponerConteo(s.dev, 'arranque');
-    if (!s.pendientes || !s.pendientes.length) return;
-    setTimeout(function () { K.disparar('kit:soporte', s); }, 1500);
+    /* 26/11 — la lista del servidor manda (también vacía: quita la cinta) y queda en el teléfono */
+    PEND_SERVIDOR = true;
+    guardarPend(s);
+    setTimeout(function () { K.disparar('kit:soporte', s); }, (s.pendientes && s.pendientes.length) ? 1500 : 0);
+  });
+
+  /* ══════════════ 26/11 · calificar insistente: copia en el teléfono ══════════════
+     Al volver a abrir la app con la sesión guardada, la cinta y las estrellas salen
+     con lo último que dijo el servidor, sin esperar la revalidación (ningún viaje
+     extra). Cuando llega el perfil, su lista reemplaza a la copia. */
+  var K_PEND = 'hac.sopPend.v1';
+  var PEND_SERVIDOR = false;
+  function uidActual() { try { var p = window.IDN && window.IDN.perfil(); return (p && p.uid) || ''; } catch (e) { return ''; } }
+  function guardarPend(s) {
+    var uid = uidActual(); if (!uid) return;
+    try {
+      var l = (s && s.pendientes) || [];
+      if (!l.length) localStorage.removeItem(K_PEND);
+      else localStorage.setItem(K_PEND, JSON.stringify({ uid: uid, ts: Date.now(), pendientes: l, reabreHasta: s.reabreHasta, comentarioHasta: s.comentarioHasta }));
+    } catch (e) {}
+  }
+  function borrarPend() { try { localStorage.removeItem(K_PEND); } catch (e) {} }
+  function desdeCopia(uid) {
+    var c = null;
+    try { c = JSON.parse(localStorage.getItem(K_PEND) || 'null'); } catch (e) {}
+    if (!c || !uid || c.uid !== uid || !(c.pendientes && c.pendientes.length)) return;
+    /* una copia de más de 15 días ya no se muestra: espera al servidor */
+    if (!(Date.now() - Number(c.ts || 0) < 15 * 86400000)) return;
+    setTimeout(function () { if (!PEND_SERVIDOR) K.disparar('kit:soporte', c); }, 1500);
+  }
+  /* la calificación (y «Mis solicitudes») corrigen la lista: la copia la sigue al instante */
+  if (K.cuando) K.cuando('kit:soportePend', function (l) {
+    if (!uidActual()) return;
+    var c = null;
+    try { c = JSON.parse(localStorage.getItem(K_PEND) || 'null'); } catch (e) {}
+    var antes = (c && c.pendientes || []).map(function (x) { return x.id; }).join(','), ahora = (l || []).map(function (x) { return x.id; }).join(',');
+    if (antes !== ahora) guardarPend({ pendientes: l || [], reabreHasta: c && c.reabreHasta, comentarioHasta: c && c.comentarioHasta });
   });
   /* sesión guardada (revalidación): si el DEV ya está adentro y nada trajo el conteo, de fondo */
   setTimeout(function () { if (esDev()) contarDeFondo(); }, 15000);

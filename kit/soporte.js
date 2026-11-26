@@ -28,11 +28,28 @@
        'kit:soporte'. Esta pieza abre la calificación de 1 a 5 estrellas.
        Con 1 o 2 (reabreHasta) pide el comentario y el caso se REABRE.
        "Después" la cierra hasta la próxima vez que se abra la app.
+       (26/11: ya no; ver CALIFICAR INSISTENTE abajo.)
      · MIS SOLICITUDES: desde el modal de soporte, la lista de las propias
        (de todas las apps) con su estado, la respuesta y las estrellas.
 
        KIT.piezas.soporte.mias();
        KIT.piezas.soporte.calificar(caso, { reabreHasta: 2 });
+
+   26/11 · CALIFICAR INSISTENTE (Hacienda; idea del KIT Flandes del 05/11)
+     · Mientras haya un soporte RESUELTO sin calificar queda una CINTA abajo
+       a la izquierda («Califica SOPH…», un toque abre las estrellas).
+     · «Después» (o cerrar) no lo da por visto: la capa vuelve sola a los
+       insistirMin..insistirMax minutos (1 a 5, al azar) mientras la persona
+       siga en la app, nunca encima de otra capa ni mientras escribe; si está
+       ocupada, se reintenta a los 20 s. Al volver a la app (otra pestaña,
+       pantalla apagada) con la hora ya cumplida o tras 1 min fuera, también.
+     · Al volver a ABRIR la app sale de nuevo: lo pendiente viaja con el
+       arranque (login/perfil) y js/soportes.js lo guarda en el teléfono para
+       mostrarlo sin esperar al servidor. Ningún viaje extra: la lista se
+       corrige con el arranque, con la respuesta de calificar y con «Mis
+       solicitudes».
+
+       KIT.piezas.soporte.pendientes({ pendientes: [...] });   // [] la limpia
 
    Pareja: kit/soporte.css
    ============================================================ */
@@ -201,24 +218,125 @@
   var ETIQUETAS = ['', 'Muy mala', 'Mala', 'Regular', 'Buena', 'Excelente'];
   var APP_T = { CONTRATISTA: 'Contratista', CONTRATACION: 'Contratación', SUPERVISION: 'Supervisión',
                 CONTABILIDAD: 'Contabilidad', TESORERIA: 'Tesorería', COMUNICACIONES: 'Comunicaciones', ADMIN: 'Admin' };
-  var VISTOS = {};          /* casos ya ofrecidos en esta visita: "Después" no insiste */
+  var VISTOS = {};          /* casos que ya se abrieron solos en esta visita */
   var COLA = [];
   var ABIERTA = null;
-  var CFG = { reabreHasta: 2, comentarioHasta: 3 };
+  var CFG = { reabreHasta: 2, comentarioHasta: 3, insistirMin: 1, insistirMax: 5 };
+  /* 26/11 · lo que falta por calificar (del más viejo al más nuevo) y la próxima insistencia */
+  var PEND = [];
+  var INS = { t: null, cuando: 0, oculta: 0 };
+  var REINTENTO_MS = 20000;   /* ocupada (otra capa, escribiendo): se vuelve a probar */
+  var VOLVER_MS = 60000;      /* fuera de la app al menos esto: al volver, se pide otra vez */
 
   function dato(t) { return String(t === null || t === undefined ? '' : t); }
 
-  /** Lo que llega con 'inicio': se encolan los que no se han ofrecido. */
+  /**
+   * Lo que llega con el arranque (o con una calificación): la lista COMPLETA
+   * de lo que la persona tiene por calificar ([] = nada). Se pone la cinta y se
+   * abren solos los que no se han ofrecido en esta visita.
+   */
   function pendientes(d) {
     d = d || {};
-    if (d.reabreHasta) CFG.reabreHasta = Number(d.reabreHasta);
-    if (d.comentarioHasta) CFG.comentarioHasta = Number(d.comentarioHasta);
-    (d.pendientes || []).forEach(function (c) {
-      if (!c || !c.id || VISTOS[c.id]) return;
+    ['reabreHasta', 'comentarioHasta', 'insistirMin', 'insistirMax'].forEach(function (k) { if (Number(d[k]) > 0) CFG[k] = Number(d[k]); });
+    if (d.pendientes) PEND = d.pendientes.filter(function (c) { return c && c.id; });
+    PEND.forEach(function (c) {
+      if (VISTOS[c.id]) return;
       VISTOS[c.id] = 1;
       COLA.push(c);
     });
+    COLA = COLA.filter(function (c) { return esPendiente(c.id); });
+    if (!PEND.length) { clearTimeout(INS.t); INS.t = null; INS.cuando = 0; }
+    avisarLista();
+    cinta();
     siguiente();
+  }
+
+  function esPendiente(id) { for (var i = 0; i < PEND.length; i++) if (PEND[i].id === id) return true; return false; }
+  function quitar(id) {
+    PEND = PEND.filter(function (c) { return c.id !== id; });
+    COLA = COLA.filter(function (c) { return c.id !== id; });
+    if (!PEND.length) { clearTimeout(INS.t); INS.t = null; INS.cuando = 0; }
+    avisarLista();
+    cinta();
+  }
+  /* la app guarda la lista en el teléfono (js/soportes.js) para la próxima apertura */
+  function avisarLista() { try { if (K.disparar) K.disparar('kit:soportePend', PEND.slice()); } catch (e) {} }
+
+  /* ── la cinta: siempre visible mientras haya algo por calificar ── */
+  var CINTA = null;
+  function cinta() {
+    if (!PEND.length) {
+      if (CINTA) { CINTA.remove(); CINTA = null; }
+      document.documentElement.classList.remove('kit-sop-cinta-on');
+      return;
+    }
+    if (!CINTA) {
+      CINTA = K.nodo(
+        '<button type="button" class="kit-sop-cinta" aria-live="polite">' +
+        '  <span class="kit-sop-cinta__ico">' + K.icono('estrella', 18) + '</span>' +
+        '  <span class="kit-sop-cinta__txt"><b></b><small>Así te respondemos a tiempo la próxima vez.</small></span>' +
+        '  <span class="kit-sop-cinta__ir">Calificar</span>' +
+        '</button>');
+      CINTA.addEventListener('click', function () { K.vibrar(6); abrirPendiente(true); });
+      document.body.appendChild(CINTA);
+      document.documentElement.classList.add('kit-sop-cinta-on');
+    }
+    CINTA.querySelector('b').textContent = PEND.length === 1
+      ? 'Califica ' + PEND[0].id
+      : 'Califica ' + PEND.length + ' soportes';
+    CINTA.classList.toggle('kit-sop-cinta--oculta', !!ABIERTA);
+  }
+  function latido() {
+    if (!CINTA) return;
+    CINTA.classList.remove('kit-sop-cinta--late');
+    void CINTA.offsetWidth;
+    CINTA.classList.add('kit-sop-cinta--late');
+  }
+
+  /** Abre la calificación del más viejo. tocado: lo pidió la persona (sin esperas). */
+  function abrirPendiente(tocado) {
+    if (!PEND.length) return false;
+    if (ABIERTA && document.body.contains(ABIERTA)) return false;
+    if (!tocado) {
+      /* nunca encima de otra capa, mientras escribe o con la app en segundo plano */
+      if (document.querySelector('.kit-capa--on')) return false;
+      if (document.querySelector('.swal2-container')) return false;
+      var a = document.activeElement;
+      if (a && (/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) || a.isContentEditable)) return false;
+      if (document.visibilityState === 'hidden') return false;
+    }
+    clearTimeout(INS.t); INS.t = null; INS.cuando = 0;
+    calificar(PEND[0], CFG);
+    return true;
+  }
+
+  /** «Después»: la capa vuelve sola en 1 a 5 minutos (al azar) mientras siga en la app. */
+  function programar() {
+    if (!PEND.length) return;
+    var min = Math.max(0.1, Number(CFG.insistirMin) || 1), max = Math.max(min, Number(CFG.insistirMax) || 5);
+    esperar(Math.round((min + Math.random() * (max - min)) * 60000));
+  }
+  function esperar(ms) {
+    clearTimeout(INS.t);
+    INS.cuando = Date.now() + ms;
+    INS.t = setTimeout(insistir, ms);
+  }
+  function insistir() {
+    INS.t = null;
+    if (!PEND.length) { INS.cuando = 0; return; }
+    /* con la app escondida se espera a que vuelva (alVolver); ocupada, en 20 s */
+    if (document.visibilityState === 'hidden') return;
+    if (!abrirPendiente(false)) esperar(REINTENTO_MS);
+  }
+  function alVolver() {
+    if (document.visibilityState === 'hidden') { INS.oculta = Date.now(); return; }
+    var fuera = INS.oculta ? Date.now() - INS.oculta : 0;
+    INS.oculta = 0;
+    if (!PEND.length || ABIERTA) return;
+    var cumplida = INS.cuando && Date.now() >= INS.cuando;
+    if (!cumplida && fuera < VOLVER_MS) return;
+    /* después de que la app se repinta: los botones no esperan por esto */
+    esperar(900);
   }
 
   function siguiente() {
@@ -332,8 +450,13 @@
       document.removeEventListener('keydown', tecla);
       hoja.remove();
       ABIERTA = null;
+      /* 26/11 · calificado: sale de la lista y sigue el próximo. «Después»:
+         queda la cinta y vuelve en 1 a 5 min (no se encadenan capas) */
+      if (r) quitar(caso.id); else { COLA = []; cinta(); latido(); programar(); }
       if (alTerminar) alTerminar(r || null);
       setTimeout(siguiente, 450);
+      /* calificado y queda otro: se ofrece enseguida (si no puede, el reloj insiste) */
+      if (r) setTimeout(function () { if (PEND.length && !ABIERTA && !COLA.length && !abrirPendiente(false)) programar(); }, 700);
     }
     function tecla(e) { if (e.key === 'Escape') fuera(null); }
     document.addEventListener('keydown', tecla);
@@ -353,8 +476,8 @@
           K.aviso(r && r.reabierto
             ? 'Volvimos a abrir el caso ' + caso.id + '. Soporte ya lo tiene con tu comentario.'
             : '¡Gracias! Calificaste el soporte ' + caso.id + ' con ' + elegido + (elegido === 1 ? ' estrella.' : ' estrellas.'), r && r.reabierto ? 'aviso' : 'ok', 6500);
-          if (r && r.pendientes) pendientes({ pendientes: r.pendientes });
           fuera(r);
+          if (r && r.pendientes) pendientes({ pendientes: r.pendientes });
         }, function (e) {
           si.disabled = false;
           si.classList.remove('kit-ocupado');
@@ -363,7 +486,9 @@
     });
 
     ABIERTA = hoja;
+    VISTOS[caso.id] = 1;
     document.body.appendChild(hoja);
+    cinta();
     setTimeout(function () { if (botones[0]) botones[0].focus(); }, 80);
     return { cerrar: function () { fuera(null); } };
   }
@@ -428,6 +553,8 @@
         lista.appendChild(K.nodo('<div class="kit-mias__vacio">' + K.icono('comentario', 30) + '<p>Todavía no has pedido soporte. Cuando lo hagas, aquí ves en qué va y la respuesta.</p></div>'));
         return;
       }
+      /* 26/11 · la lista completa corrige la cinta sin otro viaje */
+      if (!(r.total > l.length)) pendientes({ pendientes: l.filter(function (x) { return x.porCalificar; }) });
       if (r.total > l.length) lista.appendChild(K.nodo('<p class="kit-mias__nota">Se muestran las ' + l.length + ' más recientes de ' + r.total + '.</p>'));
       l.forEach(function (x) {
         var t = K.nodo(
@@ -472,8 +599,10 @@
   }
 
   if (K.cuando) K.cuando('kit:soporte', pendientes);
+  document.addEventListener('visibilitychange', alVolver);
 
   K.piezas.soporte = { abrir: abrir, contexto: contexto, calificar: calificar, pendientes: pendientes, mias: mias,
-                       _cola: function () { return COLA.slice(); }, _vistos: function () { return VISTOS; } };
+                       _cola: function () { return COLA.slice(); }, _vistos: function () { return VISTOS; },
+                       _pend: function () { return PEND.slice(); }, _ins: function () { return INS; }, _cfg: function () { return CFG; } };
 }());
 
