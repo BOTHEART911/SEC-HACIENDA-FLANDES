@@ -157,7 +157,17 @@
       if (vieja) vieja.remove();
       if (!badge) return;
       var url = String(row[campo] || '').trim();
-      badge.onclick = function (ev) { ev.preventDefault(); verEnVisor(badge.href || url, NOMBRE[campo]); };
+      badge.onclick = function (ev) {
+        ev.preventDefault();
+        /* el mismo visor del detalle (todos los documentos, anterior/siguiente); su botón de pestaña abre Google Docs */
+        try {
+          if (typeof window.abrirDocsAsignacion_ === 'function' && typeof window.docsAsignacion_ === 'function') {
+            var pos = window.docsAsignacion_(row).findIndex(function (d) { return d._campo === campo; });
+            return window.abrirDocsAsignacion_(row, pos < 0 ? 0 : pos);
+          }
+        } catch (e) {}
+        verEnVisor(badge.href || url, NOMBRE[campo]);
+      };
       if (!suyo || finalizada || !url) return;
       var id = idDe(url);
       var caja = document.createElement('div');
@@ -190,5 +200,14 @@
   setTimeout(engancharEditar, 1500);
   setTimeout(engancharEditar, 4000);
 
-  window.WORD_ASIG = { pintar: pintar, docs: docs, avisar: avisar, prepararEditar: prepararEditar };
+  /** 25/11 — enlace para editar en Google Docs (con la cuenta de USUARIOS) si quien abre es el abogado
+      o el asistente de una asignación no finalizada y el documento ya está en línea; si no, ''. */
+  function abrirUrl(row, url) {
+    var id = idDe(url);
+    if (!id || !row || String(row.estado || '').toUpperCase() === 'FINALIZADO' || !esDeLaAsignacion(row)) return '';
+    var c = correoMio();
+    return 'https://docs.google.com/document/d/' + id + '/edit' + (c ? '?authuser=' + encodeURIComponent(c) : '');
+  }
+
+  window.WORD_ASIG = { pintar: pintar, docs: docs, avisar: avisar, prepararEditar: prepararEditar, abrirUrl: abrirUrl };
 }());

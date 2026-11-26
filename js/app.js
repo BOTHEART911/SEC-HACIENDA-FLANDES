@@ -148,7 +148,9 @@ const PROC_CASILLAS_ = [
 ];
 function docsAsignacion_(row){
   return PROC_CASILLAS_.filter(c => String(row[c[0]] || '').trim())
-    .map(c => ({ url: String(row[c[0]]).trim(), titulo: c[1], detalle: c[2] === 'in' ? 'Recibido' : 'Respuesta', _tipo: c[2] }));
+    .map(c => ({ url: String(row[c[0]]).trim(), titulo: c[1], detalle: c[2] === 'in' ? 'Recibido' : 'Respuesta', _tipo: c[2], _campo: c[0],
+      /* 25/11 — abogado y asistente: «abrir en otra pestaña» va a Google Docs para editar (js/word-asig.js) */
+      abrirUrl: window.WORD_ASIG && window.WORD_ASIG.abrirUrl ? window.WORD_ASIG.abrirUrl(row, String(row[c[0]]).trim()) : '' }));
 }
 function puedeAgregarDocAsig_(row){
   const estado = String(row.estado || '').toUpperCase();

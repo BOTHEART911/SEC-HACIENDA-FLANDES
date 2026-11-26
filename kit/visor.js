@@ -959,6 +959,8 @@
       b.title = chico ? 'Volver al tamaño normal' : 'Minimizar';
       return;
     }
+    /* 25/11 (Hacienda) — un documento de Google que la persona puede editar se abre en Google Docs, con su cuenta */
+    if (a === 'abrir' && d._ref && d._ref.abrirUrl) { window.open(d._ref.abrirUrl, '_blank', 'noopener'); return; }
     if (d.cargar && !d.url) { accionBytes(a, d); return; }
     if (a === 'abrir') { window.open(paraAbrir(d.url), '_blank', 'noopener'); return; }
     if (a === 'bajar') {
@@ -1012,6 +1014,8 @@
     var d = actual();
     var lienzo = capa.querySelector('.kit-visor__lienzo');
     capa.querySelector('.kit-visor__t').textContent = d ? (d.titulo || 'Documento') : '';
+    var bAbrir = capa.querySelector('[data-a="abrir"]');
+    if (bAbrir) bAbrir.title = (d && d._ref && d._ref.abrirUrl) ? 'Abrir en Google Docs para editar' : 'Abrir en una pestaña';
     var cu = capa.querySelector('.kit-visor__cuenta');
     cu.textContent = docs.length > 1 ? (i + 1) + ' de ' + docs.length + ' ▾' : '';
     cu.disabled = docs.length < 2;
