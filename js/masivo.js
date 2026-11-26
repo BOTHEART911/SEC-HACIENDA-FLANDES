@@ -3,7 +3,7 @@
 
    Dos vistas (todos los roles):
      · Predial · Comunicaciones persuasivas (view-mas-pers): una carta en
-       PDF por contribuyente con la tabla de TODAS sus fichas, oficio
+       PDF por contribuyente con la tabla de sus fichas EN MORA (25/11), oficio
        consecutivo automático, constancia en la bitácora del expediente.
      · Predial · Marketing (view-mas-mkt): correo con la imagen en el cuerpo
        y adjunta; destinatarios por Excel o por filtros de BD Predial.
@@ -167,7 +167,7 @@
           '<button type="button" class="kit-btn" data-mas="refrescar" title="Volver a traer el avance">' + ico('recargar') + ' Refrescar</button>' +
         '</div>' +
         '<p class="mas-intro">' + (tipo === 'PERS'
-          ? 'Una carta en PDF por contribuyente, con la tabla de todas sus fichas, desde <b>cobrocoactivo@flandes-tolima.gov.co</b>. Cada envío queda en la bitácora del expediente.'
+          ? 'Una carta en PDF por contribuyente, con la tabla de sus fichas en mora (las que están al día no van), desde <b>cobrocoactivo@flandes-tolima.gov.co</b>. Cada envío queda en la bitácora del expediente.'
           : (tipo === 'ICA' ? 'Correo con imagen desde <b>cobrocoactivo@flandes-tolima.gov.co</b>. Destinatarios por Excel o por filtros de BD Requerimientos. Cada envío queda en la línea de tiempo del requerimiento.'
           : 'Correo con la imagen de la campaña (en el cuerpo y adjunta) desde <b>cobrocoactivo@flandes-tolima.gov.co</b>. Destinatarios por Excel o por filtros de BD Predial.')) + '</p>' +
         '<div class="mas-cuota" id="' + p + '-cuota"></div>' +
@@ -1178,7 +1178,7 @@
   /**
    * Vista previa con la configuración del bloque (asunto, cuerpo, plantilla, imagen fija)
    * y los datos reales del contribuyente; al confirmar sale de una vez desde cobrocoactivo.
-   * La persuasiva lleva todas las fichas con el mismo NIT/CC. Si la tarjeta no tiene
+   * La persuasiva lleva las fichas EN MORA del mismo NIT/CC (25/11: las AL DIA no van). Si la tarjeta no tiene
    * ningún correo, se pide y queda guardado al enviar. 20/11: sin bloqueo de 7 días; solo
    * el freno de doble toque (rid + mismo envío en los últimos 2 minutos, en ICA).
    * 24/11: ese freno es POR TARJETA (tipo + expediente), no por correo ni por NIT/CC: otra
@@ -1212,7 +1212,16 @@
         if (!document.body.contains(m)) return;
         var d = r[0], im = r[1];
         U.d = d; medir('unico:previa', t0);
-        var quien = d.nf > 1 ? 'Las <b>' + d.nf + ' fichas</b> de este NIT/CC van en ' + (tipo === 'PERS' ? 'la carta' : 'el registro del envío') + '.' : '';
+        var quien = d.nf > 1 ? 'Las <b>' + d.nf + ' fichas</b> ' + (tipo === 'PERS' ? 'en mora ' : '') + 'de este NIT/CC van en ' + (tipo === 'PERS' ? 'la carta' : 'el registro del envío') + '.' : '';
+        /* 25/11 — la persuasiva solo relaciona las fichas EN MORA del NIT/CC */
+        var alDia = (tipo === 'PERS' && d.alDia) ? d.alDia : [];
+        if (alDia.length) quien += (quien ? ' ' : '') + (d.baseAlDia ? '<b>Esta tarjeta está al día</b>: la carta lleva solo las fichas en mora del mismo NIT/CC. ' : '') +
+          'No van en la carta por estar al día: ' + esc(alDia.join(', ')) + '.';
+        if (d.estado === 'AL_DIA') {
+          aviso2('al-dia', '<b>Este contribuyente está al día</b>' + (alDia.length > 1 ? ' en sus ' + alDia.length + ' fichas' : '') +
+            ': no tiene predios en mora para la comunicación persuasiva. No se envía.');
+          return;
+        }
         if (d.estado === 'BLOQUEADO') {
           aviso2('reloj', 'Este contribuyente ya recibió ' + (tipo === 'PERS' ? 'la comunicación persuasiva' : 'el marketing') + ' el <b>' + esc(fCorta(d.ultimo)) + '</b>' + (d.camp ? ' («' + esc(d.camp) + '»)' : '') +
             '. Se puede volver a enviar desde el <b>' + esc(fLarga(d.hasta)) + '</b>.');

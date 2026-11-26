@@ -189,7 +189,8 @@
 :root { --ba-normal: #2563eb; --ba-ambar: #d97706; --ba-rojo: #dc2626; }
 :root[data-tema="oscuro"] { --ba-normal: #60a5fa; --ba-ambar: #fbbf24; --ba-rojo: #f87171; }
 
-.ba-card { box-shadow: inset 4px 0 0 var(--ba-c, var(--ba-normal)), var(--k-sombra-1, 0 1px 3px rgba(0,0,0,.08)) !important; }
+/* 25/11 — borde completo (sin franja lateral: DESIGN.md) */
+.ba-card { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--ba-c, var(--ba-normal)) 55%, transparent), var(--k-sombra-1, 0 1px 3px rgba(0,0,0,.08)) !important; }
 .ba-card--normal { --ba-c: var(--ba-normal); }
 .ba-card--ambar  { --ba-c: var(--ba-ambar); }
 .ba-card--rojo   { --ba-c: var(--ba-rojo); }
@@ -235,3 +236,34 @@
 
 @keyframes baLatido { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.18); } }
 @media (prefers-reduced-motion: reduce) { .ba-marca--rojo svg { animation: none; } }
+
+/* ══════════════ 25/11/2026 — ASIGNACIONES: el aviso se toca (sin «Enterado») ══════════════ */
+.ba-marca--btn {
+  width: 100%; min-height: 44px; cursor: pointer; text-align: left;
+  transition: background-color .18s cubic-bezier(.2,.8,.2,1), border-color .18s cubic-bezier(.2,.8,.2,1);
+}
+.ba-marca--btn:hover { background: color-mix(in srgb, var(--ba-c, var(--ba-normal)) 16%, transparent); }
+.ba-marca--btn:focus-visible { outline: 2px solid var(--ba-c, var(--ba-normal)); outline-offset: 2px; }
+.ba-marca__ir { display: inline-flex; align-items: center; gap: 2px; flex: none; font-weight: 600; }
+
+.ba-pend { text-align: left; }
+.ba-pend .swal2-html-container { text-align: left; margin: 8px 18px 0; }
+.ba-pend__ref { margin: 0 0 10px; font: 500 .9rem/1.35 var(--k-fuente, inherit); color: var(--k-tinta-2, #3d5248); }
+.ba-pend__dias--normal { color: var(--ba-normal); } .ba-pend__dias--ambar { color: var(--ba-ambar); } .ba-pend__dias--rojo { color: var(--ba-rojo); }
+.ba-pend__ent {
+  padding: 10px 12px; border-radius: var(--k-r-md, 14px);
+  background: var(--k-papel-2, #f6f8f7); border: 1px solid var(--k-linea, rgba(6,64,43,.14));
+}
+.ba-pend__de { display: block; margin: 0 0 6px; font-size: .84rem; color: var(--k-apagado, #4b5c54); }
+.ba-pend__de b { color: var(--k-tinta, #0f1f16); }
+.ba-pend__tx { margin: 0; max-height: 34vh; overflow: auto; font: 400 .95rem/1.5 var(--k-fuente, inherit); color: var(--k-tinta, #0f1f16); white-space: normal; word-break: break-word; }
+.ba-reas { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--k-linea, rgba(6,64,43,.14)); display: grid; gap: 8px; }
+.ba-reas__t { display: flex; align-items: center; gap: 6px; margin: 0; font: 600 .92rem/1.2 var(--k-fuente-titulo, inherit); color: var(--k-tinta, #0f1f16); }
+.ba-reas__c { display: grid; gap: 4px; font-size: .8rem; color: var(--k-apagado, #4b5c54); }
+.ba-reas__c select { min-height: 44px; padding: 0 10px; border-radius: var(--k-r-sm, 10px); border: 1px solid var(--k-linea, rgba(6,64,43,.14)); background: var(--k-papel, #fff); color: var(--k-tinta, #0f1f16); font: 500 .9rem var(--k-fuente, inherit); }
+.ba-reas__c select:disabled { opacity: .6; cursor: not-allowed; }
+.ba-reas__n { margin: 0; font-size: .8rem; color: var(--k-apagado, #4b5c54); }
+.ba-reas__n--err { color: var(--k-malo, #b91c1c); font-weight: 600; }
+.ba-reas__b { justify-self: start; min-height: 44px; }
+@media (min-width: 720px) { .ba-reas { grid-template-columns: 1fr 1fr; } .ba-reas__t, .ba-reas__n, .ba-reas__b { grid-column: 1 / -1; } }
+.ba-pend__de svg { vertical-align: -3px; margin-right: 4px; }

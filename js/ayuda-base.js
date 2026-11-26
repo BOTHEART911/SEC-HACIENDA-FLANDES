@@ -874,7 +874,7 @@ window.AYUDA_BASE = [
 "bitacoras pendientes",
 "tengo bitacoras atrasadas"
 ],
-"respuesta": "{{bitPendientes}}Cuando uno escribe (abogado, asistente o asignador/admin), los otros dos quedan **por responder**. Se cierra con tu bitácora o con **Enterado**. Azul: hasta 1 día hábil · ámbar: 2 a 3 · rojo: más de 3.",
+"respuesta": "{{bitPendientes}}Cuando uno escribe (abogado, asistente o asignador/admin), los otros dos quedan **por responder**. Se cierra con tu bitácora (en BD Predial también con **Enterado**). En Asignaciones, al tocar el aviso de la tarjeta ves la última bitácora pendiente y puedes **Responder en Editar** o **Reasignar**. Azul: hasta 1 día hábil · ámbar: 2 a 3 · rojo: más de 3.",
 "accion": "preguntar:HC-BIT-PRED|HC-BIT-SEM",
 "estado": "",
 "activo": true,
@@ -915,7 +915,7 @@ window.AYUDA_BASE = [
 {
 "id": "HC-ENTERADO",
 "app": "HACIENDA",
-"vista": "bd-predial,bdp-detalle,bdp-form,bdp-panel,asignaciones,ver-asignacion,editar-asignacion,agregar-asignacion,panel",
+"vista": "bd-predial,bdp-detalle,bdp-form,bdp-panel,panel",
 "titulo": "Enterado",
 "frases": [
 "enterado",
@@ -924,7 +924,7 @@ window.AYUDA_BASE = [
 "cerrar la bitacora sin escribir",
 "quitar el pendiente de bitacora"
 ],
-"respuesta": "Si no necesitas escribir nada, toca **Enterado** en la marca de la tarjeta: la bitácora deja de estar por responder para ti.",
+"respuesta": "En BD Predial, si no necesitas escribir nada, toca **Enterado** en la marca de la tarjeta: la bitácora deja de estar por responder para ti. En Asignaciones ya no hay Enterado: toca el aviso para ver la última bitácora y responderla o reasignarla.",
 "accion": "",
 "estado": "",
 "activo": true,

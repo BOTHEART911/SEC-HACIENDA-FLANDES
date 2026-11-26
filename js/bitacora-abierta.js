@@ -145,6 +145,13 @@
 
   /* ---------- la marca de la tarjeta ---------- */
   function textoDias(d) { return d === 0 ? 'hoy' : (d === 1 ? '1 día hábil' : d + ' días hábiles'); }
+  /* 25/11 — en ASIGNACIONES el aviso ya no lleva «Enterado»: se toca y muestra la
+     última bitácora pendiente, con Responder y Reasignar (js abajo · procreasignar). */
+  function marcaProcHTML(e) {
+    return '<button type="button" class="kit-ba ba-marca ba-marca--btn ba-marca--' + e.nivel + '" data-bit-ver="1" title="Ver la última bitácora por responder">' + ico('libro', 15) +
+      '<span>Bitácora por responder · ' + esc(textoDias(e.dias)) + '</span>' +
+      '<span class="ba-marca__ir">Ver ' + ico('adelante', 14) + '</span></button>';
+  }
   function marcaHTML(e) {
     return '<div class="ba-marca ba-marca--' + e.nivel + '" role="status">' + ico('libro', 15) +
       '<span>Bitácora por responder · ' + esc(textoDias(e.dias)) + '</span>' +
@@ -190,7 +197,7 @@
       card.classList.add('ba-card', 'ba-card--' + e.nivel);
       card.__baFila = r;
       var tmp = document.createElement('div');
-      tmp.innerHTML = marcaHTML(e);
+      tmp.innerHTML = marcaProcHTML(e);
       var nueva = tmp.firstChild;
       if (vieja) vieja.replaceWith(nueva);
       else {
@@ -321,8 +328,111 @@
     });
   }
 
+  /* ---------- 25/11 · ASIGNACIONES: ver la última bitácora pendiente, responder o reasignar ---------- */
+  var RE_ENTRADA = /^\s*([A-ZÁÉÍÓÚÑÜ][A-ZÁÉÍÓÚÑÜ .]{1,80}?)\s+(\d{1,2}\/\d{1,2}\/\d{4})\s*:\s?(.*)$/;
+  /** Entradas de la bitácora: [{ autor, fecha, texto }] (las líneas sin encabezado se suman a la anterior). */
+  function entradas(bit) {
+    var out = [];
+    String(bit || '').split(/\r?\n/).forEach(function (l) {
+      var m = l.match(RE_ENTRADA);
+      if (m) out.push({ autor: m[1].trim(), fecha: m[2], texto: m[3] });
+      else if (out.length && l.trim()) out[out.length - 1].texto += '\n' + l;
+      else if (l.trim()) out.push({ autor: '', fecha: '', texto: l });
+    });
+    return out;
+  }
+  /** La entrada por la que está pendiente: la última de otra persona (no del SISTEMA ni mía). */
+  function ultimaPendiente(r) {
+    var y = yo(), es = entradas(r.bitacora);
+    for (var i = es.length - 1; i >= 0; i--) {
+      var a = norm(es[i].autor);
+      if (a && a !== 'SISTEMA' && a !== y) return es[i];
+    }
+    return es.length ? es[es.length - 1] : null;
+  }
+  function opciones(idSel, actual) {
+    var sel = $(idSel), out = [], vistos = {};
+    if (sel) Array.prototype.forEach.call(sel.options, function (o) {
+      if (vistos[o.value]) return; vistos[o.value] = 1;
+      out.push('<option value="' + esc(o.value) + '"' + (norm(o.value) === norm(actual) ? ' selected' : '') + '>' + esc(o.textContent) + '</option>');
+    });
+    if (actual && !out.some(function (h) { return h.indexOf(' selected') !== -1; })) out.push('<option value="' + esc(actual) + '" selected>' + esc(actual) + '</option>');
+    return out.join('');
+  }
+  function abrirEditar(r) {
+    try {
+      var fn = window.abrirEditarAsignacion_ || (0, eval)('abrirEditarAsignacion_');
+      fn(r);
+      setTimeout(function () { var b = $('edit-bitacora'); if (b) { b.focus(); try { b.setSelectionRange(b.value.length, b.value.length); b.scrollTop = b.scrollHeight; } catch (_) {} } }, 250);
+    } catch (e) { console.warn('BITAB editar:', e); }
+  }
+  function verPendiente(r) {
+    if (!r || !window.Swal) return;
+    var e = estado(r, 'view-asignaciones');
+    var ent = ultimaPendiente(r);
+    var jefe = esAdmin();
+    var y = yo(), soyAbogado = !!y && norm(r.asignado) === y;
+    var sinAsis = SIN[norm(r.asistente)] === 1;
+    var puedeAb = jefe, puedeAs = jefe || (soyAbogado && sinAsis);
+    var reas = (puedeAb || puedeAs) ?
+      '<div class="ba-reas"><p class="ba-reas__t">' + ico('personas', 16) + ' Reasignar</p>' +
+        '<label class="ba-reas__c"><span>Abogado</span><select id="ba-reas-ab"' + (puedeAb ? '' : ' disabled') + '>' + opciones('edit-asignado', r.asignado) + '</select></label>' +
+        '<label class="ba-reas__c"><span>Asistente</span><select id="ba-reas-as"' + (puedeAs ? '' : ' disabled') + '>' + opciones('edit-asistente', SIN[norm(r.asistente)] ? '' : r.asistente) + '</select></label>' +
+        '<p class="ba-reas__n">La bitácora por responder pasa a quien entra y le llega el aviso.</p>' +
+        '<button type="button" class="kit-btn kit-btn--marca ba-reas__b" id="ba-reas-ok">' + ico('check', 16) + ' Reasignar</button></div>' :
+      '<p class="ba-reas__n">Para reasignar, pídelo a un administrador' + (soyAbogado ? ' (el asistente solo lo pones tú cuando no hay ninguno)' : '') + '.</p>';
+    window.Swal.fire({
+      title: 'Bitácora por responder',
+      customClass: { popup: 'ba-pend' },
+      html: '<p class="ba-pend__ref">' + esc(VISTAS['view-asignaciones'].ficha(r)) + (e ? ' · <b class="ba-pend__dias ba-pend__dias--' + e.nivel + '">' + esc(textoDias(e.dias)) + '</b>' : '') + '</p>' +
+        (ent ? '<div class="ba-pend__ent"><p class="ba-pend__de">' + ico('libro', 15) + ' <b>' + esc(ent.autor || '—') + '</b>' + (ent.fecha ? ' · ' + esc(ent.fecha) : '') + '</p>' +
+          '<p class="ba-pend__tx">' + esc(ent.texto).replace(/\n/g, '<br>') + '</p></div>' : '<p class="ba-pend__tx">La bitácora está vacía.</p>') + reas,
+      showCancelButton: true, confirmButtonText: 'Responder en Editar', cancelButtonText: 'Cerrar', reverseButtons: true, focusConfirm: false,
+      didOpen: function (pop) {
+        try { if (window.HAC_FLANDES && window.HAC_FLANDES.iconizar) window.HAC_FLANDES.iconizar(pop); } catch (_) {}
+        var b = pop.querySelector('#ba-reas-ok');
+        if (b) b.addEventListener('click', function () { reasignar(r, b, pop); });
+      }
+    }).then(function (x) { if (x && x.isConfirmed) abrirEditar(r); });
+  }
+  function reasignar(r, btn, pop) {
+    if (btn.__ocupado) return;
+    var ab = pop.querySelector('#ba-reas-ab'), as = pop.querySelector('#ba-reas-as');
+    var cuerpo = { id_proceso: r.id_proceso, rowIndex: r.rowIndex };
+    if (ab && !ab.disabled && norm(ab.value) !== norm(r.asignado)) cuerpo.asignado = ab.value;
+    if (as && !as.disabled && norm(as.value) !== norm(SIN[norm(r.asistente)] ? '' : r.asistente)) cuerpo.asistente = as.value;
+    if (cuerpo.asignado === undefined && cuerpo.asistente === undefined) {
+      var n = pop.querySelector('.ba-reas__n'); if (n) n.textContent = 'Elige otro abogado o asistente.'; return;
+    }
+    if (cuerpo.asignado !== undefined && !String(cuerpo.asignado).trim()) { var n2 = pop.querySelector('.ba-reas__n'); if (n2) n2.textContent = 'La asignación necesita un abogado.'; return; }
+    btn.__ocupado = true; btn.disabled = true; btn.classList.add('ba-ocupado');
+    btn.__rid = btn.__rid || nuevoRid();
+    cuerpo.rid = btn.__rid;
+    var t0 = Date.now();
+    enviar('procreasignar', cuerpo).then(function (res) {
+      if (res && res.fila) Object.keys(res.fila).forEach(function (k) { r[k] = res.fila[k]; });
+      try { if (window.WORD_ASIG && res && res.wordAviso) window.WORD_ASIG.avisar(res); } catch (_) {}
+      try { console.info('[medicion] procreasignar:pantalla', Date.now() - t0, 'ms'); } catch (_) {}
+      sonar('success');
+      try { window.Swal.fire({ toast: true, position: 'top', icon: 'success', title: (res && res.ya) ? 'Ya estaba así.' : 'Reasignada. Quien entra recibe el aviso.', timer: 2200, showConfirmButton: false }); } catch (_) {}
+      refrescar('view-asignaciones');
+    }, function (e) {
+      btn.__ocupado = false; btn.disabled = false; btn.classList.remove('ba-ocupado');
+      if (!reintentable(e)) btn.__rid = null;
+      sonar('error');
+      var n = pop.querySelector('.ba-reas__n'); if (n) { n.textContent = String(e && e.message || e); n.classList.add('ba-reas__n--err'); }
+    });
+  }
+
   /* Un solo escucha para las dos vistas (antes que el de app.js). */
   document.addEventListener('click', function (ev) {
+    var ver = ev.target.closest && ev.target.closest('[data-bit-ver]');
+    if (ver) {
+      ev.preventDefault(); ev.stopPropagation();
+      var c = ver.closest('.proc-card');
+      if (c && c.__baFila) verPendiente(c.__baFila);
+      return;
+    }
     var btn = ev.target.closest && ev.target.closest('[data-bit-enterado]');
     if (!btn) return;
     ev.preventDefault(); ev.stopPropagation();
@@ -407,7 +517,9 @@
       return '- **' + def.ficha(x.r).replace(/\*/g, '') + '** — ' + textoDias(x.e.dias) + (ult ? ' · última: ' + ult : '');
     };
     var partes = ['Tienes **' + p.length + '** ' + (p.length === 1 ? 'bitácora' : 'bitácoras') + ' por responder en ' + def.et +
-      '. Escribe la tuya o toca **Enterado** en la tarjeta. La pastilla *Bitácoras por responder* las deja solas en pantalla.'];
+      (vista === 'view-asignaciones'
+        ? '. Toca el aviso de la tarjeta para ver la última y responderla o reasignarla.'
+        : '. Escribe la tuya o toca **Enterado** en la tarjeta.') + ' La pastilla *Bitácoras por responder* las deja solas en pantalla.'];
     if (g.rojo.length) partes.push('**🔴 Más de 3 días hábiles (' + g.rojo.length + ')**\n' + g.rojo.slice(0, 15).map(linea).join('\n') + (g.rojo.length > 15 ? '\n- … y ' + (g.rojo.length - 15) + ' más' : ''));
     if (g.ambar.length) partes.push('**🟠 2 a 3 días hábiles (' + g.ambar.length + ')**\n' + g.ambar.slice(0, 15).map(linea).join('\n') + (g.ambar.length > 15 ? '\n- … y ' + (g.ambar.length - 15) + ' más' : ''));
     if (g.normal.length) partes.push('**🟢 Recientes (' + g.normal.length + ')**\n' + g.normal.slice(0, 15).map(linea).join('\n') + (g.normal.length > 15 ? '\n- … y ' + (g.normal.length - 15) + ' más' : ''));
@@ -457,7 +569,7 @@
 
   window.BITAB = {
     estado: estado, pendientes: pendientes, parse: parse, habiles: habiles, nivel: nivel,
-    insight: insight, enterado: enterado, contarInicio: contarInicio, conteos: function () { return conteos; },
+    insight: insight, enterado: enterado, verPendiente: verPendiente, ultimaPendiente: ultimaPendiente, contarInicio: contarInicio, conteos: function () { return conteos; },
     pastilla: function (vista, v) { encendido[vista] = !!v; var b = $('ba-pill-' + vista); if (b) b.classList.toggle('active', !!v); refrescar(vista); },
     encendido: function (vista) { return !!encendido[vista]; },
     montar: alEntrar, decorarProcesos: decorarProcesos

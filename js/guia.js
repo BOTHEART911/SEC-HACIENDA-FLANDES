@@ -231,7 +231,8 @@
           { k: 'trio', p: [['balanza', 'Abogado'], ['equipo', 'Asistente'], ['llave', 'Asignador o admin']] },
           { k: 'leyenda', p: [['#3b82c4', 'Hasta 1 día hábil'], ['#e39b2d', '2 a 3 días'], ['#d64541', 'Más de 3 días']] },
           { k: 'tips', p: [
-            ['check', 'Se cierra con tu bitácora o con **Enterado**.'],
+            ['check', 'Se cierra con tu bitácora. En BD Predial también con **Enterado**.'],
+            ['intercambiar', 'En Asignaciones, toca el aviso: ves la última bitácora, **Responder en Editar** o **Reasignar**.'],
             ['filtro', 'Pastilla **Bitácoras por responder** y Consultar → **por revisar**.'],
             ['campana', 'Aviso push al instante y resumen a las 7 a. m.']
           ] }
