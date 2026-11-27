@@ -150,6 +150,7 @@
     'view-bdp-form': 'Expediente predial',
     'view-bdp-detalle': 'Detalle del expediente',
     'view-bdp-panel': 'Panel base de datos',
+    'view-bdp-carga': 'Carga masiva predial',
     'view-config': 'Configuración',
     'view-ica-req': 'Requerimientos ICA',
     'view-mas-pers': 'Comunicaciones persuasivas',

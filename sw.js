@@ -83,6 +83,8 @@ var APP_SHELL = [
   './js/ica.js',
   './js/masivo.js',
   './css/masivo.css',
+  './js/carga-predial.js',
+  './css/carga-predial.css',
   './js/inicio.js',
   './css/inicio.css',
   './js/zonas.js',          // 20/11: residencias de la hoja ZONAS

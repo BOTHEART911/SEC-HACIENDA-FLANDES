@@ -354,7 +354,7 @@
         '<div class="ntf-para">' +
           '<div class="ntf-para__props"><small>' + (props.length > 1 ? 'Contribuyentes (' + props.length + ')' : 'Contribuyente') + '</small><ul>' + quienes + '</ul></div>' +
           '<div><small>Ficha catastral</small><b>' + esc(fichaLimpia(row.ficha_catastral) || '—') + '</b></div>' +
-          '<div><small>Expediente físico</small><b>' + esc(row.no_exp_fisico || '—') + '</b></div>' +
+          '<div><small>Expediente físico</small><b>' + esc(row.no_exp_fisico || 'Exp. sin asignar') + '</b></div>' +
           '<div class="ntf-para__correo"><small>Se envía a</small>' + (hayCorreo ? listaPara(ds) : '<span class="ntf-mal">Sin correo electrónico válido</span>') +
             (ds.malos.length ? '<br><small class="ntf-mal">No se envía a (correo no válido): ' + esc(ds.malos.join(', ')) + '</small>' : '') + '</div>' +
         '</div>' + reb + previo +
@@ -747,7 +747,7 @@
         var ult = k === st.envios.length - 1;
         var reb = Array.isArray(x.reb) ? x.reb : (ult && st.rebote ? st.reb : []);
         out.push({
-          id: row.id_predial, exp: row.no_exp_fisico || '', contribuyentes: una(row.nombres), documentos: una(row.nit_cedula),
+          id: row.id_predial, exp: row.no_exp_fisico || 'Exp. sin asignar', contribuyentes: una(row.nombres), documentos: una(row.nit_cedula),
           ficha: fichaLimpia(row.ficha_catastral), factura: x.fac, tipo: x.re ? 'Reenvío' : 'Envío', fechaIso: f, fecha: dmy(f), hora: x.h || '',
           por: x.por || '', correos: una(row.correo_electronico).replace(/ \/ /g, ', '), rebote: reb.join(', '),
           vence: ult && st.vence ? st.vence.toLocaleDateString('es-CO') : '', plazo: ult ? plazoTxt(st) : 'Reemplazado por un envío posterior',

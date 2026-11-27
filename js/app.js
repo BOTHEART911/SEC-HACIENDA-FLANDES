@@ -6877,7 +6877,7 @@ function bdpCardHTML_(row, idx, puedeEliminar, puedeDecision) {
       '</div>' +
       '<div class="bdp-grid">' +
         '<div><b>Ficha Catastral</b>' + (cop(fichaTxt, 'ficha') || '—') + '</div>' +
-        '<div><b>N° Exp. Físico</b>' + (cop(row.no_exp_fisico, 'exp') || '—') + '</div>' +
+        '<div><b>N° Exp. Físico</b>' + (cop(row.no_exp_fisico, 'exp') || 'Exp. sin asignar') + '</div>' +   /* 27/11 — carga masiva */
         '<div><b>Sustanciador</b>'  + escapeHtml_(row.sustanciador || '—') + '</div>' +
         '<div><b>Asignador</b>'     + escapeHtml_(row.asignador || '—') + '</div>' +
         '<div><b>Debe desde</b>'    + escapeHtml_(bdpFormatDebeDesde_(row.debe_desde)) + '</div>' +
@@ -7166,7 +7166,7 @@ document.getElementById('bdp-list')?.addEventListener('click', async (e) => {
       icon:'warning',
       title:'¿Eliminar expediente?',
       html:'<b>' + escapeHtml_(row.nombres || row.id_predial) + '</b><br>' +
-           '<b>Exp. Físico:</b> ' + escapeHtml_(row.no_exp_fisico || '') + '<br><br>' +
+           '<b>Exp. Físico:</b> ' + escapeHtml_(row.no_exp_fisico || 'Exp. sin asignar') + '<br><br>' +
            'Esta acción es irreversible.',
       showCancelButton:true,
       confirmButtonText:'Eliminar',
@@ -7407,7 +7407,7 @@ function abrirBDPExpediente_(row) {
   __bdpArchRow = row;
   __bdpArchMode = 'live';
   document.getElementById('bdp-arch-context').innerHTML =
-    '<b>' + escapeHtml_(row.nombres || '') + '</b> — Exp. ' + escapeHtml_(row.no_exp_fisico || '');
+    '<b>' + escapeHtml_(row.nombres || '') + '</b> — Exp. ' + escapeHtml_(row.no_exp_fisico || 'sin asignar');
   document.getElementById('modal-bdp-archivo').classList.remove('hidden');
 
   const url = String(row.archivo_expediente || '').trim();
@@ -7956,7 +7956,7 @@ function abrirBDPEditar_(row) {
 
   document.getElementById('bdp-form-title').textContent = 'EDITAR EXPEDIENTE';
   document.getElementById('bdp-form-badge').innerHTML =
-    `<div class="edit-badge">${escapeHtml_(row.id_predial)} — ${escapeHtml_(row.no_exp_fisico || '')}</div>`;
+    `<div class="edit-badge">${escapeHtml_(row.id_predial)} — ${escapeHtml_(row.no_exp_fisico || 'Exp. sin asignar')}</div>`;
 
   bdpPopulateLetras_();
   bdpSetupNumericInputs_();
@@ -8255,7 +8255,11 @@ document.getElementById('btn-bdp-form-guardar')?.addEventListener('click', async
     }
     if (!debeRaw || !/^\d{6}$/.test(debeRaw)) { Swal.fire({ icon:'warning', title:'Selecciona el año de Debe Desde' }); return; }
     if (!sust) { Swal.fire({ icon:'warning', title:'Sustanciador requerido' }); return; }
-    if (!expLet || !expNum || expNum.length !== 4) {
+    /* 27/11 — CARGA MASIVA: el expediente que llegó sin No. físico se edita sin exigirlo
+       (si se escribe, va completo; el que ya lo tiene no puede quedar sin él). */
+    const sinExpOrig = esEdit && __bdpFormRow && !String(__bdpFormRow.no_exp_fisico || '').trim();
+    const expVacio = !expLet && !expNum;
+    if (!(sinExpOrig && expVacio) && (!expLet || !expNum || expNum.length !== 4)) {
       Swal.fire({ icon:'warning', title:'No. Exp. Físico inválido', text:'Letra + 4 dígitos (ej: A0001)' });
       return;
     }
@@ -8283,7 +8287,7 @@ document.getElementById('btn-bdp-form-guardar')?.addEventListener('click', async
       escaneado: document.getElementById('bdp-escaneado').value || 'NO',
       debe_desde: debeRaw,
       valor_deuda: esAlDia ? 0 : valorRaw,
-      no_exp_fisico: expLet + '-' + expNum,
+      no_exp_fisico: (sinExpOrig && expVacio) ? '' : expLet + '-' + expNum,
       sustanciador: sust,
 
       oficio_persuas:       (document.getElementById('bdp-oficio-persuas').value || '').trim(),
@@ -8308,6 +8312,15 @@ document.getElementById('btn-bdp-form-guardar')?.addEventListener('click', async
      (cubre el caso del usuario no-super que solo edita estado/actuación/bitácora) */
   if (esAlDia) {
     payload.valor_deuda = 0;
+  }
+
+  /* 27/11 — sin No. físico no hay mandamiento, embargo, sentencia, desembargo ni COBRO COACTIVO */
+  if (esEdit && __bdpFormRow) {
+    const expFinal = payload.no_exp_fisico !== undefined ? String(payload.no_exp_fisico || '').trim()
+                                                         : String(__bdpFormRow.no_exp_fisico || '').trim();
+    const motivo = bdpSinExpBloquea_(expFinal, __bdpFormRow, actuacion, estadoProc,
+      document.getElementById('bdp-mandam-pago')?.value || '');
+    if (motivo) { Swal.fire({ icon:'warning', title:'Falta el No. de expediente físico', text: motivo }); return; }
   }
 
  /* AGREGAR */
@@ -8375,6 +8388,23 @@ document.getElementById('btn-bdp-form-guardar')?.addEventListener('click', async
     Swal.fire({ icon:'error', title:'Error', text:String(e.message||e) });
   }
 });
+
+/* 27/11 — CARGA MASIVA: un expediente sin No. de expediente físico no puede pasar a
+   MANDAMIENTO DE PAGO, EMBARGO, SENTENCIA, DESEMBARGO, mandamiento SI ni COBRO COACTIVO
+   (el backend lo vuelve a revisar: Carga1127.gs · CM_exigirExp_). Solo frena CAMBIOS. */
+const BDP_CON_EXP_ACT = ['MANDAMIENTO DE PAGO', 'EMBARGO', 'SENTENCIA', 'DESEMBARGO'];
+function bdpSinExpBloquea_(expFinal, row, actuacion, estado, mandam) {
+  if (String(expFinal || '').trim()) return '';
+  const n = v => normalizeText_(v || '');
+  if (BDP_CON_EXP_ACT.includes(n(actuacion)) && n(actuacion) !== n(row.actuacion))
+    return 'Asígnale el No. de expediente físico antes de pasar a ' + n(actuacion) + '.';
+  if (n(estado) === 'COBRO COACTIVO' && n(row.estado_proceso) !== 'COBRO COACTIVO')
+    return 'Asígnale el No. de expediente físico antes de pasar a COBRO COACTIVO.';
+  if (n(mandam) === 'SI' && n(row.mandam_pago) !== 'SI')
+    return 'Asígnale el No. de expediente físico antes de marcar el mandamiento de pago.';
+  return '';
+}
+window.bdpSinExpBloquea_ = bdpSinExpBloquea_;
 
 /* ====================================================================
    FASE 9 · ajuste 5 — ¿Escaneado? = SI solo si hay EXPEDIENTE ARCHIVO
@@ -8558,7 +8588,7 @@ function abrirBDPDetalle_(row) {
     playSoundOnce(SOUNDS.menu);
     __bdpRebRow = row;
     document.getElementById('bdp-reb-context').innerHTML =
-      `<b>${escapeHtml_(row.nombres || '')}</b> — Exp. ${escapeHtml_(row.no_exp_fisico || '')}`;
+      `<b>${escapeHtml_(row.nombres || '')}</b> — Exp. ${escapeHtml_(row.no_exp_fisico || 'sin asignar')}`;
     document.getElementById('bdp-reb-justif').value = '';
     document.getElementById('modal-bdp-rebotar').classList.remove('hidden');
   });
@@ -8679,7 +8709,7 @@ function abrirBDPDecision_(row) {
   }
   __bdpDecRow = row;
   document.getElementById('bdp-dec-context').innerHTML =
-    `<b>${escapeHtml_(row.nombres || '')}</b> — Exp. ${escapeHtml_(row.no_exp_fisico || '')}<br>` +
+    `<b>${escapeHtml_(row.nombres || '')}</b> — Exp. ${escapeHtml_(row.no_exp_fisico || 'sin asignar')}<br>` +
     `Actuación actual: <b>${escapeHtml_(row.actuacion || 'NINGUNA')}</b>`;
   document.getElementById('bdp-dec-actuacion').value = row.actuacion || 'NINGUNA';
   bdpSetSeguimiento_('bdp-seg-fecha','bdp-seg-check','bdp-seg-aviso', row.fecha_seguimiento, row.recordatorio);
@@ -8696,6 +8726,9 @@ document.getElementById('btn-bdp-dec-guardar')?.addEventListener('click', async 
  if (!__bdpDecRow) return;
   const nueva = document.getElementById('bdp-dec-actuacion').value;
   if (!nueva) { Swal.fire({ icon:'warning', title:'Selecciona una actuación' }); return; }
+  /* 27/11 — sin No. físico no hay mandamiento, embargo, sentencia ni desembargo */
+  { const mot = bdpSinExpBloquea_(__bdpDecRow.no_exp_fisico, __bdpDecRow, nueva, __bdpDecRow.estado_proceso, __bdpDecRow.mandam_pago);
+    if (mot) { Swal.fire({ icon:'warning', title:'Falta el No. de expediente físico', text: mot }); return; } }
 
   const segFecha = bdpISOaDDMMYYYY_(document.getElementById('bdp-seg-fecha').value || '');
   const segCheck = document.getElementById('bdp-seg-check').checked;
